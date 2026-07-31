@@ -1,6 +1,6 @@
 # Draywar Alpha — Decision-bar phase plan (Path C)
 
-**Status:** Draft for Elliot agreement · after sign-off = build authority for Path C  
+**Status:** **Agreed** (Elliot 2026-07-31). Build authority for Path C phases B0–B5.  
 **Date:** 2026-07-31  
 **Checklist authority:** `Alpha/ALPHA_DECISION_BAR.md` (ratified)  
 **Standing law:** `docs/reputation_and_standing.md`  
@@ -305,8 +305,8 @@ When Elliot agrees this plan:
 
 ## Agreement checkbox (Elliot)
 
-- [ ] Phase order B0→B5 accepted  
-- [ ] Parallel worktree rules accepted  
-- [ ] Final Alpha only after B5 checklist green  
+- [x] Phase order B0→B5 accepted  
+- [x] Parallel worktree rules accepted  
+- [x] Final Alpha only after B5 checklist green  
 
-Edit this file if a phase should split or merge before build starts.
+Signed: Elliot 2026-07-31 (chat agreement). Build starts in a fresh session at B0.
