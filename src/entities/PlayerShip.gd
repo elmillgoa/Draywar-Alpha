@@ -364,8 +364,13 @@ func _mouse_aim_point() -> Vector3:
 	var mouse: Vector2 = viewport.get_mouse_position()
 	var origin: Vector3 = _camera.project_ray_origin(mouse)
 	var direction: Vector3 = _camera.project_ray_normal(mouse)
-	# Plane through lead intercept when locked (depth matches where to aim); else ship.
-	var plane_point: Vector3 = global_position
+	# Free-fire: plane at combat range along the nose so the reticle maps into the
+	# world ahead (not through the ship — that collapses aim to screen-plane lateral
+	# and free bolts never reach distant targets). Locked: plane through lead
+	# intercept so depth matches where the lead pip lives.
+	var plane_point: Vector3 = (
+		global_position + (-global_transform.basis.z * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE)
+	)
 	var lock: Node = locked_target()
 	if lock is Node3D:
 		var lock_body: Node3D = lock as Node3D

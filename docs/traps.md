@@ -24,3 +24,4 @@ encode it in `scripts/checkin.py` when possible.
 ## UI / EventBus (E1+)
 
 11. **Never `free()` a Control that is still inside its own `pressed` (or any) signal.** Job accept rebuilt the jobs box and freed the Accept button mid-click → crash `Object is locked and can't be freed`. Use `remove_child` + `queue_free()`, and `call_deferred` for full rebuilds triggered from that button.
+12. **Free-fire mouse aim plane must not sit on the ship.** Intersecting the reticle ray with a plane through the freighter collapses aim to screen-lateral; bolts never go where the reticle points. Unlocked plane depth = combat range along the nose; locked plane = lead intercept (Combat Fairness).

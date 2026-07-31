@@ -145,3 +145,95 @@ func test_mouse_aim_plane_uses_lead_when_locked_target_moves() -> void:
 		dist_to_lead_plane + 0.5,
 		"aim plane must track lead, not current target position"
 	)
+
+
+func test_mouse_aim_uses_fallback_plane_when_unlocked() -> void:
+	var space: Node3D = Node3D.new()
+	add_child_autofree(space)
+
+	var cam: Camera3D = Camera3D.new()
+	space.add_child(cam)
+	cam.global_position = Vector3(0.0, 10.0, 20.0)
+	cam.look_at(Vector3.ZERO, Vector3.UP)
+	cam.current = true
+
+	var ship: PlayerShip = PlayerShip.new()
+	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
+	space.add_child(ship)
+	ship.global_position = Vector3.ZERO
+	ship.set_aim_camera(cam)
+	await get_tree().process_frame
+
+	assert_eq(ship.locked_target(), null)
+
+	var free_plane: Vector3 = (
+		ship.global_position
+		+ (-ship.global_transform.basis.z * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE)
+	)
+	var aim: Vector3 = ship._mouse_aim_point()
+	var plane_n: Vector3 = cam.global_transform.basis.z.normalized()
+	var dist_to_free_plane: float = absf((aim - free_plane).dot(plane_n))
+	var dist_to_ship_plane: float = absf((aim - ship.global_position).dot(plane_n))
+	assert_lt(dist_to_free_plane, 0.5, "unlocked aim must lie on free-fire depth plane")
+	assert_gt(
+		dist_to_ship_plane,
+		dist_to_free_plane + 10.0,
+		"unlocked aim must not collapse to the ship plane (breaks free-fire)"
+	)
+	assert_gt(
+		aim.distance_to(ship.global_position),
+		50.0,
+		"free aim point must sit well ahead of the ship"
+	)
+
+
+func test_free_fire_hits_hostile_without_lock() -> void:
+	## Reticle aim alone must be enough: no Tab lock required to score a hit.
+	var space: Node3D = Node3D.new()
+	add_child_autofree(space)
+
+	var cam: Camera3D = Camera3D.new()
+	space.add_child(cam)
+	cam.global_position = Vector3(0.0, 10.0, 20.0)
+	cam.look_at(Vector3.ZERO, Vector3.UP)
+	cam.current = true
+
+	var ship: PlayerShip = PlayerShip.new()
+	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
+	space.add_child(ship)
+	ship.global_position = Vector3.ZERO
+	ship.set_aim_camera(cam)
+	await get_tree().process_frame
+
+	assert_eq(ship.locked_target(), null, "must hit without lock")
+	var aim: Vector3 = ship._mouse_aim_point()
+	var aim_dir: Vector3 = aim - ship.global_position
+	assert_gt(
+		aim_dir.length(),
+		50.0,
+		"free aim must reach combat depth (regression: ship-plane free-fire)"
+	)
+	aim_dir = aim_dir.normalized()
+
+	# Sit on the free-fire aim ray inside bolt travel range; freeze AI so it stays put.
+	var range_m: float = 40.0
+	var hostile: HostileNpc = HostileNpc.spawn_under(
+		space, ship.global_position + aim_dir * range_m
+	)
+	hostile.set_physics_process(false)
+	await get_tree().process_frame
+	assert_eq(ship.locked_target(), null)
+
+	var before: float = hostile.remaining_hp()
+	assert_true(ship.try_fire())
+	# Travel time: 40 m / 280 m/s ≈ 0.14 s; wait with margin.
+	var waited: float = 0.0
+	while waited < 0.6 and is_instance_valid(hostile) and hostile.remaining_hp() >= before:
+		await get_tree().physics_frame
+		waited += get_tree().root.get_physics_process_delta_time()
+	assert_true(is_instance_valid(hostile), "hostile should still exist after free-fire")
+	assert_lt(
+		hostile.remaining_hp(),
+		before,
+		"free-fire bolt along reticle must damage a target on the aim ray without lock"
+	)
