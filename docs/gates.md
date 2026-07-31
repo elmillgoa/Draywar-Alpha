@@ -207,3 +207,16 @@ Not a re-open of Final Alpha. Refuse → iterate E1 list only. Sign → open roa
 ### Attempt log
 
 *(none yet — waiting on Elliot)*
+
+### Play fixes (pre–formal Attempt) — 2026-07-31
+
+**Not a full E1 feel verdict.** Mid-gate play after E1 code. Combat/aim/job path fixed and accepted for this slice.
+
+**Elliot (verbatim):**
+
+> Much better. We are good on this section
+
+**Fixes in that slice:** Accept-job crash (free mid-pressed); free-fire reticle (camera ray); bounty prey ensure (near player if none in lock range).
+
+**Still open:** Formal E1 feel Attempt (small game worth another phase?) — not signed yet.
+
