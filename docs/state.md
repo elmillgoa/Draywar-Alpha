@@ -12,7 +12,9 @@
 - A5 Minimal Playable Slice — **mechanical** (systems/money/loop wired); **not accepted as Alpha**
 - **Final Alpha Gate** — **not signed** (2026-07-31): tech demonstrator, not Alpha
 
-**Next:** Iterate until play feels like a prove-it Alpha, then re-run Final Alpha Gate. Do not expand to full plan.
+**Next:** Close the gap to Elliot’s Alpha bar, then re-run Final Alpha Gate. Do not expand to full plan.
+
+**Alpha bar (Elliot, post–Final Alpha refuse):** playable game with **core systems working**, **actual graphics** (not black + colored boxes), **more than flying shapes**, **minimal content for real vetting**. Current = less than the basics / tech demonstrator.
 
 ## Proof (A5)
 

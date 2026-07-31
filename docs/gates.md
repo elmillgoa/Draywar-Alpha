@@ -77,3 +77,15 @@ Elliot’s words only. Agents never sign these.
 > This isn't an Alpha. This is a rudimentary technology demonstrator
 
 **Notes:** Mechanical A5 criteria (systems, money, normal-play levers, no console required for the loop) may hold as a tech slice. Final Alpha fantasy sign-off refused. Iterate until the play feels like a prove-it game, not a systems demo. Do not advance to full-plan expansion on this verdict.
+
+**Elliot’s Alpha bar (clarified same session, verbatim intent):**
+
+> To me an actual Alpha is a playable game that has all of the core systems in and working. It has actual graphics and lets you do more than fly around a black screen with colored shapes. It has a minimal amount of content done so proper testing and vetting can be done. The current version has less than the basics.
+
+**Binding bar for re-gate (plain):**
+
+1. **Core systems in and working** — not stubs you have to imagine around  
+2. **Actual graphics** — not black space + colored boxes only  
+3. **More than flying shapes** — a real play session, not a tech demo  
+4. **Minimal content for real vetting** — enough places/jobs/people to test the fantasy properly  
+5. **Current build is below that bar** — less than the basics  
