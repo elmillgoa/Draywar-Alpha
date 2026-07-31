@@ -65,12 +65,32 @@ Before calling done: run **adversary** (where applicable) then **verify**.
 
 ---
 
-## 5. Session ritual
+## 5. Memory system (four records + hooks)
+
+**Not Grok “AI memory.”** Disk is truth. Trust files over chat recollection.
+
+| Record | Job |
+|--------|-----|
+| `docs/state.md` | Where are we **now**? Short. Rewritten. Every session. |
+| `docs/journal/` | **Why** is it like this? Append-only. Search, never dump whole. |
+| `docs/traps.md` | What lies silently? Permanent. |
+| `docs/eras.md` | Which epoch does an old note belong to? |
+
+**Harness hooks** (`scripts/hooks/`, `.grok/hooks/memory-system.json`):
+
+- **Session start** — real position from `state.md`; warn if dirty/unpushed.
+- **Before compact** — write status, commit, push; do not start new work.
+- **After compact** — memory incomplete and will not feel it; re-read `state.md`.
+
+Hooks are the floor. They do **not** replace `/wrap`.
+Between contracts, re-read `docs/state.md`. Never start work you cannot finish and record.
+
+## 6. Session ritual
 
 | When | Skill / action |
 |------|----------------|
 | Session start | `/start` — orient, toolchain, restate contract, **stop** |
-| Build | `/work` — one contract at a time |
+| Build | `/work` — one contract; **subagents build** |
 | Before complete | `/adversary` then `/verify` |
 | Human feel gates | `/gate` (A1 flight, A4 recovery, Final Alpha) |
 | Plan vs reality | `/escalate` — implement nothing while open |
