@@ -64,3 +64,12 @@ func test_dock_refused_out_of_range() -> void:
 func test_undock_refused_when_not_docked() -> void:
 	var dock: DockingController = DockingController.new()
 	assert_eq(dock.request_undock(), &"")
+
+
+func test_force_dock_starts_career_at_station() -> void:
+	var dock: DockingController = DockingController.new()
+	assert_eq(dock.force_dock(STATION), STATION)
+	assert_true(dock.is_docked())
+	assert_eq(dock.docked_station_id(), STATION)
+	assert_eq(dock.request_undock(), STATION)
+	assert_false(dock.is_docked())

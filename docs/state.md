@@ -4,6 +4,8 @@
 
 **Current position:** Path C. **B0–B5 build complete.** **Final Alpha Gate open** — Elliot must play and sign. Not signed.
 
+**Play fix (2026-07-31):** New Game starts **docked** at starter station (storyboard berth). **No combat hostiles in patrolled Alpha** — undock is safe. Pirates only in contested/lawless (Beta/Gamma). Hostiles ignore docked ships.
+
 | Doc | Role |
 |-----|------|
 | `Alpha/ALPHA_DECISION_BAR.md` | Checklist (all rows Present / good enough to judge) |

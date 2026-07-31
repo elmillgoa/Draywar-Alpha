@@ -63,6 +63,11 @@ func _physics_process(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
 
+	# Docked ships are not combat targets (station airspace / storyboard safe).
+	if _player_is_docked():
+		velocity = Vector3.ZERO
+		return
+
 	var player: Node3D = _player_ship()
 	if player == null:
 		return
@@ -77,6 +82,23 @@ func _physics_process(delta: float) -> void:
 
 	if _fire_cooldown <= 0.0:
 		_fire_at_player(player)
+
+
+func _player_is_docked() -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return false
+	var dock: Node = tree.get_first_node_in_group(&"docking_service")
+	if dock == null or not dock.has_method(&"docked_station_id"):
+		return false
+	var station_raw: Variant = dock.call(&"docked_station_id")
+	if typeof(station_raw) == TYPE_STRING_NAME:
+		var as_name: StringName = station_raw
+		return not String(as_name).is_empty()
+	if typeof(station_raw) == TYPE_STRING:
+		var as_text: String = station_raw
+		return not as_text.is_empty()
+	return false
 
 
 func _face_toward(to_player: Vector3, dt: float) -> void:

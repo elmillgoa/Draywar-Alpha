@@ -68,19 +68,19 @@ Elliot’s words only. Agents never sign these.
 2. You should see the **DRAYWAR** main menu: **New Game / Continue / Quit**.
 3. Click **New Game**.
 4. A short **controls tip** appears (mouse aim, WASD, F dock/jump, Space fire, Esc pause). Click **Got it**.
-5. You are in space. Note HUD: **SYSTEM**, **STANDING**, **CREDITS**, **FUEL**, **HULL**, **NAV** (HERE + GATES).
+5. You **start already docked** at Alpha Port (storyboard entry — berth in the starter ship). Station menu is open. Not free-flying into combat.
+6. Note HUD: **SYSTEM**, **STANDING**, **CREDITS**, **FUEL**, **HULL**, **NAV** (HERE + GATES). Alpha is patrolled government space — **no pirates on undock**.
 
-#### 1. Flight + dock (place treatment)
+#### 1. Flight + undock (place treatment)
 
-6. Fly toward the station (large dock structure). **F** when prompted to dock.
-7. Station menu opens: title + flavor line, sections **Jobs / Services / Trade / Contacts**, **Undock**.
-8. Read the **status / standing** line (HUD + docked strip). Alpha is **Reach Authority**, patrolled — fees higher, more NPCs.
+7. Station menu: title + flavor line, sections **Jobs / Services / Trade / Contacts**, **Undock**.
+8. Read the **status / standing** line (HUD + docked strip). Alpha is **Reach Authority**, patrolled — fees higher, more NPCs, **safe airspace**.
 9. **Esc** → pause: Resume, Captain sheet, Save, Load, Quit to menu. Open **Captain sheet** — credits, fuel, hull, cargo, local standing, job line. Close.
 
 #### 2. Job loop across systems
 
 10. At Alpha Port **Jobs**: accept the courier (**Accept job → Beta Hub**). HUD shows **JOB … → Beta Hub**.
-11. Undock. Fly to the **gate** (blue / labeled). **F** to jump when in range (needs fuel). Watch **SYSTEM** and **STANDING** change on arrival (**Beta Drift**, contested Syndicate).
+11. **Undock** into safe Alpha space. Fly to the **gate** (blue / labeled). **F** to jump when in range (needs fuel). Watch **SYSTEM** and **STANDING** change on arrival (**Beta Drift**, contested Syndicate). Contested/lawless systems may have a thin pirate.
 12. Dock **Beta Hub**. **Turn in job**. Credits and Reach standing should move. Note flavor / fee difference vs Alpha.
 13. Optional second hop: take Beta’s return job to Alpha, or jump **Gamma Fringe** (lawless, thinner traffic). Dock **Gamma Outpost**. Feel density and standing controller change.
 
@@ -92,8 +92,8 @@ Elliot’s words only. Agents never sign these.
 
 #### 4. Thin combat
 
-17. In a system with a **hostile** (spawned in play): **Space** to fire. Take or deal damage; **HULL** drops.
-18. If you kill in **patrolled Alpha**, standing with **Reach Authority** should move (attribution).
+17. Jump to **Beta or Gamma** (not Alpha). A **red hostile** may be near the station — **Space** to fire. Take or deal damage; **HULL** drops. Alpha undock stays safe.
+18. If you kill in **patrolled** space (if a fight is forced later), standing with the controller can move (attribution). Contested kills need witnesses/evidence per standing law.
 19. If hull hits zero you are **crippled** (cannot fly). Dock + **Repair ship** restores. Refuel as needed.
 
 #### 5. Sticky hole + recovery foothold (no console)

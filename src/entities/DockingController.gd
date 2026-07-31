@@ -65,6 +65,16 @@ func request_dock() -> StringName:
 	return _docked_station_id
 
 
+## Place the career at a station without needing range (session start / storyboard).
+func force_dock(station_id: StringName) -> StringName:
+	if String(station_id).is_empty():
+		return &""
+	_docked_station_id = station_id
+	_in_range_station_id = &""
+	state = State.DOCKED
+	return _docked_station_id
+
+
 ## Attempt undock. Returns the station id left on success, empty on refusal.
 func request_undock() -> StringName:
 	if state != State.DOCKED:

@@ -21,6 +21,17 @@ class FakeSystemWorld:
 		add_to_group(BalanceSession.GROUP_SYSTEM_WORLD)
 
 
+class FakeDockedService:
+	extends Node
+	## Reports always-docked so hostiles must not fire.
+
+	func _ready() -> void:
+		add_to_group(&"docking_service")
+
+	func docked_station_id() -> StringName:
+		return &"station_alpha_port"
+
+
 var _crippled_count: int = 0
 var _repaired_count: int = 0
 var _hostile_damaged: Array[float] = []
@@ -217,17 +228,30 @@ func test_hitscan_fire_damages_hostile_in_range() -> void:
 	)
 
 
-func test_spawn_helper_places_hostile_under_world() -> void:
+func test_patrolled_alpha_does_not_spawn_hostile() -> void:
 	var world: SystemWorld = SystemWorld.new()
 	world.system_id = SYSTEM_ALPHA
 	add_child_autofree(world)
 	world.build()
-
+	assert_false(SystemWorld.system_allows_hostiles(SYSTEM_ALPHA))
 	var found: int = 0
 	for child: Node in world.get_children():
 		if child is HostileNpc:
 			found += 1
-	assert_eq(found, 1, "build must spawn one HostileNpc under the world")
+	assert_eq(found, 0, "government / patrolled Alpha must not spawn combat hostiles")
+
+
+func test_contested_or_lawless_spawns_hostile() -> void:
+	var world: SystemWorld = SystemWorld.new()
+	world.system_id = &"system_beta"
+	add_child_autofree(world)
+	world.build()
+	assert_true(SystemWorld.system_allows_hostiles(&"system_beta"))
+	var found: int = 0
+	for child: Node in world.get_children():
+		if child is HostileNpc:
+			found += 1
+	assert_eq(found, 1, "contested Beta should place one pirate for combat vetting")
 
 	var extra: HostileNpc = world.spawn_hostile_at(Vector3(5.0, 1.0, 5.0))
 	assert_eq(extra.get_parent(), world)
@@ -236,3 +260,29 @@ func test_spawn_helper_places_hostile_under_world() -> void:
 	assert_almost_eq(extra.global_position.x, expected.x, TOLERANCE)
 	assert_almost_eq(extra.global_position.y, expected.y, TOLERANCE)
 	assert_almost_eq(extra.global_position.z, expected.z, TOLERANCE)
+
+
+func test_hostile_does_not_fire_while_player_docked() -> void:
+	var space: Node3D = Node3D.new()
+	add_child_autofree(space)
+
+	var fake_dock: FakeDockedService = FakeDockedService.new()
+	space.add_child(fake_dock)
+
+	var wallet: WalletService = WalletService.new()
+	space.add_child(wallet)
+	await get_tree().process_frame
+	wallet.reset()
+	var start: float = wallet.condition()
+
+	var ship: PlayerShip = PlayerShip.new()
+	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
+	space.add_child(ship)
+	ship.global_position = Vector3.ZERO
+
+	var hostile: HostileNpc = HostileNpc.spawn_under(space, Vector3(0.0, 0.0, -20.0))
+	await get_tree().process_frame
+	# Simulate engage ticks while reported docked.
+	for _i: int in 5:
+		hostile._physics_process(0.5)
+	assert_eq(wallet.condition(), start, "docked player must not take combat fire")

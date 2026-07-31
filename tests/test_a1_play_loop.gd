@@ -65,6 +65,26 @@ func test_system_world_places_station_and_emits_system_entered() -> void:
 	assert_gt(world.get_child_count(), 0, "gray-box meshes must be parented under the world")
 
 
+func test_begin_session_docked_parks_without_fee_prompt() -> void:
+	var station: StringName = &"station_alpha_port"
+	var ship: PlayerShip = PlayerShip.new()
+	add_child_autofree(ship)
+	ship.global_position = Vector3(0.0, 8.0, 130.0)
+	ship.visible = true
+	ship.set_flight_enabled(true)
+
+	var service: DockingService = DockingService.new()
+	add_child_autofree(service)
+	service.setup(ship, {station: Vector3.ZERO})
+
+	assert_true(service.begin_session_docked(station))
+	assert_true(service.controller().is_docked())
+	assert_eq(service.docked_station_id(), station)
+	assert_false(ship.visible)
+	assert_eq(_docked.size(), 1)
+	assert_eq(_docked[0], station)
+
+
 func test_docking_service_range_scan_emits_prompt_then_f_key_docks() -> void:
 	var station: StringName = &"station_alpha_port"
 	var ship: PlayerShip = PlayerShip.new()

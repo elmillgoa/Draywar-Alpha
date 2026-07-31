@@ -252,10 +252,32 @@ func _spawn_npc_traffic() -> void:
 	_npc_traffic.rebuild_for_system(system_id)
 
 
-## One combat hostile near the station so a fight is findable without console.
+## One combat hostile near the station when the system security allows pirates.
+## Patrolled government space stays safe on undock (no free kill at Alpha).
 func _spawn_hostile() -> void:
+	if not system_allows_hostiles(system_id):
+		return
 	var pos: Vector3 = BalanceFlight.STATION_POSITION + BalanceCombat.SPAWN_OFFSET
 	HostileNpc.spawn_under(self, pos)
+
+
+## Whether this system places a combat hostile (not ambient traffic).
+static func system_allows_hostiles(for_system_id: StringName) -> bool:
+	if not ContentLibrary.has_item(for_system_id):
+		return false
+	var item: ContentItem = ContentLibrary.item(for_system_id)
+	if not (item is StarSystem):
+		return false
+	var system: StarSystem = item as StarSystem
+	match system.policing:
+		StarSystem.POLICED_BY_PATROLS:
+			return BalanceCombat.SPAWN_IN_PATROLLED
+		StarSystem.POLICED_BY_CONTESTED:
+			return BalanceCombat.SPAWN_IN_CONTESTED
+		StarSystem.POLICED_BY_NOBODY:
+			return BalanceCombat.SPAWN_IN_LAWLESS
+		_:
+			return false
 
 
 ## Test / console helper: place a hostile under this world at an offset from station.

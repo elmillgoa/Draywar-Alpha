@@ -141,11 +141,36 @@ func _start_new_game() -> void:
 	_reset_career_services()
 	await _tear_down_play_session()
 	_boot_play_session()
+	# Storyboard entry: always wake up docked at the starter station, not
+	# free-flying into pirates. Government Alpha has no combat hostiles.
+	_enter_career_docked()
 	_in_play = true
 	_hide_main_menu()
 	_set_pause(false)
 	if _new_game_tip != null:
 		_new_game_tip.show_tip()
+
+
+## Dock at the primary station of the current system (new career only; no fee).
+func _enter_career_docked() -> void:
+	if _docking == null or _world == null:
+		return
+	var station_id: StringName = _primary_station_id()
+	if String(station_id).is_empty():
+		return
+	_docking.begin_session_docked(station_id)
+
+
+## First station id in the live world map (starter ship storyboard berth).
+func _primary_station_id() -> StringName:
+	if _world == null:
+		return &""
+	var positions: Dictionary = _world.station_positions()
+	if positions.is_empty():
+		return &""
+	var ids: Array = positions.keys()
+	ids.sort()
+	return StringName(str(ids[0]))
 
 
 func _on_continue_requested() -> void:

@@ -64,6 +64,27 @@ func docked_station_id() -> StringName:
 	return _controller.docked_station_id()
 
 
+## Start the career already docked (storyboard entry). No dock fee.
+## Ship is parked at the station anchor, hidden, flight off; station menu opens.
+func begin_session_docked(station_id: StringName) -> bool:
+	if _ship == null or String(station_id).is_empty():
+		return false
+	if not _station_positions.has(station_id):
+		return false
+	if not StandingService.can_dock_at_station(station_id):
+		return false
+	var docked_id: StringName = _controller.force_dock(station_id)
+	if docked_id == &"":
+		return false
+	_ship.global_position = _station_anchor(docked_id)
+	_ship.velocity = Vector3.ZERO
+	_ship.set_flight_enabled(false)
+	_ship.visible = false
+	_emit_prompt_if_changed(&"", false)
+	EventBus.on_docked.emit(docked_id)
+	return true
+
+
 func _physics_process(_delta: float) -> void:
 	if _ship == null:
 		return

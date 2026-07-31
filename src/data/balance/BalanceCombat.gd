@@ -83,6 +83,12 @@ const HOSTILE_HITBOX_HEIGHT: float = 6.0
 ## World offset from station anchor for the one play hostile.
 const SPAWN_OFFSET: Vector3 = Vector3(55.0, 6.0, 95.0)
 
+## Patrolled / government systems do not spawn combat hostiles (safe undock).
+## Contested and lawless systems may place one thin pirate for B4 vetting.
+const SPAWN_IN_PATROLLED: bool = false
+const SPAWN_IN_CONTESTED: bool = true
+const SPAWN_IN_LAWLESS: bool = true
+
 # --- Beam flash (visual only) ----------------------------------------------
 
 const BEAM_WIDTH: float = 0.18
