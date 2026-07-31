@@ -364,21 +364,21 @@ func _mouse_aim_point() -> Vector3:
 	var mouse: Vector2 = viewport.get_mouse_position()
 	var origin: Vector3 = _camera.project_ray_origin(mouse)
 	var direction: Vector3 = _camera.project_ray_normal(mouse)
-	# Free-fire: plane at combat range along the nose so the reticle maps into the
-	# world ahead (not through the ship — that collapses aim to screen-plane lateral
-	# and free bolts never reach distant targets). Locked: plane through lead
-	# intercept so depth matches where the lead pip lives.
-	var plane_point: Vector3 = (
-		global_position + (-global_transform.basis.z * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE)
-	)
+	# Free-fire: point ON the camera ray under the reticle (classic mouse-aim
+	# convergence). Ship turns and bolts fly ship → that point. Using a plane at
+	# ship-forward combat depth fails with a chase camera offset behind/above —
+	# that plane is not what the reticle sees.
 	var lock: Node = locked_target()
-	if lock is Node3D:
-		var lock_body: Node3D = lock as Node3D
-		var target_pos: Vector3 = lock_body.global_position
-		var target_vel: Vector3 = _lock_combat_velocity(lock)
-		plane_point = FlightMath.lead_point(
-			global_position, target_pos, target_vel, BalanceCombat.PROJECTILE_SPEED
-		)
+	if not (lock is Node3D):
+		return origin + direction * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE
+
+	# Locked: ray × plane through lead intercept (plane normal = camera forward).
+	var lock_body: Node3D = lock as Node3D
+	var target_pos: Vector3 = lock_body.global_position
+	var target_vel: Vector3 = _lock_combat_velocity(lock)
+	var plane_point: Vector3 = FlightMath.lead_point(
+		global_position, target_pos, target_vel, BalanceCombat.PROJECTILE_SPEED
+	)
 	var plane_normal: Vector3 = _camera.global_transform.basis.z
 	var denom: float = direction.dot(plane_normal)
 	if absf(denom) < BalanceFlight.DIRECTION_EPSILON:

@@ -22,6 +22,21 @@ var _system_display_name: String = ""
 var _npc_traffic: NpcTraffic = null
 
 
+func _ready() -> void:
+	EventBus.on_mission_accepted.connect(_on_mission_accepted_ensure_prey)
+	EventBus.on_undocked.connect(_on_undocked_ensure_prey)
+	EventBus.on_system_entered.connect(_on_system_entered_ensure_prey)
+
+
+func _exit_tree() -> void:
+	if EventBus.on_mission_accepted.is_connected(_on_mission_accepted_ensure_prey):
+		EventBus.on_mission_accepted.disconnect(_on_mission_accepted_ensure_prey)
+	if EventBus.on_undocked.is_connected(_on_undocked_ensure_prey):
+		EventBus.on_undocked.disconnect(_on_undocked_ensure_prey)
+	if EventBus.on_system_entered.is_connected(_on_system_entered_ensure_prey):
+		EventBus.on_system_entered.disconnect(_on_system_entered_ensure_prey)
+
+
 ## Builds the gray box for `system_id`. Safe to call once; call `clear_world`
 ## first when reusing the node for a jump.
 func build() -> void:
@@ -36,6 +51,9 @@ func build() -> void:
 	_spawn_hostile()
 	built.emit(system_id)
 	EventBus.on_system_entered.emit(system_id)
+	# Bounty may already be active (save restore / accept before jump). If the
+	# one-shot build spawn is gone or never ran, place prey near the player.
+	_maybe_ensure_bounty_prey()
 
 
 ## Remove placed meshes and traffic so `build()` can run for another system.
@@ -261,6 +279,53 @@ func _spawn_hostile() -> void:
 	HostileNpc.spawn_under(self, pos)
 
 
+## Live combat hostiles under this world (GROUP_HOSTILE, valid, still alive).
+func live_hostile_count() -> int:
+	var count: int = 0
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return 0
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if not is_instance_valid(node):
+			continue
+		if not is_ancestor_of(node):
+			continue
+		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
+			continue
+		count += 1
+	return count
+
+
+## If this system allows hostiles and none are live, spawn one near `near`
+## outside every station safe radius. No-op in patrolled space or when prey exists.
+func ensure_hostile_near(near: Vector3) -> void:
+	if not system_allows_hostiles(system_id):
+		return
+	if live_hostile_within_range(near, BalanceCombat.TARGET_LOCK_RANGE):
+		return
+	var pos: Vector3 = _position_outside_station_safe(near)
+	HostileNpc.spawn_under(self, pos)
+
+
+## True if a live hostile is within `range_m` of `near`.
+func live_hostile_within_range(near: Vector3, range_m: float) -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return false
+	var range_sq: float = range_m * range_m
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if not is_instance_valid(node) or not is_ancestor_of(node):
+			continue
+		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
+			continue
+		if not (node is Node3D):
+			continue
+		var body: Node3D = node as Node3D
+		if near.distance_squared_to(body.global_position) <= range_sq:
+			return true
+	return false
+
+
 ## Whether this system places a combat hostile (not ambient traffic).
 static func system_allows_hostiles(for_system_id: StringName) -> bool:
 	if not ContentLibrary.has_item(for_system_id):
@@ -283,6 +348,119 @@ static func system_allows_hostiles(for_system_id: StringName) -> bool:
 ## Test / console helper: place a hostile under this world at an offset from station.
 func spawn_hostile_at(offset: Vector3) -> HostileNpc:
 	return HostileNpc.spawn_under(self, BalanceFlight.STATION_POSITION + offset)
+
+
+func _on_mission_accepted_ensure_prey(
+	_template_id: StringName, _offering_entity_id: StringName
+) -> void:
+	_maybe_ensure_bounty_prey()
+
+
+func _on_undocked_ensure_prey(_station_id: StringName) -> void:
+	_maybe_ensure_bounty_prey()
+
+
+func _on_system_entered_ensure_prey(entered_id: StringName) -> void:
+	if entered_id != system_id:
+		return
+	_maybe_ensure_bounty_prey()
+
+
+## When an active bounty targets this system and the kill is still open, make
+## sure a live hostile exists near the player (or a station). Does not invent
+## standing rules; does not spawn after the objective is already ready.
+func _maybe_ensure_bounty_prey() -> void:
+	if not _bounty_needs_prey_here():
+		return
+	ensure_hostile_near(_bounty_near_position())
+
+
+## True when MissionService has an open bounty for this system and hostiles are allowed.
+func _bounty_needs_prey_here() -> bool:
+	if not system_allows_hostiles(system_id):
+		return false
+	var mission: Node = _mission_service_node()
+	if mission == null or not mission.has_method(&"has_active"):
+		return false
+	if mission.call(&"has_active") != true:
+		return false
+	if not mission.has_method(&"active_kind") or not mission.has_method(&"active_target_system_id"):
+		return false
+	var kind: StringName = StringName(str(mission.call(&"active_kind")))
+	var target: StringName = StringName(str(mission.call(&"active_target_system_id")))
+	var objective_done: bool = (
+		mission.has_method(&"is_objective_ready") and mission.call(&"is_objective_ready") == true
+	)
+	return (
+		kind == BalanceStanding.MISSION_KIND_BOUNTY and target == system_id and not objective_done
+	)
+
+
+func _mission_service_node() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"mission_service")
+
+
+func _bounty_near_position() -> Vector3:
+	var tree: SceneTree = get_tree()
+	if tree != null:
+		var ship_node: Node = tree.get_first_node_in_group(BalanceSession.GROUP_PLAYER_SHIP)
+		if ship_node is Node3D:
+			var ship: Node3D = ship_node as Node3D
+			return ship.global_position
+	if not station_world_positions.is_empty():
+		var first_key: StringName = station_world_positions.keys()[0]
+		return station_world_positions[first_key]
+	return BalanceFlight.STATION_POSITION
+
+
+## Place a spawn point near `near` that sits outside every known station safe
+## radius (and the balance station anchor as fallback).
+func _position_outside_station_safe(near: Vector3) -> Vector3:
+	var offset: Vector3 = BalanceCombat.BOUNTY_SPAWN_OFFSET
+	var candidates: Array[Vector3] = [
+		near + offset,
+		near - offset,
+		near + Vector3(offset.z, offset.y, -offset.x),
+		near + Vector3(-offset.z, offset.y, offset.x),
+	]
+	for candidate: Vector3 in candidates:
+		if not _is_inside_any_station_safe(candidate):
+			return candidate
+	var anchor: Vector3 = _nearest_station_anchor(near)
+	var dir: Vector3 = near - anchor
+	if dir.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		dir = offset
+	if dir.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		dir = Vector3(1.0, 0.0, 0.0)
+	var push: float = BalanceCombat.STATION_SAFE_RADIUS + BalanceCombat.BOUNTY_SPAWN_SAFE_MARGIN
+	return anchor + dir.normalized() * push
+
+
+func _is_inside_any_station_safe(pos: Vector3) -> bool:
+	if station_world_positions.is_empty():
+		return pos.distance_to(BalanceFlight.STATION_POSITION) <= BalanceCombat.STATION_SAFE_RADIUS
+	for station_id: StringName in station_world_positions:
+		var anchor: Vector3 = station_world_positions[station_id]
+		if pos.distance_to(anchor) <= BalanceCombat.STATION_SAFE_RADIUS:
+			return true
+	return false
+
+
+func _nearest_station_anchor(from: Vector3) -> Vector3:
+	if station_world_positions.is_empty():
+		return BalanceFlight.STATION_POSITION
+	var best: Vector3 = BalanceFlight.STATION_POSITION
+	var best_dist: float = INF
+	for station_id: StringName in station_world_positions:
+		var anchor: Vector3 = station_world_positions[station_id]
+		var dist: float = from.distance_to(anchor)
+		if dist < best_dist:
+			best_dist = dist
+			best = anchor
+	return best
 
 
 func _make_station_body(pos: Vector3, color: Color) -> Node3D:

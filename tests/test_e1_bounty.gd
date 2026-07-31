@@ -238,6 +238,124 @@ func test_contract_type_bounty_requires_target_system() -> void:
 	assert_eq(contract.validation_errors().size(), 0)
 
 
+func test_ensure_hostile_near_spawns_when_contested_and_empty() -> void:
+	var world: SystemWorld = SystemWorld.new()
+	world.system_id = SYSTEM_BETA
+	add_child_autofree(world)
+	world.build()
+	# Clear the build-time pirate so the board can re-supply prey.
+	_free_all_hostiles(world)
+	await get_tree().process_frame
+	assert_eq(world.live_hostile_count(), 0)
+	var near: Vector3 = Vector3(-160.0, 0.0, 90.0)
+	world.ensure_hostile_near(near)
+	await get_tree().process_frame
+	assert_eq(world.live_hostile_count(), 1, "ensure must place one when none live")
+	var hostile: HostileNpc = _first_hostile(world)
+	assert_ne(hostile, null)
+	assert_gt(
+		hostile.global_position.distance_to(near),
+		BalanceCombat.STATION_SAFE_RADIUS * 0.5,
+		"bounty spawn should sit off the request point"
+	)
+	assert_false(
+		_hostile_inside_any_station_safe(world, hostile.global_position),
+		"bounty spawn must sit outside every station safe radius"
+	)
+
+
+func test_bounty_accept_ensures_hostile_when_none_live() -> void:
+	## Accepting a bounty in its target contested system with zero prey must
+	## spawn one (secondary dock / already-killed cases).
+	var world: SystemWorld = SystemWorld.new()
+	world.system_id = SYSTEM_BETA
+	add_child_autofree(world)
+	world.build()
+	_free_all_hostiles(world)
+	await get_tree().process_frame
+	assert_eq(world.live_hostile_count(), 0)
+	assert_true(_mission.accept(CONTRACT_BOUNTY_BETA))
+	await get_tree().process_frame
+	assert_eq(
+		world.live_hostile_count(),
+		1,
+		"accept bounty with no live hostile must ensure one in target system"
+	)
+
+
+func test_ensure_does_not_spawn_when_bounty_objective_ready() -> void:
+	var world: SystemWorld = SystemWorld.new()
+	world.system_id = SYSTEM_BETA
+	add_child_autofree(world)
+	world.build()
+	_free_all_hostiles(world)
+	await get_tree().process_frame
+	assert_true(_mission.accept(CONTRACT_BOUNTY_BETA))
+	# Simulate kill done — objective ready; ensure must not restock pirates.
+	EventBus.on_hostile_killed.emit(SYSTEM_BETA, &"entity_nobody")
+	assert_true(_mission.is_objective_ready())
+	_free_all_hostiles(world)
+	await get_tree().process_frame
+	assert_eq(world.live_hostile_count(), 0)
+	world._maybe_ensure_bounty_prey()
+	await get_tree().process_frame
+	assert_eq(
+		world.live_hostile_count(), 0, "kill already done: ensure must not spawn another pirate"
+	)
+
+
+func test_patrolled_system_never_ensures_bounty_hostile() -> void:
+	var world: SystemWorld = SystemWorld.new()
+	world.system_id = SYSTEM_ALPHA
+	add_child_autofree(world)
+	world.build()
+	assert_false(SystemWorld.system_allows_hostiles(SYSTEM_ALPHA))
+	assert_eq(world.live_hostile_count(), 0)
+	# Accept a beta bounty while standing in patrolled Alpha — no local spawn.
+	assert_true(_mission.accept(CONTRACT_BOUNTY_BETA))
+	await get_tree().process_frame
+	assert_eq(world.live_hostile_count(), 0, "patrolled Alpha must never spawn bounty prey")
+	world.ensure_hostile_near(Vector3.ZERO)
+	await get_tree().process_frame
+	assert_eq(world.live_hostile_count(), 0, "ensure_hostile_near is a no-op in patrolled space")
+
+
+func test_bounty_spawn_offset_outside_station_safe_radius() -> void:
+	var dist: float = BalanceCombat.BOUNTY_SPAWN_OFFSET.length()
+	assert_gt(
+		dist, BalanceCombat.STATION_SAFE_RADIUS, "bounty offset must clear station undock airspace"
+	)
+
+
+func _free_all_hostiles(world: SystemWorld) -> void:
+	var tree: SceneTree = world.get_tree()
+	if tree == null:
+		return
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if is_instance_valid(node) and world.is_ancestor_of(node):
+			node.free()
+
+
+func _first_hostile(world: SystemWorld) -> HostileNpc:
+	var tree: SceneTree = world.get_tree()
+	if tree == null:
+		return null
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if is_instance_valid(node) and world.is_ancestor_of(node) and node is HostileNpc:
+			return node as HostileNpc
+	return null
+
+
+func _hostile_inside_any_station_safe(world: SystemWorld, pos: Vector3) -> bool:
+	var positions: Dictionary[StringName, Vector3] = world.station_positions()
+	if positions.is_empty():
+		return pos.distance_to(BalanceFlight.STATION_POSITION) <= BalanceCombat.STATION_SAFE_RADIUS
+	for station_id: StringName in positions:
+		if pos.distance_to(positions[station_id]) <= BalanceCombat.STATION_SAFE_RADIUS:
+			return true
+	return false
+
+
 func _accept_button_labels(menu: StationMenu) -> PackedStringArray:
 	var out: PackedStringArray = []
 	_collect_accept_labels(menu, out)

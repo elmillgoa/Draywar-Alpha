@@ -147,7 +147,9 @@ func test_mouse_aim_plane_uses_lead_when_locked_target_moves() -> void:
 	)
 
 
-func test_mouse_aim_uses_fallback_plane_when_unlocked() -> void:
+func test_mouse_aim_uses_camera_ray_when_unlocked() -> void:
+	## Unlocked free-fire aim is a point ON the camera mouse ray (reticle line),
+	## not a plane at ship-forward combat depth (chase cam makes that wrong).
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
@@ -166,20 +168,18 @@ func test_mouse_aim_uses_fallback_plane_when_unlocked() -> void:
 
 	assert_eq(ship.locked_target(), null)
 
-	var free_plane: Vector3 = (
-		ship.global_position
-		+ (-ship.global_transform.basis.z * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE)
-	)
+	var viewport: Viewport = ship.get_viewport()
+	var mouse: Vector2 = viewport.get_mouse_position()
+	var ray_origin: Vector3 = cam.project_ray_origin(mouse)
+	var ray_dir: Vector3 = cam.project_ray_normal(mouse)
+	var expected: Vector3 = ray_origin + ray_dir * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE
 	var aim: Vector3 = ship._mouse_aim_point()
-	var plane_n: Vector3 = cam.global_transform.basis.z.normalized()
-	var dist_to_free_plane: float = absf((aim - free_plane).dot(plane_n))
-	var dist_to_ship_plane: float = absf((aim - ship.global_position).dot(plane_n))
-	assert_lt(dist_to_free_plane, 0.5, "unlocked aim must lie on free-fire depth plane")
-	assert_gt(
-		dist_to_ship_plane,
-		dist_to_free_plane + 10.0,
-		"unlocked aim must not collapse to the ship plane (breaks free-fire)"
-	)
+	assert_almost_eq(aim.x, expected.x, 0.01)
+	assert_almost_eq(aim.y, expected.y, 0.01)
+	assert_almost_eq(aim.z, expected.z, 0.01)
+	# Point sits on the camera ray (cross product ≈ 0).
+	var off_ray: float = (aim - ray_origin).cross(ray_dir).length()
+	assert_lt(off_ray, 0.05, "unlocked aim must lie on the camera mouse ray")
 	assert_gt(
 		aim.distance_to(ship.global_position),
 		50.0,

@@ -352,6 +352,12 @@ func _count_hostile_bolts(parent: Node) -> int:
 func test_pirate_spawn_offset_is_outside_station_safe_radius() -> void:
 	var dist: float = BalanceCombat.SPAWN_OFFSET.length()
 	assert_gt(dist, BalanceCombat.STATION_SAFE_RADIUS, "pirates must not camp the undock pad")
+	var bounty_dist: float = BalanceCombat.BOUNTY_SPAWN_OFFSET.length()
+	assert_gt(
+		bounty_dist,
+		BalanceCombat.STATION_SAFE_RADIUS,
+		"bounty restock spawn must not camp the undock pad"
+	)
 
 
 func test_player_can_fire_while_crippled_if_free_flying() -> void:

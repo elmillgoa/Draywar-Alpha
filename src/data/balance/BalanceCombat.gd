@@ -148,6 +148,15 @@ const COLOR_KILL_FLASH: Color = Color(1.0, 0.72, 0.35)
 ## Station is at origin; gate sits around GATE_POSITION — keep pirates there.
 const SPAWN_OFFSET: Vector3 = Vector3(200.0, 14.0, -130.0)
 
+## Offset from the player (or request point) when a bounty needs a live hostile
+## and none remain. Length must exceed STATION_SAFE_RADIUS so undock airspace
+## stays clear; ensure_hostile_near still rechecks every station safe radius.
+const BOUNTY_SPAWN_OFFSET: Vector3 = Vector3(180.0, 12.0, -100.0)
+
+## Extra push past STATION_SAFE_RADIUS when the first offset still lands in a
+## station bubble (secondary docks / tight geometry).
+const BOUNTY_SPAWN_SAFE_MARGIN: float = 25.0
+
 ## No hostile fire / engage inside this radius of any station (safe undock).
 const STATION_SAFE_RADIUS: float = 110.0
 

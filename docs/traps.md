@@ -24,4 +24,5 @@ encode it in `scripts/checkin.py` when possible.
 ## UI / EventBus (E1+)
 
 11. **Never `free()` a Control that is still inside its own `pressed` (or any) signal.** Job accept rebuilt the jobs box and freed the Accept button mid-click → crash `Object is locked and can't be freed`. Use `remove_child` + `queue_free()`, and `call_deferred` for full rebuilds triggered from that button.
-12. **Free-fire mouse aim plane must not sit on the ship.** Intersecting the reticle ray with a plane through the freighter collapses aim to screen-lateral; bolts never go where the reticle points. Unlocked plane depth = combat range along the nose; locked plane = lead intercept (Combat Fairness).
+12. **Free-fire aim must live on the camera ray under the reticle.** Ship-forward planes fail with a chase camera (offset behind/above). Unlocked: `ray_origin + ray_dir * range`. Locked: lead intercept plane. Bolts still fire ship→aim_point (convergence at that depth).
+13. **Bounty prey is not free ambient pirates.** Ambient hostiles spawn once at world build near the primary station; they do not respawn after death and may be far from secondary docks. Active bounty for this system must **ensure** a live hostile within lock range of the player on accept / undock / system enter.
