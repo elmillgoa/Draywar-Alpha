@@ -26,6 +26,7 @@ var _betray_btn: Button = null
 var _refuel_btn: Button = null
 var _repair_btn: Button = null
 var _undock_btn: Button = null
+var _status_label: Label = null
 var _trade_box: VBoxContainer = null
 var _docked_station_id: StringName = &""
 var _offer_person_id: StringName = &""
@@ -132,6 +133,15 @@ func _build_ui() -> void:
 	_flavor_label.text = ""
 	_flavor_label.visible = false
 	outer.add_child(_flavor_label)
+
+	_status_label = Label.new()
+	_status_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
+	_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_status_label.text = ""
+	_status_label.visible = false
+	outer.add_child(_status_label)
 
 	# Body scrolls; footer Undock stays pinned below.
 	_scroll = ScrollContainer.new()
@@ -269,6 +279,7 @@ func _on_docked(station_id: StringName) -> void:
 	_docked_station_id = station_id
 	_title.text = _content_name(station_id)
 	_refresh_flavor()
+	_set_status("")
 	# visible first so section refresh can show jobs/trade/services.
 	visible = true
 	_refresh_all()
@@ -282,6 +293,7 @@ func _on_undocked(_station_id: StringName) -> void:
 	if _flavor_label != null:
 		_flavor_label.text = ""
 		_flavor_label.visible = false
+	_set_status("")
 	if _recovery_hint != null:
 		_recovery_hint.visible = false
 		_recovery_hint.text = ""
@@ -291,6 +303,13 @@ func _on_undocked(_station_id: StringName) -> void:
 	_hide_action_buttons()
 	_clear_trade_rows()
 	visible = false
+
+
+func _set_status(text: String) -> void:
+	if _status_label == null:
+		return
+	_status_label.text = text
+	_status_label.visible = not text.is_empty()
 
 
 func _refresh_flavor() -> void:
@@ -346,7 +365,49 @@ func _on_accept_job_pressed() -> void:
 
 
 func _on_turn_in_job_pressed() -> void:
+	# Prefer direct complete at this menu's docked station (no silent dock lookup miss).
+	var service: Node = _mission_service_node()
+	if service != null and service.has_method(&"try_complete_at"):
+		var before_active: bool = _mission_is_active()
+		var result_raw: Variant = service.call(&"try_complete_at", _docked_station_id)
+		if typeof(result_raw) == TYPE_DICTIONARY:
+			var result: Dictionary = result_raw
+			var attributed: bool = result.get(BalanceStanding.REPORT_KEY_ATTRIBUTED, false) == true
+			if attributed:
+				var pay: int = 0
+				if result.has(&"pay_credits"):
+					pay = _variant_to_int(result[&"pay_credits"])
+				elif result.has("pay_credits"):
+					pay = _variant_to_int(result["pay_credits"])
+				_set_status(BalanceEconomy.STATION_TURN_IN_OK_FORMAT % pay)
+				_refresh_all()
+				return
+		if before_active and _mission_is_active():
+			_set_status(_turn_in_block_reason())
+			return
+		if not before_active:
+			_set_status(BalanceEconomy.STATION_TURN_IN_NO_JOB)
+			return
+	# Fallback: EventBus (console / tests).
 	EventBus.on_mission_complete_requested.emit()
+	_refresh_all()
+
+
+func _turn_in_block_reason() -> String:
+	var dest_id: StringName = &""
+	var service: Node = _mission_service_node()
+	if service != null and service.has_method(&"active_destination_station_id"):
+		dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
+	if not String(dest_id).is_empty() and dest_id != _docked_station_id:
+		return BalanceEconomy.STATION_TURN_IN_WRONG_STATION_FORMAT % _content_name(dest_id)
+	return BalanceEconomy.STATION_TURN_IN_FAILED
+
+
+func _mission_service_node() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"mission_service")
 
 
 func _on_abandon_job_pressed() -> void:

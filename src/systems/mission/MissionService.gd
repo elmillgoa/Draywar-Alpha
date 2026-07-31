@@ -27,6 +27,8 @@ const OUTCOME_ABANDONED: StringName = &"abandoned"
 
 var _active_template_id: StringName = &""
 var _state: StringName = STATE_NONE
+## Last station from on_docked — backup if group docking lookup fails mid-frame.
+var _last_docked_station_id: StringName = &""
 
 
 func _ready() -> void:
@@ -34,6 +36,8 @@ func _ready() -> void:
 	EventBus.on_mission_accept_requested.connect(_on_accept_requested)
 	EventBus.on_mission_complete_requested.connect(_on_complete_requested)
 	EventBus.on_mission_abandon_requested.connect(_on_abandon_requested)
+	EventBus.on_docked.connect(_on_docked)
+	EventBus.on_undocked.connect(_on_undocked)
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
 
@@ -45,10 +49,22 @@ func _exit_tree() -> void:
 		EventBus.on_mission_complete_requested.disconnect(_on_complete_requested)
 	if EventBus.on_mission_abandon_requested.is_connected(_on_abandon_requested):
 		EventBus.on_mission_abandon_requested.disconnect(_on_abandon_requested)
+	if EventBus.on_docked.is_connected(_on_docked):
+		EventBus.on_docked.disconnect(_on_docked)
+	if EventBus.on_undocked.is_connected(_on_undocked):
+		EventBus.on_undocked.disconnect(_on_undocked)
 	if EventBus.on_console_commands_requested.is_connected(_on_commands_requested):
 		EventBus.on_console_commands_requested.disconnect(_on_commands_requested)
 	if EventBus.on_console_command_invoked.is_connected(_on_command_invoked):
 		EventBus.on_console_command_invoked.disconnect(_on_command_invoked)
+
+
+func _on_docked(station_id: StringName) -> void:
+	_last_docked_station_id = _normalize_id(station_id)
+
+
+func _on_undocked(_station_id: StringName) -> void:
+	_last_docked_station_id = &""
 
 
 ## Whether a mission is currently active.
@@ -117,9 +133,11 @@ func can_complete_at_station(station_id: StringName) -> bool:
 	var template: ContractType = _template(_active_template_id)
 	if template == null:
 		return false
-	if String(template.destination_station_id).is_empty():
-		return not String(station_id).is_empty()
-	return template.destination_station_id == station_id
+	var dest: StringName = _normalize_id(template.destination_station_id)
+	var here: StringName = _normalize_id(station_id)
+	if String(dest).is_empty():
+		return not String(here).is_empty()
+	return dest == here
 
 
 ## Destination station for the active mission, or empty.
@@ -129,12 +147,39 @@ func active_destination_station_id() -> StringName:
 	var template: ContractType = _template(_active_template_id)
 	if template == null:
 		return &""
-	return template.destination_station_id
+	return _normalize_id(template.destination_station_id)
+
+
+## Complete at a known station (station menu path — no silent fail on dock lookup).
+## Returns the outcome report; REPORT_KEY_ATTRIBUTED true means the job closed.
+func try_complete_at(station_id: StringName) -> Dictionary:
+	var empty: Dictionary = {
+		BalanceStanding.REPORT_KEY_ATTRIBUTED: false,
+		BalanceStanding.REPORT_KEY_ENTITY_ID: &"",
+		BalanceStanding.REPORT_KEY_DELTA: 0.0,
+		BalanceStanding.REPORT_KEY_REASON: &"",
+		&"pay_credits": 0,
+	}
+	if not has_active():
+		return empty
+	if not can_complete_at_station(station_id):
+		return empty
+	return complete()
 
 
 ## Complete the active mission → positive standing + credits with offering Entity.
 func complete() -> Dictionary:
 	return _finish(true, false)
+
+
+static func _normalize_id(value: Variant) -> StringName:
+	if typeof(value) == TYPE_STRING_NAME:
+		var as_name: StringName = value
+		return StringName(String(as_name).strip_edges())
+	if typeof(value) == TYPE_STRING:
+		var as_text: String = value
+		return StringName(as_text.strip_edges())
+	return StringName(str(value).strip_edges())
 
 
 ## Fail after a genuine attempt → milder negative.
@@ -162,19 +207,15 @@ func _on_complete_requested() -> void:
 
 func _docked_station_id() -> StringName:
 	var tree: SceneTree = get_tree()
-	if tree == null:
-		return &""
-	var dock_node: Node = tree.get_first_node_in_group(&"docking_service")
-	if dock_node == null or not dock_node.has_method(&"docked_station_id"):
-		return &""
-	var station_raw: Variant = dock_node.call(&"docked_station_id")
-	if typeof(station_raw) == TYPE_STRING_NAME:
-		var as_name: StringName = station_raw
-		return as_name
-	if typeof(station_raw) == TYPE_STRING:
-		var as_text: String = station_raw
-		return StringName(as_text)
-	return &""
+	if tree != null:
+		var dock_node: Node = tree.get_first_node_in_group(&"docking_service")
+		if dock_node != null and dock_node.has_method(&"docked_station_id"):
+			var station_raw: Variant = dock_node.call(&"docked_station_id")
+			var from_service: StringName = _normalize_id(station_raw)
+			if not String(from_service).is_empty():
+				return from_service
+	# Fallback: last on_docked (same source StationMenu uses for Turn In visibility).
+	return _last_docked_station_id
 
 
 func _on_abandon_requested() -> void:

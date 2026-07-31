@@ -265,6 +265,12 @@ const STATION_ASK_FAVOR_FORMAT: String = "Ask favor of %s"
 const STATION_BETRAY_FORMAT: String = "Betray %s"
 const STATION_UNDOCK_LABEL: String = "Undock"
 
+## Station menu job turn-in feedback (no silent no-ops).
+const STATION_TURN_IN_OK_FORMAT: String = "Job complete. +%d credits."
+const STATION_TURN_IN_WRONG_STATION_FORMAT: String = "Deliver to %s first."
+const STATION_TURN_IN_NO_JOB: String = "No active job to turn in."
+const STATION_TURN_IN_FAILED: String = "Could not turn in job here."
+
 ## Station menu section headers (B3 / B5 drama).
 const STATION_SECTION_JOBS: String = "Jobs"
 const STATION_SECTION_SERVICES: String = "Services"
