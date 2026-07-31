@@ -43,11 +43,11 @@
 
 ## Next session starts here
 
-1. `/start` (or he says go).
-2. If he says go on A1: finish **entire A1** (flight, one system with station+gate, dock loop, camera, HUD). Subagents build.
-3. Report A1 done with proof; wait for human flight gate.
+1. `/start` — orient; current position is **A0 complete**, next is **A1**.
+2. If he says go on A1 / Phase 1: finish **entire A1** (mouse-aim flight, one system with station+gate, dock→undock loop, chase camera, readable HUD). Subagents build. No combat.
+3. Report A1 done with proof; run **[GATE: ELLIOT] flight feel** before claiming A1 closed.
 
 ## Session history
 
-- **2026-07-30** — Setup session: greenfield project, tooling and skills.
-- **2026-07-30** — A0 Foundation complete: data pipeline, save v1, console, time.
+- **2026-07-30** — Setup: greenfield project, tooling, skills, memory system.
+- **2026-07-30** — A0 Foundation complete and pushed (`74d99f8`): data pipeline, save v1, console, time. GUT 93/93.
