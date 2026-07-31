@@ -1,6 +1,7 @@
 # Draywar Alpha — Decision bar (Hybrid path C)
 
-**Status:** Elliot-chosen authority for what “Alpha done” means after Final Alpha refuse.  
+**Status:** **Ratified** (Elliot 2026-07-31). Authority for what “Alpha done” means after Final Alpha refuse.  
+**Build order:** `Alpha/ALPHA_DECISION_PHASE_PLAN.md` (Path C phases B0–B5).  
 **Date:** 2026-07-31  
 **Does not replace:** `docs/reputation_and_standing.md` (standing law) or Destination fidelity/tone filters.  
 **Does replace:** “smallest gray-box tech slice” as the success definition for Final Alpha.

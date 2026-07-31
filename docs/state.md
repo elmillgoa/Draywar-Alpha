@@ -2,55 +2,56 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **Path C (Hybrid) chosen.** Final Alpha not signed. Build is a tech demonstrator below the decision bar.
+**Current position:** **Path C ratified.** Checklist + **decision phase plan B0–B5** drafted for agreement. **No build until Elliot OK on plan.** Then fresh chat starts at **B0**.
 
-- A0–A4: foundation through recovery (A1/A4 feel gates signed)
-- A5: mechanical multi-system/money/NPC — **over-claimed**; **play** is still one start system + boxes
-- **Final Alpha** — not signed (tech demonstrator)
-- **Path C locked:** enough game to decide if full/beta is worth it — not full game, not full art/sound
+| Authority | Role |
+|-----------|------|
+| `Alpha/ALPHA_DECISION_BAR.md` | What “done” means (ratified) |
+| `Alpha/ALPHA_DECISION_PHASE_PLAN.md` | Build order B0–B5 + parallel tracks |
+| `docs/reputation_and_standing.md` | Standing law |
+| Old A0–A5 phase plan | Historical; mechanical debt under decision bar |
 
-**Authority for “Alpha done”:** `Alpha/ALPHA_DECISION_BAR.md` (checklist) + standing law + fidelity/tone.
-
-**Next:** Elliot **ratifies or edits** the decision-bar checklist, then say **go** on the first build slice (recommended: multi-system actually reachable + presentation floor + menus/jobs/character sheet before combat/trade depth).
+**Next contract (after plan OK):** **B0 — World you can actually travel** (3 systems reachable in play; discoverable jump). Parallel: **B1 presentation tracks** if agreed.
 
 ## Decision bar (summary)
 
-Alpha = **decision-quality playable**: core systems present (menu, character sheet, job tracking, trade, combat, world, standing, recovery, money…) at “good enough to judge,” not 100%. Full graphics/sound not required; black+boxes not enough.
+Enough systems to decide if beta/full is worth it — menu, sheet, jobs, trade, combat, multi-system world, standing/recovery — good enough to judge, not 100%, not full art/sound.
 
-## Honest now vs checklist
+## Honest now
 
 | Area | Status |
 |------|--------|
-| Flight / standing / recovery / thin money / thin jobs | Partial |
-| 3–4 systems **in play** | **Fail** (one start + hard-to-read gate) |
-| Main menu, character sheet, trade, combat | **Missing** |
-| Presentation floor | **Fail** |
-| Save without console | Partial |
+| Multi-system **in play** | Fail |
+| Menu / sheet / trade / combat | Missing |
+| Presentation floor | Fail |
+| Flight / standing / recovery / thin money-jobs | Partial |
+
+## Parallelism
+
+Worktrees per phase tracks in `ALPHA_DECISION_PHASE_PLAN.md`. Serialize Main/EventBus/Standing/save merges.
 
 ## Gates
 
-- lint / GUT last green at A5 mechanical (re-check after next build)
-- Final Alpha **open** until checklist + play pass
+- Final Alpha **open** until B5 + sign-off  
+- A1 / A4 feel gates remain signed  
 
 ## Open decisions
 
-- **Ratify** `Alpha/ALPHA_DECISION_BAR.md` checklist (edit any row).
-- Then order of work if he doesn’t pick: world playability → UI shell → trade/combat thin slices.
+- **Elliot: accept or edit B0–B5 plan** (`Alpha/ALPHA_DECISION_PHASE_PLAN.md`).  
+- Then close planning chat; build in fresh chat with `/start` + go B0.
 
-## Standing decisions that bind
+## Standing decisions
 
-- Greenfield this folder only.
-- Standing law: `docs/reputation_and_standing.md`.
-- Path C hybrid: not full Destination build; not gray-box-only Alpha.
-- Godot 4.6.1 at `C:\Godot\`.
+- Path C hybrid. Standing law. Godot 4.6.1. Subagents + worktrees for parallel tracks. Full phase per go when building.
 
 ## Next session starts here
 
-1. `/start` — path C; decision bar file.
-2. Elliot confirms checklist (or edits).
-3. **Go** on first slice → implement → re-check bar → eventually Final Alpha re-gate.
+1. `/start`  
+2. Confirm plan still agreed.  
+3. **Go on B0** (optionally B0+B1 parallel).  
+4. Worktrees for phase tracks; merge; lint/tests; state.  
+5. Through B5 → Final Alpha gate.
 
 ## Session history
 
-- **2026-07-30** — Setup; A0; A1.
-- **2026-07-31** — A1–A4; A5 mechanical; Final Alpha refused; Alpha bar clarified; **Path C hybrid + decision bar drafted**.
+- **2026-07-30–31** — A0–A5 mechanical; Final Alpha refused; Path C + decision bar; **B0–B5 phase plan drafted**.
