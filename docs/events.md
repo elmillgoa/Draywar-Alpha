@@ -383,3 +383,105 @@ Mission abandoned; stronger negative standing already applied.
 | `delta` | `float` | Applied standing change. |
 
 **Emitted by** `src/systems/mission/MissionService.gd`.
+
+## Personal recovery (A4)
+
+### `on_recovery_accept_requested(person_id: StringName)`
+
+UI or console asked to accept the next recovery step from this Person.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `person_id` | `StringName` | Person content id offering the step. |
+
+**Emitted by** `StationMenu` (Talk to …) and may be used by other UI.
+**Listened to by** `RecoveryService`.
+
+### `on_recovery_offered(chain_id: StringName, step_id: StringName, person_id: StringName)`
+
+A recovery step is available (announced on dock when gated conditions pass).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `chain_id` | `StringName` | RecoveryChain content id. |
+| `step_id` | `StringName` | RecoveryStep id within the chain. |
+| `person_id` | `StringName` | Person offering the step. |
+
+**Emitted by** `src/systems/recovery/RecoveryService.gd` on dock.
+
+### `on_recovery_accepted(chain_id: StringName, step_id: StringName, person_id: StringName)`
+
+Player accepted a recovery step (one active max).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `chain_id` | `StringName` | RecoveryChain content id. |
+| `step_id` | `StringName` | RecoveryStep id. |
+| `person_id` | `StringName` | Person offering the step. |
+
+**Emitted by** `src/systems/recovery/RecoveryService.gd`.
+
+### `on_recovery_completed(chain_id: StringName, step_id: StringName, person_id: StringName, entity_id: StringName, person_delta: float, entity_delta: float)`
+
+Recovery step completed; personal and Entity standing deltas already applied.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `chain_id` | `StringName` | RecoveryChain content id. |
+| `step_id` | `StringName` | RecoveryStep id. |
+| `person_id` | `StringName` | Person who offered the step. |
+| `entity_id` | `StringName` | Entity whose standing moved. |
+| `person_delta` | `float` | Applied personal standing change. |
+| `entity_delta` | `float` | Applied Entity standing change (after stickiness). |
+
+**Emitted by** `src/systems/recovery/RecoveryService.gd`.
+
+### `on_recovery_failed(chain_id: StringName, step_id: StringName, person_id: StringName, person_delta: float)`
+
+Recovery step failed; mild personal standing hit already applied.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `chain_id` | `StringName` | RecoveryChain content id. |
+| `step_id` | `StringName` | RecoveryStep id. |
+| `person_id` | `StringName` | Person who offered the step. |
+| `person_delta` | `float` | Applied personal standing change. |
+
+**Emitted by** `src/systems/recovery/RecoveryService.gd`.
+
+### `on_recovery_abandoned(chain_id: StringName, step_id: StringName, person_id: StringName, person_delta: float)`
+
+Recovery step abandoned; stronger personal standing hit already applied.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `chain_id` | `StringName` | RecoveryChain content id. |
+| `step_id` | `StringName` | RecoveryStep id. |
+| `person_id` | `StringName` | Person who offered the step. |
+| `person_delta` | `float` | Applied personal standing change. |
+
+**Emitted by** `src/systems/recovery/RecoveryService.gd`.
+
+### `on_recovery_betrayed(person_id: StringName, person_delta: float, entity_delta: float)`
+
+Player betrayed a recovery contact; personal dump and Entity hit already applied.
+Route is closed via `on_person_closed`.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `person_id` | `StringName` | Person who was betrayed. |
+| `person_delta` | `float` | Applied personal standing change. |
+| `entity_delta` | `float` | Applied Entity standing change. |
+
+**Emitted by** `src/systems/recovery/RecoveryService.gd`.
+
+### `on_person_closed(person_id: StringName, reason: StringName)`
+
+A Person's recovery route is closed (betrayal or other tagged close).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `person_id` | `StringName` | Person content id. |
+| `reason` | `StringName` | Close tag (e.g. `&"betrayal"`). |
+
+**Emitted by** `src/systems/standing/StandingService.gd` from `close_person()`.

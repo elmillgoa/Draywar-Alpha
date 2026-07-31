@@ -1,13 +1,14 @@
 class_name BalanceStanding
 extends RefCounted
 
-## Standing scale, tiers, attribution, mission, and trade tunables — Alpha A3.
+## Standing scale, tiers, attribution, mission, recovery, and trade tunables.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A2–A3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A2–A4
 ## Source of truth for numbers: docs/reputation_and_standing.md
 ##
-## Stickiness, combat attribution, mission outcomes, light trade, and one-hop
-## ripples all live here. Logic reads these; nothing under src/ invents magnitudes.
+## Stickiness, combat attribution, mission outcomes, personal recovery, light
+## trade, and one-hop ripples all live here. Logic reads these; nothing under
+## src/ invents magnitudes.
 
 # --- Scale -----------------------------------------------------------------
 
@@ -105,6 +106,55 @@ const MISSION_KIND_DELIVERY: StringName = &"delivery"
 ## Content category directory for mission templates.
 const MISSION_CONTENT_CATEGORY: StringName = &"contract_types"
 
+# --- Personal recovery (A4) ------------------------------------------------
+
+## Content category for RecoveryChain resources. Alpha ceiling is 1.
+const RECOVERY_CONTENT_CATEGORY: StringName = &"recovery_chains"
+
+## Alpha chain step count bounds (law §5: short chain of further jobs).
+const RECOVERY_CHAIN_MIN_STEPS: int = 3
+const RECOVERY_CHAIN_MAX_STEPS: int = 5
+
+## Default step deltas when a RecoveryStep does not override (low-rank scale).
+const RECOVERY_DEFAULT_PERSONAL_DELTA: float = 10.0
+const RECOVERY_DEFAULT_ENTITY_DELTA: float = 2.0
+
+## Authored low-rank deniable first job (trust test — tiny Entity movement).
+const RECOVERY_DENIABLE_PERSONAL_DELTA: float = 12.0
+const RECOVERY_DENIABLE_ENTITY_DELTA: float = 2.0
+
+## Later low-rank steps (still small Entity movement; slightly larger late).
+const RECOVERY_LOW_STEP2_PERSONAL_DELTA: float = 10.0
+const RECOVERY_LOW_STEP2_ENTITY_DELTA: float = 2.0
+const RECOVERY_LOW_STEP3_PERSONAL_DELTA: float = 8.0
+const RECOVERY_LOW_STEP3_ENTITY_DELTA: float = 3.0
+const RECOVERY_LOW_STEP4_PERSONAL_DELTA: float = 8.0
+const RECOVERY_LOW_STEP4_ENTITY_DELTA: float = 4.0
+
+## Mid-rank reference magnitudes (not used by Alpha's low-rank chain content).
+## Rank influence proof: mid deniable Entity delta is larger than low.
+const RECOVERY_MID_DENIABLE_ENTITY_DELTA: float = 4.0
+
+## Favor: small personal standing gift to bootstrap toward Friendly.
+const RECOVERY_FAVOR_PERSONAL_DELTA: float = 5.0
+
+## Fail / abandon personal hits while a recovery step is active.
+const RECOVERY_FAIL_PERSONAL_DELTA: float = -2.0
+const RECOVERY_ABANDON_PERSONAL_DELTA: float = -6.0
+
+## Betrayal: close the Person, dump personal standing, mild Entity hit.
+const RECOVERY_BETRAYAL_PERSONAL_DELTA: float = -40.0
+const RECOVERY_BETRAYAL_ENTITY_DELTA: float = -5.0
+
+## Close reasons (tags for close_person / save).
+const RECOVERY_CLOSE_REASON_BETRAYAL: StringName = &"betrayal"
+const RECOVERY_CLOSE_REASON_NONE: StringName = &""
+
+## Minimum personal successes before follow-on recovery (history flag).
+## Alpha §5 bootstrap: the deniable first job needs Friendly only; completing
+## it records success so follow-ons satisfy this count.
+const RECOVERY_MIN_SUCCESS_FOR_FOLLOW_ON: int = 1
+
 # --- Legal trade (A3, light) -----------------------------------------------
 
 ## Small standing gain from one legal trade action.
@@ -132,6 +182,11 @@ const REASON_MISSION_FAIL: StringName = &"mission_fail"
 const REASON_MISSION_ABANDON: StringName = &"mission_abandon"
 const REASON_TRADE_LEGAL: StringName = &"trade_legal"
 const REASON_RIPPLE: StringName = &"ripple"
+const REASON_RECOVERY_COMPLETE: StringName = &"recovery_complete"
+const REASON_RECOVERY_FAIL: StringName = &"recovery_fail"
+const REASON_RECOVERY_ABANDON: StringName = &"recovery_abandon"
+const REASON_RECOVERY_BETRAYAL: StringName = &"recovery_betrayal"
+const REASON_RECOVERY_FAVOR: StringName = &"recovery_favor"
 
 # --- Status moment / HUD copy ----------------------------------------------
 
@@ -156,6 +211,10 @@ const STATUS_KIND_STATION: StringName = &"station"
 const SAVE_SECTION_KEY: StringName = &"standing"
 const SAVE_KEY_ENTITIES: StringName = &"entities"
 const SAVE_KEY_PEOPLE: StringName = &"people"
+## Optional A4 maps inside the standing section (no envelope version bump).
+const SAVE_KEY_PERSON_SUCCESS: StringName = &"person_success"
+const SAVE_KEY_PERSON_CLOSED: StringName = &"person_closed"
+const SAVE_KEY_RECOVERY_PROGRESS: StringName = &"recovery_progress"
 
 # --- Console ---------------------------------------------------------------
 
@@ -201,6 +260,19 @@ const CONSOLE_EVIDENCE_TRUE_WORD: String = "true"
 ## Station menu: accept job button label.
 const STATION_ACCEPT_JOB_LABEL: String = "Accept courier job"
 
+## Station menu: talk to recovery contact when a step is available.
+const STATION_RECOVERY_TALK_FORMAT: String = "Talk to %s"
+
+## `recovery accept` / `favor` arg counts (tokens after the verb).
+const CONSOLE_RECOVERY_ACCEPT_ARGS: int = 2
+const CONSOLE_FAVOR_ARGS: int = 1
+
+## Index of person id in `recovery accept <person_id>` args.
+const CONSOLE_RECOVERY_PERSON_INDEX: int = 1
+
+## Index of person id in `favor <person_id>` args.
+const CONSOLE_FAVOR_PERSON_INDEX: int = 0
+
 ## Console feedback formats.
 const CONSOLE_KILL_ATTRIBUTED_FORMAT: String = "Kill attributed in %s → %s standing %s (delta %s)."
 const CONSOLE_KILL_UNATTRIBUTED_FORMAT: String = "Kill in %s not attributed."
@@ -208,3 +280,8 @@ const CONSOLE_MISSION_ACCEPTED_FORMAT: String = "Accepted mission %s (%s)."
 const CONSOLE_MISSION_OUTCOME_FORMAT: String = "Mission %s %s → %s standing %s (delta %s)."
 const CONSOLE_TRADE_FORMAT: String = "Legal trade with %s → standing %s (delta %s)."
 const CONSOLE_TRADE_CAPPED_FORMAT: String = "Legal trade with %s → no gain (at/above soft cap %s)."
+const CONSOLE_RECOVERY_ACCEPTED_FORMAT: String = "Accepted recovery %s step %s with %s."
+const CONSOLE_RECOVERY_OUTCOME_FORMAT: String = "Recovery %s %s → p %s (Δ %s) e %s (Δ %s)."
+const CONSOLE_RECOVERY_BETRAY_FORMAT: String = "Betrayed %s — closed. p %s (Δ %s); e %s (Δ %s)."
+const CONSOLE_FAVOR_FORMAT: String = "Favor with %s → personal standing %s (delta %s)."
+const CONSOLE_FAVOR_CLOSED_FORMAT: String = "Favor refused — %s is closed (%s)."

@@ -1,14 +1,15 @@
 extends Node
 
-## Single writer for player standing with Entities and People — Alpha A3.
+## Single writer for player standing with Entities and People — Alpha A4.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A2–A3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A2–A4
 ## Law: docs/reputation_and_standing.md
 ##
 ## Autoload named `StandingService`. Nothing else writes standing. All mutations
 ## clamp to the balance scale and emit on EventBus. Status moments fire on
 ## system entry and successful dock. Deltas apply stickiness and optional
-## one-hop Entity ripples (combat/mission only).
+## one-hop Entity ripples (combat/mission only). Personal history flags support
+## the A4 recovery path (success count + closed/betrayed).
 
 const StandingConsoleCommands = preload("res://src/systems/standing/StandingConsoleCommands.gd")
 
@@ -26,6 +27,10 @@ var last_delta_reason: StringName = &""
 
 var _entity_standing: Dictionary[StringName, float] = {}
 var _person_standing: Dictionary[StringName, float] = {}
+## Person id → count of successful personal work (recovery completes, etc.).
+var _person_success_count: Dictionary[StringName, int] = {}
+## Person id → close reason (non-empty means recovery route closed).
+var _person_closed: Dictionary[StringName, StringName] = {}
 var _console_commands: RefCounted = null
 
 
@@ -40,6 +45,8 @@ func _ready() -> void:
 func reset_to_defaults() -> void:
 	_entity_standing.clear()
 	_person_standing.clear()
+	_person_success_count.clear()
+	_person_closed.clear()
 
 
 ## Player standing with this Entity (content default if unset).
@@ -108,6 +115,56 @@ func apply_person_delta(person_id: StringName, raw_delta: float, reason: StringN
 	var applied: float = new_value - old_value
 	set_person_standing(person_id, new_value)
 	return applied
+
+
+## Record one successful piece of personal work with this Person (history flag).
+func record_personal_success(person_id: StringName) -> void:
+	var prior: int = personal_success_count(person_id)
+	_person_success_count[person_id] = prior + 1
+
+
+## How many successful personal jobs this Person has credited the player with.
+func personal_success_count(person_id: StringName) -> int:
+	if _person_success_count.has(person_id):
+		return _person_success_count[person_id]
+	return 0
+
+
+## Whether this Person's recovery route is closed (betrayal, etc.).
+func is_person_closed(person_id: StringName) -> bool:
+	if not _person_closed.has(person_id):
+		return false
+	return not String(_person_closed[person_id]).is_empty()
+
+
+## Reason tag for a closed Person, or empty when open.
+func person_close_reason(person_id: StringName) -> StringName:
+	if _person_closed.has(person_id):
+		return _person_closed[person_id]
+	return BalanceStanding.RECOVERY_CLOSE_REASON_NONE
+
+
+## Permanently close recovery with this Person (law §6). Emits person_closed.
+func close_person(person_id: StringName, reason: StringName) -> void:
+	var tag: StringName = reason
+	if String(tag).is_empty():
+		tag = BalanceStanding.RECOVERY_CLOSE_REASON_BETRAYAL
+	_person_closed[person_id] = tag
+	EventBus.on_person_closed.emit(person_id, tag)
+
+
+## Alpha §5 offer gate (standing layer only).
+##
+## Bootstrap reading of law §5: "Friendly personal + history of successful work"
+## would lock the deniable first job forever if history required success first.
+## Alpha uses (a): Friendly personal standing alone unlocks offerability here;
+## RecoveryService requires prior chain success only for follow-on steps. Closed
+## People never offer. History count is still tracked for follow-on / future use.
+func can_offer_recovery(person_id: StringName) -> bool:
+	if is_person_closed(person_id):
+		return false
+	var personal: float = get_person_standing(person_id)
+	return personal >= BalanceStanding.TIER_FRIENDLY_MIN
 
 
 ## Small legal-trade gain, soft-capped so trade alone cannot exceed the cap.
@@ -242,6 +299,8 @@ func can_dock_at_station(station_id: StringName) -> bool:
 
 
 ## Career section for save (only explicit overrides; missing = defaults).
+## Optional A4 keys: person_success, person_closed (recovery progress is owned
+## by RecoveryService when present — see save_schema.md).
 func to_section() -> Dictionary:
 	var entities: Dictionary = {}
 	for id: StringName in _entity_standing:
@@ -249,9 +308,17 @@ func to_section() -> Dictionary:
 	var people: Dictionary = {}
 	for id: StringName in _person_standing:
 		people[id] = _person_standing[id]
+	var success: Dictionary = {}
+	for id: StringName in _person_success_count:
+		success[id] = _person_success_count[id]
+	var closed: Dictionary = {}
+	for id: StringName in _person_closed:
+		closed[id] = String(_person_closed[id])
 	return {
 		BalanceStanding.SAVE_KEY_ENTITIES: entities,
 		BalanceStanding.SAVE_KEY_PEOPLE: people,
+		BalanceStanding.SAVE_KEY_PERSON_SUCCESS: success,
+		BalanceStanding.SAVE_KEY_PERSON_CLOSED: closed,
 	}
 
 
@@ -265,6 +332,10 @@ func apply_section(section: Variant) -> void:
 		_apply_standing_map(data[BalanceStanding.SAVE_KEY_ENTITIES], true)
 	if data.has(BalanceStanding.SAVE_KEY_PEOPLE):
 		_apply_standing_map(data[BalanceStanding.SAVE_KEY_PEOPLE], false)
+	if data.has(BalanceStanding.SAVE_KEY_PERSON_SUCCESS):
+		_apply_success_map(data[BalanceStanding.SAVE_KEY_PERSON_SUCCESS])
+	if data.has(BalanceStanding.SAVE_KEY_PERSON_CLOSED):
+		_apply_closed_map(data[BalanceStanding.SAVE_KEY_PERSON_CLOSED])
 
 
 func _apply_standing_map(raw_map: Variant, is_entity: bool) -> void:
@@ -290,6 +361,39 @@ func _apply_standing_map(raw_map: Variant, is_entity: bool) -> void:
 			_entity_standing[id] = clamped
 		else:
 			_person_standing[id] = clamped
+
+
+func _apply_success_map(raw_map: Variant) -> void:
+	if typeof(raw_map) != TYPE_DICTIONARY:
+		return
+	var map: Dictionary = raw_map
+	for key: Variant in map:
+		var id: StringName = StringName(str(key))
+		var raw_value: Variant = map[key]
+		var count: int = 0
+		if typeof(raw_value) == TYPE_INT:
+			count = raw_value
+		elif typeof(raw_value) == TYPE_FLOAT:
+			var as_float: float = raw_value
+			count = int(as_float)
+		else:
+			continue
+		if count < 0:
+			count = 0
+		_person_success_count[id] = count
+
+
+func _apply_closed_map(raw_map: Variant) -> void:
+	if typeof(raw_map) != TYPE_DICTIONARY:
+		return
+	var map: Dictionary = raw_map
+	for key: Variant in map:
+		var id: StringName = StringName(str(key))
+		var raw_value: Variant = map[key]
+		var reason: StringName = StringName(str(raw_value))
+		if String(reason).is_empty():
+			continue
+		_person_closed[id] = reason
 
 
 func _status_for_controller(controller_id: StringName) -> Dictionary:

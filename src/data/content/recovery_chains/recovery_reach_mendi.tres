@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="RecoveryChain" load_steps=7 format=3]
+
+; Alpha A4 — single recovery chain. Dockhand Mendi (low rank, Reach Authority)
+; offers deniable work so a player hated by the Authority can climb back.
+; Rank influence: low-rank contact → tiny Entity deltas (see BalanceStanding).
+
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryChain.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryStep.gd" id="2"]
+
+[sub_resource type="Resource" id="step_deniable"]
+script = ExtResource("2")
+id = &"step_deniable_package"
+display_name = "Off-books package drop"
+personal_standing_delta = 12.0
+entity_standing_delta = 2.0
+requires_prior_success = false
+
+[sub_resource type="Resource" id="step_whisper"]
+script = ExtResource("2")
+id = &"step_quiet_whisper"
+display_name = "Quiet word on the dock"
+personal_standing_delta = 10.0
+entity_standing_delta = 2.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_cover"]
+script = ExtResource("2")
+id = &"step_cover_shift"
+display_name = "Cover a short shift"
+personal_standing_delta = 8.0
+entity_standing_delta = 3.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_vouch"]
+script = ExtResource("2")
+id = &"step_vouch_note"
+display_name = "A vouch that sticks"
+personal_standing_delta = 8.0
+entity_standing_delta = 4.0
+requires_prior_success = true
+
+[resource]
+script = ExtResource("1")
+id = &"recovery_reach_mendi"
+display_name = "Mendi's Quiet Path"
+person_id = &"person_ra_mendi"
+entity_id = &"entity_reach_authority"
+steps = Array[ExtResource("2")]([SubResource("step_deniable"), SubResource("step_whisper"), SubResource("step_cover"), SubResource("step_vouch")])

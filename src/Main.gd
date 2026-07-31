@@ -1,11 +1,11 @@
 extends Node
 
-## Boot entry and composition root for Draywar Alpha — A3.
+## Boot entry and composition root for Draywar Alpha — A4.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A4
 ##
-## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission
-## services (scene children), and boots the playable system.
+## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission /
+## Recovery services (scene children), and boots the playable system.
 
 const BOOT_BANNER: String = "Draywar Alpha — boot OK"
 

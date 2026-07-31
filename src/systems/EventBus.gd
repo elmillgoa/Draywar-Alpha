@@ -97,3 +97,38 @@ signal on_mission_failed(template_id: StringName, entity_id: StringName, delta: 
 
 ## MissionService: mission abandoned; standing delta already applied.
 signal on_mission_abandoned(template_id: StringName, entity_id: StringName, delta: float)
+
+## UI / console: request to accept the next recovery step from this Person.
+signal on_recovery_accept_requested(person_id: StringName)
+
+## RecoveryService: a recovery step is available from this Person (e.g. on dock).
+signal on_recovery_offered(chain_id: StringName, step_id: StringName, person_id: StringName)
+
+## RecoveryService: player accepted a recovery step.
+signal on_recovery_accepted(chain_id: StringName, step_id: StringName, person_id: StringName)
+
+## RecoveryService: recovery step completed; standing deltas already applied.
+signal on_recovery_completed(
+	chain_id: StringName,
+	step_id: StringName,
+	person_id: StringName,
+	entity_id: StringName,
+	person_delta: float,
+	entity_delta: float
+)
+
+## RecoveryService: recovery step failed; personal delta already applied.
+signal on_recovery_failed(
+	chain_id: StringName, step_id: StringName, person_id: StringName, person_delta: float
+)
+
+## RecoveryService: recovery step abandoned; personal delta already applied.
+signal on_recovery_abandoned(
+	chain_id: StringName, step_id: StringName, person_id: StringName, person_delta: float
+)
+
+## RecoveryService: player betrayed a recovery contact; standing already applied.
+signal on_recovery_betrayed(person_id: StringName, person_delta: float, entity_delta: float)
+
+## StandingService: a Person's recovery route is closed (betrayal, etc.).
+signal on_person_closed(person_id: StringName, reason: StringName)

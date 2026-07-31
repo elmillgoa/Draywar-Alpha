@@ -22,6 +22,8 @@ const CONTENT_BUDGET: Dictionary[StringName, int] = {
 	&"hulls": 2,
 	&"weapons": 12,
 	&"equipment": 10,
+	## Alpha A4: one personal recovery chain total (Alpha Scope).
+	&"recovery_chains": 1,
 }
 
 ## Time control — three speeds and nothing between them.

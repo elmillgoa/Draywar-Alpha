@@ -51,8 +51,10 @@ func _run_save(args: PackedStringArray) -> void:
 		return
 
 	var path: String = SaveService.path_for(file_name)
+	var standing_section: Dictionary = StandingService.to_section()
+	_merge_recovery_progress(standing_section)
 	var sections: Dictionary = {
-		BalanceStanding.SAVE_SECTION_KEY: StandingService.to_section(),
+		BalanceStanding.SAVE_SECTION_KEY: standing_section,
 	}
 	var written: SaveResult = _service.save_to(path, SaveService.envelope(sections, file_name))
 	if not written.ok():
@@ -78,16 +80,57 @@ func _run_load(args: PackedStringArray) -> void:
 func _apply_standing_section(envelope: Dictionary) -> void:
 	if not envelope.has(SaveService.KEY_SECTIONS):
 		StandingService.reset_to_defaults()
+		_reset_recovery_progress()
 		return
 	var sections_raw: Variant = envelope[SaveService.KEY_SECTIONS]
 	if typeof(sections_raw) != TYPE_DICTIONARY:
 		StandingService.reset_to_defaults()
+		_reset_recovery_progress()
 		return
 	var sections: Dictionary = sections_raw
 	if sections.has(BalanceStanding.SAVE_SECTION_KEY):
-		StandingService.apply_section(sections[BalanceStanding.SAVE_SECTION_KEY])
+		var standing_raw: Variant = sections[BalanceStanding.SAVE_SECTION_KEY]
+		StandingService.apply_section(standing_raw)
+		_apply_recovery_progress(standing_raw)
 	else:
 		StandingService.reset_to_defaults()
+		_reset_recovery_progress()
+
+
+func _merge_recovery_progress(standing_section: Dictionary) -> void:
+	var service: Node = _recovery_service()
+	if service == null or not service.has_method(&"progress_to_section"):
+		return
+	var progress: Variant = service.call(&"progress_to_section")
+	if typeof(progress) == TYPE_DICTIONARY:
+		standing_section[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS] = progress
+
+
+func _apply_recovery_progress(standing_raw: Variant) -> void:
+	if typeof(standing_raw) != TYPE_DICTIONARY:
+		_reset_recovery_progress()
+		return
+	var data: Dictionary = standing_raw
+	var service: Node = _recovery_service()
+	if service == null or not service.has_method(&"apply_progress_section"):
+		return
+	if data.has(BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS):
+		service.call(&"apply_progress_section", data[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS])
+	else:
+		service.call(&"apply_progress_section", {})
+
+
+func _reset_recovery_progress() -> void:
+	var service: Node = _recovery_service()
+	if service != null and service.has_method(&"apply_progress_section"):
+		service.call(&"apply_progress_section", {})
+
+
+func _recovery_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"recovery_service")
 
 
 func _file_name(args: PackedStringArray, usage: String) -> String:

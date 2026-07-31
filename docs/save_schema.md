@@ -22,13 +22,19 @@ with a migration step in `SaveMigrations.gd`.
 ### Optional section: `standing` (schema v1)
 
 Written by `StandingService.to_section()` / applied by `apply_section()`.
+Console save also merges recovery chain progress into this section (A4).
 
 | Key | Type | Meaning |
 |---|---|---|
 | `entities` | `Dictionary` | Entity id → float standing overrides. |
 | `people` | `Dictionary` | Person id → float standing overrides. |
+| `person_success` | `Dictionary` | Person id → int successful personal work count (A4). |
+| `person_closed` | `Dictionary` | Person id → close reason string (A4; missing = open). |
+| `recovery_progress` | `Dictionary` | Chain id → Array of completed step id strings (A4). |
 
 Ids not listed use content `default_player_standing` (else 0).
+Missing A4 maps mean no history, nobody closed, no chain progress.
+No envelope version bump — these keys are optional inside schema v1.
 
 Saving is deterministic to the byte: the same state always produces the same
 file, and loading a file and saving it again reproduces it exactly.
