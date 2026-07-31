@@ -1,14 +1,12 @@
 extends Node
 
-## The console commands the save system answers to — Alpha A0.
+## The console commands the save system answers to — Alpha A0 / B2.
 ##
-## `save <name>` and `load <name>`. Lives in the save system so only this side
-## of the boundary may touch `SaveService`. Child of `Main.tscn`.
+## `save <name>` and `load <name>`. Thin wrapper over CareerSave so menu and
+## console share one gather/apply path. Child of `Main.tscn`.
 
 const SAVE_COMMAND: StringName = &"save"
 const LOAD_COMMAND: StringName = &"load"
-
-var _service: SaveService = SaveService.new()
 
 
 func _ready() -> void:
@@ -50,20 +48,11 @@ func _run_save(args: PackedStringArray) -> void:
 	if file_name.is_empty():
 		return
 
-	var path: String = SaveService.path_for(file_name)
-	var standing_section: Dictionary = StandingService.to_section()
-	_merge_recovery_progress(standing_section)
-	var sections: Dictionary = {
-		BalanceStanding.SAVE_SECTION_KEY: standing_section,
-	}
-	var wallet_section: Dictionary = _wallet_section()
-	if not wallet_section.is_empty():
-		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
-	var written: SaveResult = _service.save_to(path, SaveService.envelope(sections, file_name))
+	var written: SaveResult = CareerSave.save_to_name(get_tree(), file_name)
 	if not written.ok():
 		_say("Save failed: %s" % written.summary())
 		return
-	_say("Saved to '%s'." % path)
+	_say("Saved to '%s'." % SaveService.path_for(file_name))
 
 
 func _run_load(args: PackedStringArray) -> void:
@@ -72,106 +61,17 @@ func _run_load(args: PackedStringArray) -> void:
 		return
 
 	var path: String = SaveService.path_for(file_name)
-	var loaded: SaveResult = _service.load_from(path)
+	var loaded: SaveResult = CareerSave.load_envelope(path)
 	if not loaded.ok():
 		_say("Load failed: %s" % loaded.summary())
 		return
-	_apply_standing_section(loaded.envelope)
-	_apply_wallet_section(loaded.envelope)
+	var sections: Dictionary = {}
+	if loaded.envelope.has(SaveService.KEY_SECTIONS):
+		var sections_raw: Variant = loaded.envelope[SaveService.KEY_SECTIONS]
+		if typeof(sections_raw) == TYPE_DICTIONARY:
+			sections = sections_raw
+	CareerSave.apply_meta_sections(get_tree(), sections)
 	_say("Loaded '%s'." % path)
-
-
-func _apply_standing_section(envelope: Dictionary) -> void:
-	if not envelope.has(SaveService.KEY_SECTIONS):
-		StandingService.reset_to_defaults()
-		_reset_recovery_progress()
-		return
-	var sections_raw: Variant = envelope[SaveService.KEY_SECTIONS]
-	if typeof(sections_raw) != TYPE_DICTIONARY:
-		StandingService.reset_to_defaults()
-		_reset_recovery_progress()
-		return
-	var sections: Dictionary = sections_raw
-	if sections.has(BalanceStanding.SAVE_SECTION_KEY):
-		var standing_raw: Variant = sections[BalanceStanding.SAVE_SECTION_KEY]
-		StandingService.apply_section(standing_raw)
-		_apply_recovery_progress(standing_raw)
-	else:
-		StandingService.reset_to_defaults()
-		_reset_recovery_progress()
-
-
-func _wallet_section() -> Dictionary:
-	var wallet: Node = _wallet_service()
-	if wallet == null or not wallet.has_method(&"to_section"):
-		return {}
-	var section: Variant = wallet.call(&"to_section")
-	if typeof(section) != TYPE_DICTIONARY:
-		return {}
-	return section
-
-
-func _apply_wallet_section(envelope: Dictionary) -> void:
-	var wallet: Node = _wallet_service()
-	if wallet == null:
-		return
-	if not envelope.has(SaveService.KEY_SECTIONS):
-		if wallet.has_method(&"reset"):
-			wallet.call(&"reset")
-		return
-	var sections_raw: Variant = envelope[SaveService.KEY_SECTIONS]
-	if typeof(sections_raw) != TYPE_DICTIONARY:
-		if wallet.has_method(&"reset"):
-			wallet.call(&"reset")
-		return
-	var sections: Dictionary = sections_raw
-	if sections.has(BalanceEconomy.SAVE_SECTION_KEY) and wallet.has_method(&"apply_section"):
-		wallet.call(&"apply_section", sections[BalanceEconomy.SAVE_SECTION_KEY])
-	elif wallet.has_method(&"reset"):
-		wallet.call(&"reset")
-
-
-func _wallet_service() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(&"wallet_service")
-
-
-func _merge_recovery_progress(standing_section: Dictionary) -> void:
-	var service: Node = _recovery_service()
-	if service == null or not service.has_method(&"progress_to_section"):
-		return
-	var progress: Variant = service.call(&"progress_to_section")
-	if typeof(progress) == TYPE_DICTIONARY:
-		standing_section[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS] = progress
-
-
-func _apply_recovery_progress(standing_raw: Variant) -> void:
-	if typeof(standing_raw) != TYPE_DICTIONARY:
-		_reset_recovery_progress()
-		return
-	var data: Dictionary = standing_raw
-	var service: Node = _recovery_service()
-	if service == null or not service.has_method(&"apply_progress_section"):
-		return
-	if data.has(BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS):
-		service.call(&"apply_progress_section", data[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS])
-	else:
-		service.call(&"apply_progress_section", {})
-
-
-func _reset_recovery_progress() -> void:
-	var service: Node = _recovery_service()
-	if service != null and service.has_method(&"apply_progress_section"):
-		service.call(&"apply_progress_section", {})
-
-
-func _recovery_service() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(&"recovery_service")
 
 
 func _file_name(args: PackedStringArray, usage: String) -> String:

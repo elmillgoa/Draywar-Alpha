@@ -631,3 +631,88 @@ No parameters.
 
 **Emitted by** `StationMenu`.
 **Listened to by** `WalletService`.
+
+## Session shell (B2)
+
+### `on_new_game_requested()`
+
+Main menu asked to start a new career.
+
+No parameters.
+
+**Emitted by** `MainMenu`.
+**Listened to by** `Main`.
+
+### `on_continue_requested()`
+
+Main menu asked to continue the most recent career save.
+
+No parameters.
+
+**Emitted by** `MainMenu`.
+**Listened to by** `Main`.
+
+### `on_quit_to_desktop_requested()`
+
+Main menu asked to quit the application.
+
+No parameters.
+
+**Emitted by** `MainMenu`.
+**Listened to by** `Main`.
+
+### `on_quit_to_menu_requested()`
+
+Pause menu asked to leave play and return to the main menu.
+
+No parameters.
+
+**Emitted by** `PauseMenu`.
+**Listened to by** `Main`.
+
+### `on_pause_changed(open: bool)`
+
+Pause overlay opened or closed. Flight input freezes while open.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `open` | `bool` | True when the pause menu is shown. |
+
+**Emitted by** `Main` (Escape toggle), `PauseMenu` (Resume).
+**Listened to by** `PauseMenu`, `PlayerShip`, `DockingService`, `GateTravelService`, `Main`.
+
+### `on_captain_sheet_open_requested()`
+
+UI asked to open the captain sheet.
+
+No parameters.
+
+**Emitted by** `PauseMenu`.
+**Listened to by** `CaptainSheet`.
+
+### `on_captain_sheet_close_requested()`
+
+UI asked to close the captain sheet.
+
+No parameters.
+
+**Emitted by** `CaptainSheet` (Close), `Main` (Escape while sheet open).
+**Listened to by** `CaptainSheet`.
+
+### `on_manual_save_requested()`
+
+Pause menu asked to write the default career save.
+
+No parameters.
+
+**Emitted by** `PauseMenu`.
+**Listened to by** `Main`.
+
+### `on_manual_load_requested()`
+
+Pause menu asked to load the most recent career save.
+
+No parameters.
+
+**Emitted by** `PauseMenu`.
+**Listened to by** `Main`.

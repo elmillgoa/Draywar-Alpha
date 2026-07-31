@@ -11,6 +11,7 @@ extends Node
 var _ship: PlayerShip = null
 var _gate_positions: Dictionary[StringName, Vector3] = {}
 var _console_open: bool = false
+var _pause_open: bool = false
 var _last_prompt_dest: StringName = &""
 var _last_can_jump: bool = false
 var _docking: DockingService = null
@@ -25,11 +26,15 @@ func setup(
 	_docking = docking
 	if not EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
 		EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
+	if not EventBus.on_pause_changed.is_connected(_on_pause_changed):
+		EventBus.on_pause_changed.connect(_on_pause_changed)
 
 
 func _exit_tree() -> void:
 	if EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
 		EventBus.on_console_visibility_changed.disconnect(_on_console_visibility_changed)
+	if EventBus.on_pause_changed.is_connected(_on_pause_changed):
+		EventBus.on_pause_changed.disconnect(_on_pause_changed)
 
 
 func _physics_process(_delta: float) -> void:
@@ -54,7 +59,7 @@ func _physics_process(_delta: float) -> void:
 	var can_jump: bool = in_interact and fuel_ok
 	_emit_prompt_if_changed(prompt_id, can_jump)
 
-	if _console_open:
+	if _console_open or _pause_open:
 		return
 	# Prefer station dock: DockingService also listens for F. Only jump when
 	# in gate interact range and not in station interact range.
@@ -109,3 +114,7 @@ func _distance_to(dest_id: StringName, from: Vector3) -> float:
 
 func _on_console_visibility_changed(open: bool) -> void:
 	_console_open = open
+
+
+func _on_pause_changed(open: bool) -> void:
+	_pause_open = open

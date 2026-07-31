@@ -14,11 +14,13 @@ one per game system. The envelope is defined exactly and has no opinion about
 what is inside a section.
 
 **Version 1 stores the envelope only** (no schema bump for optional sections).
-Debug `save`/`load` write `sections` that may include optional **`standing`**
-(A2) and **`wallet`** (A5) maps. Missing `standing` means all-neutral content
-defaults. Missing `wallet` means starting credits/fuel/condition. Tests may
-still use a hostile probe fixture. New required career fields later bump the
-version with a migration step in `SaveMigrations.gd`.
+Debug `save`/`load` and menu save write `sections` that may include optional
+**`standing`** (A2), **`wallet`** (A5), **`world`** (B2), and **`mission`**
+(B2) maps. Missing `standing` means all-neutral content defaults. Missing
+`wallet` means starting credits/fuel/condition. Missing `world` keeps the
+boot system/spawn. Missing `mission` means no active job. Tests may still use
+a hostile probe fixture. New required career fields later bump the version
+with a migration step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -50,6 +52,34 @@ Console save merges this section when a wallet service is present (A5).
 
 Missing section → boot defaults from `BalanceEconomy`.
 No envelope version bump — optional inside schema v1.
+
+### Optional section: `world` (schema v1)
+
+Written by `CareerSave` when a `system_world` and player ship are present (B2).
+Applied by `Main` after boot (system rebuild + free-fly position). Docked
+restore is not required (free-fly at saved position is OK).
+
+| Key | Type | Meaning |
+|---|---|---|
+| `system_id` | `String` | Content id of the current star system. |
+| `pos_x` | `float` | Ship world X. |
+| `pos_y` | `float` | Ship world Y. |
+| `pos_z` | `float` | Ship world Z. |
+| `docked_station_id` | `String` | Docked station id, or empty when free-flying. |
+
+Missing section → boot system and spawn. No envelope version bump.
+
+### Optional section: `mission` (schema v1)
+
+Written by `MissionService.to_section()` when a mission is active (B2).
+Applied by `MissionService.apply_section()` (restores active template; emits
+`on_mission_accepted` so HUD refreshes).
+
+| Key | Type | Meaning |
+|---|---|---|
+| `template_id` | `String` | Active contract template content id. |
+
+Missing section → no active mission. No envelope version bump.
 
 Saving is deterministic to the byte: the same state always produces the same
 file, and loading a file and saving it again reproduces it exactly.
@@ -112,5 +142,6 @@ N+1, and bump `SaveSchema.CURRENT_VERSION`.
 - `encode_bytes` / `decode_bytes` for in-memory work
 
 Console: `save <name>` / `load <name>` via `SaveConsoleCommands` (child of Main).
+Menu/pause: same gather/apply path through `CareerSave` (default name `career`).
 
 Files live under `user://saves/*.sav`.

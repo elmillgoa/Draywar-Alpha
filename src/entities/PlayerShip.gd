@@ -20,7 +20,9 @@ var _drag: float = BalanceFlight.SHIP_DRAG
 
 var _throttle: float = 0.0
 var _flight_enabled: bool = true
+var _input_blocked: bool = false
 var _console_open: bool = false
+var _pause_open: bool = false
 var _camera: Camera3D = null
 var _last_reported_speed: float = -1.0
 
@@ -30,6 +32,7 @@ func _ready() -> void:
 	_apply_hull_from_library(hull_id)
 	_build_mesh()
 	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
+	EventBus.on_pause_changed.connect(_on_pause_changed)
 	# Seed HUD listeners that connect before the first physics tick.
 	EventBus.on_player_throttle_changed.emit(_throttle)
 	EventBus.on_player_speed_changed.emit(0.0)
@@ -38,6 +41,8 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
 		EventBus.on_console_visibility_changed.disconnect(_on_console_visibility_changed)
+	if EventBus.on_pause_changed.is_connected(_on_pause_changed):
+		EventBus.on_pause_changed.disconnect(_on_pause_changed)
 
 
 ## Wire the chase camera used for mouse-aim raycasts.
@@ -80,7 +85,7 @@ func _apply_hull_from_library(id: StringName) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not _flight_enabled or _console_open:
+	if not _flight_enabled or _input_blocked:
 		return
 
 	var dt: float = TimeScale.scaled_delta(delta)
@@ -210,6 +215,16 @@ func _build_mesh() -> void:
 
 func _on_console_visibility_changed(open: bool) -> void:
 	_console_open = open
+	_refresh_input_blocked()
+
+
+func _on_pause_changed(open: bool) -> void:
+	_pause_open = open
+	_refresh_input_blocked()
+
+
+func _refresh_input_blocked() -> void:
+	_input_blocked = _console_open or _pause_open
 
 
 func _wallet_node() -> Node:

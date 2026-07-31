@@ -13,6 +13,7 @@ var _ship: PlayerShip = null
 var _station_positions: Dictionary[StringName, Vector3] = {}
 var _controller: DockingController = DockingController.new()
 var _console_open: bool = false
+var _pause_open: bool = false
 var _last_prompt_id: StringName = &""
 var _last_can_dock: bool = false
 
@@ -25,6 +26,8 @@ func setup(ship: PlayerShip, station_positions: Dictionary[StringName, Vector3])
 		add_to_group(&"docking_service")
 	if not EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
 		EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
+	if not EventBus.on_pause_changed.is_connected(_on_pause_changed):
+		EventBus.on_pause_changed.connect(_on_pause_changed)
 	if not EventBus.on_dock_requested.is_connected(_on_dock_requested):
 		EventBus.on_dock_requested.connect(_on_dock_requested)
 	if not EventBus.on_undock_requested.is_connected(_on_undock_requested):
@@ -43,6 +46,8 @@ func is_in_station_interact_range() -> bool:
 func _exit_tree() -> void:
 	if EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
 		EventBus.on_console_visibility_changed.disconnect(_on_console_visibility_changed)
+	if EventBus.on_pause_changed.is_connected(_on_pause_changed):
+		EventBus.on_pause_changed.disconnect(_on_pause_changed)
 	if EventBus.on_dock_requested.is_connected(_on_dock_requested):
 		EventBus.on_dock_requested.disconnect(_on_dock_requested)
 	if EventBus.on_undock_requested.is_connected(_on_undock_requested):
@@ -83,7 +88,7 @@ func _physics_process(_delta: float) -> void:
 	var can_dock: bool = range_ok and standing_ok
 	_emit_prompt_if_changed(prompt_id, can_dock)
 
-	if _console_open:
+	if _console_open or _pause_open:
 		return
 	if Input.is_action_just_pressed(FlightInput.ACTION_DOCK) and range_ok:
 		EventBus.on_dock_requested.emit(_controller.prompt_station_id())
@@ -194,3 +199,7 @@ func _on_undock_requested(station_id: StringName) -> void:
 
 func _on_console_visibility_changed(open: bool) -> void:
 	_console_open = open
+
+
+func _on_pause_changed(open: bool) -> void:
+	_pause_open = open

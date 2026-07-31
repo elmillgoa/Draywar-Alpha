@@ -7,7 +7,7 @@ extends Node
 ## Law: docs/reputation_and_standing.md §7
 ##
 ## Not a standing writer. Completes/fails/abandons call StandingService.
-## Child of Main (not an autoload). Session-only for A3 (no save section).
+## Child of Main (not an autoload). Optional save section `mission` (B2).
 ## Console: `mission list|accept|complete|fail|abandon|status`.
 
 const MISSION: StringName = &"mission"
@@ -65,6 +65,31 @@ func active_template_id() -> StringName:
 func reset() -> void:
 	_active_template_id = &""
 	_state = STATE_NONE
+
+
+## Optional save section (schema v1). Empty when no active mission.
+func to_section() -> Dictionary:
+	if not has_active():
+		return {}
+	return {BalanceSession.MISSION_KEY_TEMPLATE_ID: String(_active_template_id)}
+
+
+## Restore mission from save. Emits on_mission_accepted so HUD refreshes.
+func apply_section(raw: Variant) -> void:
+	reset()
+	if typeof(raw) != TYPE_DICTIONARY:
+		return
+	var data: Dictionary = raw
+	if not data.has(BalanceSession.MISSION_KEY_TEMPLATE_ID):
+		return
+	var template_id: StringName = StringName(str(data[BalanceSession.MISSION_KEY_TEMPLATE_ID]))
+	if String(template_id).is_empty():
+		return
+	var template: ContractType = _template(template_id)
+	if template == null:
+		return
+	# Prefer accept() so HUD/listeners refresh without double-standing writes.
+	accept(template_id)
 
 
 ## Every loaded contract template id (sorted by ContentLibrary).

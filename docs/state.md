@@ -2,7 +2,7 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** Path C. **B0 + B1 complete** (world travel + presentation floor). Next: **B2 Session shell**. Final Alpha **not signed**.
+**Current position:** Path C. **B0–B2 complete**. Next: **B3 Station depth + trade**. Final Alpha **not signed**.
 
 | Doc | Role |
 |-----|------|
@@ -10,7 +10,7 @@
 | `Alpha/ALPHA_DECISION_PHASE_PLAN.md` | B0–B5 order + worktree parallel tracks (**agreed**) |
 | `docs/reputation_and_standing.md` | Standing law |
 
-**Last closed:** **B0 — World you can actually travel** + **B1 — Presentation floor** (same session, main tree).
+**Last closed:** **B2 — Session shell** (main menu / pause / captain sheet / job tracking / save UX).
 
 ## Honest now
 
@@ -18,25 +18,24 @@
 |------|--------|
 | Multi-system **in play** | **Pass** — Alpha/Beta/Gamma linked; HUD NAV + world gate labels; F jump |
 | Presentation floor | **Pass** — starfield, per-system tint, distinct silhouettes, shared UI theme |
-| Menu / sheet / trade / combat | Missing (B2+) |
-| Flight / standing / recovery / thin money-jobs | Partial (A0–A5 mechanical debt) |
+| Session shell | **Pass** — main menu, pause, captain sheet, career save/load UX, job HUD |
+| Trade / station depth / combat | Missing (B3+) |
+| Flight / standing / recovery / thin money-jobs | Partial (A0–A5 mechanical + B0–B2 shell) |
 
-## B0 / B1 evidence
+## B2 evidence
 
-**B0 acceptance**
+**Acceptance**
 
-- Cold boot multi-system path (no console): undock → fly to cyan gate / follow HUD NAV → F jump → dock → next system → return. Guided by SYSTEM title, NAV (HERE + GATES), world `GATE → …` labels, status moment on entry.
-- Player can name system from HUD SYSTEM / NAV HERE without editor.
-- Tests: `tests/test_b0_travel.gd` (gate graph, jump rebuild α→β→γ→α, gate labels, distinct backdrops, HUD nav, fuel block, arrival). Suite **203/203**.
-- **Play smoke (recorded):** Automated rebuild loop + nav/label proof stands in for human cold-boot until Elliot flies; path above is the manual smoke.
+- Boot → main menu (not straight into flight). New Game → play. Esc pause → Save / Load / Captain sheet / Quit to menu. Continue restores career via optional sections.
+- Active job: HUD `JOB name → destination` (display name).
+- Tests: `tests/test_b2_session_shell.gd` (gather sections, round-trip wallet/mission/world, menu buttons, theme, mission section, named save, HUD dest). Suite **210/210**.
+- Verify-red: broke post-load credits assert → 1 fail; restored → green.
+- **Play smoke:** headless Main boot prints banner and lands on menu; full click loop is code path + unit composition (same style as B0).
 
-**B1 acceptance**
+**Implementation**
 
-- Scene reads as game: starfield (220), not pure black; per-system space/ambient/station colours; station cylinder+disc, gate torus+beacon, player prism, NPC capsules.
-- Theme: `DraywarUiTheme` / `BalanceUi` on **StationMenu** and **FlightHUD**.
-- Tests: `tests/test_b1_presentation.gd`.
-
-**Verify-red:** broke gate-graph assert → red (202 pass); restored → 203 green.
+- `CareerSave` shared by console + menu; optional `world` + `mission` sections (schema v1, no envelope bump).
+- Free-fly position restore; docked-state restore deferred.
 
 ## Gates
 
@@ -45,22 +44,23 @@
 
 ## Open decisions
 
-- None blocking B2. Save schema changes still need ask if required fields change.
+- None blocking B3. Save schema: still ask if new **required** fields.
 
 ## Standing decisions
 
-- Path C hybrid; worktrees when tracks do not thrash Main/EventBus/Standing/save.
-- B0+B1 landed in main tree (SystemWorld + HUD thrash made worktree split costly).
+- Path C hybrid; B0–B2 in main tree.
 - Godot 4.6.1 at `C:\Godot\`. Remote: `origin/main` → `https://github.com/elmillgoa/Draywar-Alpha`
+- Elliot: after phase wrap, free to start next phase in same chat.
 
 ## Next session starts here
 
-1. `/start` — orient; plan is **B2 Session shell**.
-2. **Go on B2** (main menu / pause / captain sheet / job tracking / save UX per phase plan).
-3. Do not skip to B3/B4 until B2 lands shared HUD/sheet and wallet/cargo seams.
+1. `/start` — orient; plan is **B3 Station depth + trade + money loop**.
+2. **Go on B3** (station sections, commodities, buy/sell, cargo, money visible on sheet).
+3. B3 and B4 may parallel after B2 (B2 landed shared HUD/sheet and wallet seams).
 4. Final Alpha only after B5 checklist green.
 
 ## Session history
 
-- **2026-07-31** — B0+B1: multi-system discoverable travel + presentation floor; lint/tests green; wrap.
+- **2026-07-31** — B2: session shell (menu/pause/sheet/jobs/save UX); lint/tests green; wrap.
+- **2026-07-31** — B0+B1: multi-system travel + presentation floor.
 - **2026-07-30–31** — A0–A5 mechanical; Final Alpha refused (tech demonstrator); Path C + decision bar; B0–B5 plan agreed.

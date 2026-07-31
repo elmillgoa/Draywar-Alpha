@@ -174,3 +174,30 @@ signal on_refuel_requested
 
 ## UI: request full repair at the docked station.
 signal on_repair_requested
+
+## Main menu: start a new career.
+signal on_new_game_requested
+
+## Main menu: continue the most recent career save.
+signal on_continue_requested
+
+## Main menu: quit the application.
+signal on_quit_to_desktop_requested
+
+## Pause menu: leave play and return to the main menu.
+signal on_quit_to_menu_requested
+
+## Main: pause overlay opened or closed.
+signal on_pause_changed(open: bool)
+
+## Pause / UI: open the captain sheet.
+signal on_captain_sheet_open_requested
+
+## Captain sheet: close the sheet.
+signal on_captain_sheet_close_requested
+
+## Pause menu: write the default career save.
+signal on_manual_save_requested
+
+## Pause menu: load the most recent career save.
+signal on_manual_load_requested

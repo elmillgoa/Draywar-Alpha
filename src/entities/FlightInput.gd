@@ -14,6 +14,8 @@ const ACTION_STRAFE_LEFT: StringName = &"strafe_left"
 const ACTION_STRAFE_RIGHT: StringName = &"strafe_right"
 const ACTION_AFTERBURNER: StringName = &"afterburner"
 const ACTION_DOCK: StringName = &"dock"
+## Pause menu (Escape). Same id as BalanceSession.ACTION_PAUSE.
+const ACTION_PAUSE: StringName = &"pause_menu"
 
 
 ## Ensures every flight action exists with its default key. Idempotent.
@@ -24,6 +26,7 @@ static func ensure_actions() -> void:
 	_bind(ACTION_STRAFE_RIGHT, KEY_D)
 	_bind(ACTION_AFTERBURNER, KEY_SHIFT)
 	_bind(ACTION_DOCK, KEY_F)
+	_bind(ACTION_PAUSE, KEY_ESCAPE)
 
 
 static func _bind(action: StringName, physical_key: Key) -> void:
