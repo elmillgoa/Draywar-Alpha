@@ -1,12 +1,13 @@
 class_name StationMenu
 extends CanvasLayer
 
-## Station menu — Alpha A5.
+## Station menu — Path C B3 sections (jobs, services, trade, contacts).
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1, A3, A4, A5
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
 ##
-## Undock / Launch, accept / turn in / abandon jobs, recovery talk / complete /
-## abandon / favor / betray, refuel and repair. All actions go through EventBus.
+## Undock, accept / turn in / abandon jobs, recovery talk / complete /
+## abandon / favor / betray, refuel and repair, buy/sell commodities.
+## All actions go through EventBus.
 
 var _panel: PanelContainer = null
 var _title: Label = null
@@ -20,6 +21,7 @@ var _favor_btn: Button = null
 var _betray_btn: Button = null
 var _refuel_btn: Button = null
 var _repair_btn: Button = null
+var _trade_box: VBoxContainer = null
 var _docked_station_id: StringName = &""
 var _offer_person_id: StringName = &""
 var _favor_person_id: StringName = &""
@@ -46,6 +48,7 @@ func _ready() -> void:
 	EventBus.on_credits_changed.connect(_on_wallet_changed)
 	EventBus.on_fuel_changed.connect(_on_fuel_changed)
 	EventBus.on_condition_changed.connect(_on_condition_changed)
+	EventBus.on_cargo_changed.connect(_on_cargo_changed)
 
 
 func _exit_tree() -> void:
@@ -65,6 +68,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_credits_changed, _on_wallet_changed)
 	_disconnect(EventBus.on_fuel_changed, _on_fuel_changed)
 	_disconnect(EventBus.on_condition_changed, _on_condition_changed)
+	_disconnect(EventBus.on_cargo_changed, _on_cargo_changed)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -88,33 +92,44 @@ func _build_ui() -> void:
 	_panel.theme = DraywarUiTheme.build()
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.custom_minimum_size = Vector2(
-		BalanceFlight.STATION_MENU_WIDTH, BalanceEconomy.STATION_MENU_HEIGHT_A5
+		BalanceEconomy.STATION_MENU_WIDTH_B3, BalanceEconomy.STATION_MENU_HEIGHT_B3
 	)
-	_panel.offset_left = -BalanceFlight.STATION_MENU_HALF_WIDTH
-	_panel.offset_top = -BalanceEconomy.STATION_MENU_HALF_HEIGHT_A5
-	_panel.offset_right = BalanceFlight.STATION_MENU_HALF_WIDTH
-	_panel.offset_bottom = BalanceEconomy.STATION_MENU_HALF_HEIGHT_A5
+	_panel.offset_left = -BalanceEconomy.STATION_MENU_HALF_WIDTH_B3
+	_panel.offset_top = -BalanceEconomy.STATION_MENU_HALF_HEIGHT_B3
+	_panel.offset_right = BalanceEconomy.STATION_MENU_HALF_WIDTH_B3
+	_panel.offset_bottom = BalanceEconomy.STATION_MENU_HALF_HEIGHT_B3
 	root.add_child(_panel)
 
-	var layout: VBoxContainer = VBoxContainer.new()
-	layout.alignment = BoxContainer.ALIGNMENT_CENTER
-	_panel.add_child(layout)
+	var outer: VBoxContainer = VBoxContainer.new()
+	outer.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_panel.add_child(outer)
 
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", BalanceFlight.HUD_TITLE_FONT_SIZE)
 	_title.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.text = "Station"
-	layout.add_child(_title)
+	outer.add_child(_title)
 
-	var spacer: Control = Control.new()
-	spacer.custom_minimum_size = Vector2(0.0, BalanceFlight.HUD_MARGIN)
-	layout.add_child(spacer)
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(
+		BalanceEconomy.STATION_MENU_WIDTH_B3 - BalanceFlight.HUD_MARGIN - BalanceFlight.HUD_MARGIN,
+		BalanceEconomy.STATION_MENU_SCROLL_HEIGHT
+	)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	outer.add_child(scroll)
+
+	var layout: VBoxContainer = VBoxContainer.new()
+	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(layout)
 
 	var button_size: Vector2 = Vector2(
 		BalanceFlight.STATION_MENU_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
 	)
 
+	# --- Jobs ---
+	_add_section_header(layout, BalanceEconomy.STATION_SECTION_JOBS)
 	_accept_job_btn = _make_button(layout, button_size, BalanceStanding.STATION_ACCEPT_JOB_LABEL)
 	_accept_job_btn.pressed.connect(_on_accept_job_pressed)
 	_accept_job_btn.visible = false
@@ -127,6 +142,22 @@ func _build_ui() -> void:
 	_abandon_job_btn.pressed.connect(_on_abandon_job_pressed)
 	_abandon_job_btn.visible = false
 
+	# --- Services ---
+	_add_section_header(layout, BalanceEconomy.STATION_SECTION_SERVICES)
+	_refuel_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REFUEL_LABEL)
+	_refuel_btn.pressed.connect(_on_refuel_pressed)
+
+	_repair_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REPAIR_LABEL)
+	_repair_btn.pressed.connect(_on_repair_pressed)
+
+	# --- Trade ---
+	_add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
+	_trade_box = VBoxContainer.new()
+	_trade_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.add_child(_trade_box)
+
+	# --- Contacts ---
+	_add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
 	_recovery_btn = _make_button(layout, button_size, "Talk")
 	_recovery_btn.pressed.connect(_on_recovery_pressed)
 	_recovery_btn.visible = false
@@ -151,17 +182,23 @@ func _build_ui() -> void:
 	_betray_btn.pressed.connect(_on_betray_pressed)
 	_betray_btn.visible = false
 
-	_refuel_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REFUEL_LABEL)
-	_refuel_btn.pressed.connect(_on_refuel_pressed)
+	# Undock fixed at bottom (outside scroll).
+	var undock_spacer: Control = Control.new()
+	undock_spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_SECTION_SPACER)
+	outer.add_child(undock_spacer)
 
-	_repair_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REPAIR_LABEL)
-	_repair_btn.pressed.connect(_on_repair_pressed)
-
-	var undock_btn: Button = _make_button(layout, button_size, "Undock")
+	var undock_btn: Button = _make_button(outer, button_size, BalanceEconomy.STATION_UNDOCK_LABEL)
 	undock_btn.pressed.connect(_on_undock_pressed)
 
-	var launch_btn: Button = _make_button(layout, button_size, "Launch")
-	launch_btn.pressed.connect(_on_undock_pressed)
+
+func _add_section_header(parent: Control, text: String) -> void:
+	var spacer: Control = Control.new()
+	spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_SECTION_SPACER)
+	parent.add_child(spacer)
+	var header: Label = Label.new()
+	header.add_theme_color_override("font_color", BalanceUi.ACCENT)
+	header.text = text
+	parent.add_child(header)
 
 
 func _make_button(parent: Control, size: Vector2, text: String) -> Button:
@@ -183,8 +220,9 @@ func _content_name(id: StringName) -> String:
 func _on_docked(station_id: StringName) -> void:
 	_docked_station_id = station_id
 	_title.text = _content_name(station_id)
-	_refresh_all()
+	# visible first so section refresh can show jobs/trade/services.
 	visible = true
+	_refresh_all()
 
 
 func _on_undocked(_station_id: StringName) -> void:
@@ -193,6 +231,7 @@ func _on_undocked(_station_id: StringName) -> void:
 	_favor_person_id = &""
 	_active_recovery_person_id = &""
 	_hide_action_buttons()
+	_clear_trade_rows()
 	visible = false
 
 
@@ -323,6 +362,7 @@ func _on_person_standing_changed(
 func _on_wallet_changed(_credits: int) -> void:
 	if visible:
 		_refresh_services()
+		_refresh_trade()
 
 
 func _on_fuel_changed(_fuel: float, _fuel_max: float) -> void:
@@ -335,10 +375,16 @@ func _on_condition_changed(_condition: float, _condition_max: float) -> void:
 		_refresh_services()
 
 
+func _on_cargo_changed() -> void:
+	if visible:
+		_refresh_trade()
+
+
 func _refresh_all() -> void:
 	_refresh_job_buttons()
 	_refresh_recovery_buttons()
 	_refresh_services()
+	_refresh_trade()
 
 
 func _refresh_job_buttons() -> void:
@@ -418,6 +464,91 @@ func _refresh_services() -> void:
 	_repair_btn.visible = visible
 
 
+func _clear_trade_rows() -> void:
+	if _trade_box == null:
+		return
+	for child: Node in _trade_box.get_children():
+		child.queue_free()
+
+
+func _refresh_trade() -> void:
+	if _trade_box == null:
+		return
+	_clear_trade_rows()
+	if not visible:
+		return
+	var cargo: Node = _cargo_service()
+	for commodity_id: StringName in ContentLibrary.ids_in(
+		BalanceEconomy.COMMODITY_CONTENT_CATEGORY
+	):
+		if not ContentLibrary.has_item(commodity_id):
+			continue
+		var item: ContentItem = ContentLibrary.item(commodity_id)
+		if not (item is Commodity):
+			continue
+		var commodity: Commodity = item as Commodity
+		var hold: int = 0
+		if cargo != null and cargo.has_method(&"quantity"):
+			hold = _variant_to_int(cargo.call(&"quantity", commodity_id))
+		var row: HBoxContainer = HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_trade_box.add_child(row)
+
+		var line: Label = Label.new()
+		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		line.text = (
+			BalanceEconomy.STATION_TRADE_LINE_FORMAT
+			% [
+				commodity.display_name,
+				commodity.base_buy_price,
+				commodity.base_sell_price,
+				hold,
+			]
+		)
+		row.add_child(line)
+
+		var buy_btn: Button = Button.new()
+		buy_btn.text = BalanceEconomy.STATION_TRADE_BUY_LABEL
+		buy_btn.custom_minimum_size = Vector2(
+			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
+		)
+		var can_buy: bool = false
+		if cargo != null and cargo.has_method(&"can_buy"):
+			can_buy = cargo.call(&"can_buy", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
+		buy_btn.disabled = not can_buy
+		buy_btn.pressed.connect(_on_trade_buy_pressed.bind(commodity_id))
+		row.add_child(buy_btn)
+
+		var sell_btn: Button = Button.new()
+		sell_btn.text = BalanceEconomy.STATION_TRADE_SELL_LABEL
+		sell_btn.custom_minimum_size = Vector2(
+			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
+		)
+		var can_sell: bool = false
+		if cargo != null and cargo.has_method(&"can_sell"):
+			can_sell = cargo.call(&"can_sell", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
+		sell_btn.disabled = not can_sell
+		sell_btn.pressed.connect(_on_trade_sell_pressed.bind(commodity_id))
+		row.add_child(sell_btn)
+
+
+func _on_trade_buy_pressed(commodity_id: StringName) -> void:
+	EventBus.on_trade_buy_requested.emit(commodity_id, BalanceEconomy.TRADE_QTY_UNIT)
+
+
+func _on_trade_sell_pressed(commodity_id: StringName) -> void:
+	EventBus.on_trade_sell_requested.emit(commodity_id, BalanceEconomy.TRADE_QTY_UNIT)
+
+
+func _cargo_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"cargo_service")
+
+
 func _mission_is_active() -> bool:
 	return _group_bool(&"mission_service", &"has_active")
 
@@ -460,6 +591,16 @@ func _variant_to_name(value: Variant) -> StringName:
 		var as_text: String = value
 		result = StringName(as_text)
 	return result
+
+
+func _variant_to_int(value: Variant) -> int:
+	if typeof(value) == TYPE_INT:
+		var as_int: int = value
+		return as_int
+	if typeof(value) == TYPE_FLOAT:
+		var as_float: float = value
+		return int(as_float)
+	return 0
 
 
 func _group_bool(group: StringName, method: StringName) -> bool:

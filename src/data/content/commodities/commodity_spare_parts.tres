@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Commodity" load_steps=2 format=3]
+
+; Ship spares — mid-high price trade good.
+[ext_resource type="Script" path="res://src/data/shapes/Commodity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"commodity_spare_parts"
+display_name = "Spare Parts"
+base_buy_price = 35
+base_sell_price = 24
+unit_volume = 1

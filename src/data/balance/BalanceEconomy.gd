@@ -1,12 +1,13 @@
 class_name BalanceEconomy
 extends RefCounted
 
-## Money, fuel, fees, repairs, and NPC traffic tunables — Alpha A5.
+## Money, fuel, fees, repairs, trade cargo, and NPC traffic tunables — A5 / B3.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A5
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
 ##
 ## Wallet, fuel burn, docking fees, refuel/repair station services, mission pay
-## defaults, jump fuel cost, and gray-box NPC traffic density live here.
+## defaults, jump fuel cost, cargo capacity / trade copy, and gray-box NPC
+## traffic density live here.
 
 # --- Wallet / fuel boot ----------------------------------------------------
 
@@ -94,12 +95,33 @@ const MISSION_PAY_DEFAULT: int = 120
 ## Credits paid on recovery step complete (personal work stipend).
 const RECOVERY_STEP_PAY: int = 40
 
-# --- Save (optional section, schema v1) ------------------------------------
+# --- Cargo / trade (B3) ----------------------------------------------------
+
+## Content category directory for commodities.
+const COMMODITY_CONTENT_CATEGORY: StringName = &"commodities"
+
+## Hold capacity in volume units (sum of unit_volume * qty).
+const CARGO_CAPACITY: int = 20
+
+## Default trade button quantity.
+const TRADE_QTY_UNIT: int = 1
+
+## Trade sides for on_trade_completed.
+const TRADE_SIDE_BUY: StringName = &"buy"
+const TRADE_SIDE_SELL: StringName = &"sell"
+
+## Optional future station sell multiplier (1.0 = global base sell price).
+const STATION_SELL_BONUS: float = 1.0
+
+# --- Save (optional sections, schema v1) -----------------------------------
 
 const SAVE_SECTION_KEY: StringName = &"wallet"
 const SAVE_KEY_CREDITS: StringName = &"credits"
 const SAVE_KEY_FUEL: StringName = &"fuel"
 const SAVE_KEY_CONDITION: StringName = &"condition"
+
+## Optional cargo section key (inventory map is the section body).
+const SAVE_SECTION_CARGO: StringName = &"cargo"
 
 # --- NPC traffic -----------------------------------------------------------
 
@@ -193,10 +215,31 @@ const STATION_COMPLETE_RECOVERY_LABEL: String = "Complete recovery work"
 const STATION_ABANDON_RECOVERY_LABEL: String = "Abandon recovery work"
 const STATION_ASK_FAVOR_FORMAT: String = "Ask favor of %s"
 const STATION_BETRAY_FORMAT: String = "Betray %s"
+const STATION_UNDOCK_LABEL: String = "Undock"
 
-## Station menu height for A5 service buttons.
+## Station menu section headers (B3).
+const STATION_SECTION_JOBS: String = "Jobs"
+const STATION_SECTION_SERVICES: String = "Services"
+const STATION_SECTION_TRADE: String = "Trade"
+const STATION_SECTION_CONTACTS: String = "Contacts"
+
+## Trade row copy.
+const STATION_TRADE_BUY_LABEL: String = "Buy 1"
+const STATION_TRADE_SELL_LABEL: String = "Sell 1"
+const STATION_TRADE_LINE_FORMAT: String = "%s  buy %d  sell %d  hold %d"
+
+## Station menu size for A5 service buttons (kept for older references).
 const STATION_MENU_HEIGHT_A5: float = 420.0
 const STATION_MENU_HALF_HEIGHT_A5: float = 210.0
+
+## Station menu size for B3 sections + trade list.
+const STATION_MENU_WIDTH_B3: float = 420.0
+const STATION_MENU_HALF_WIDTH_B3: float = 210.0
+const STATION_MENU_HEIGHT_B3: float = 560.0
+const STATION_MENU_HALF_HEIGHT_B3: float = 280.0
+const STATION_MENU_SCROLL_HEIGHT: float = 460.0
+const STATION_TRADE_BUTTON_WIDTH: float = 72.0
+const STATION_SECTION_SPACER: float = 6.0
 
 # --- Console ---------------------------------------------------------------
 
@@ -206,6 +249,11 @@ const CONSOLE_CREDITS_SHOW_ARGS: int = 1
 const CONSOLE_CREDITS_VALUE_INDEX: int = 1
 const CONSOLE_CREDITS_SHOW_FORMAT: String = "Credits: %d  Fuel: %s  Hull: %s"
 const CONSOLE_CREDITS_SET_FORMAT: String = "Credits set to %d."
+
+const CARGO_COMMAND: StringName = &"cargo"
+const CONSOLE_CARGO_EMPTY: String = "Cargo empty (%d/%d free volume)."
+const CONSOLE_CARGO_LINE_FORMAT: String = "  %s  x%d  (vol %d)"
+const CONSOLE_CARGO_HEADER_FORMAT: String = "Cargo %d/%d:"
 
 ## Percent scale for fuel/hull console and HUD (0..1 → 0..100).
 const PERCENT_SCALE: float = 100.0

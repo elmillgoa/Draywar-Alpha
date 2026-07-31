@@ -201,3 +201,17 @@ signal on_manual_save_requested
 
 ## Pause menu: load the most recent career save.
 signal on_manual_load_requested
+
+## UI: request to buy this commodity quantity at the docked station.
+signal on_trade_buy_requested(commodity_id: StringName, quantity: int)
+
+## UI: request to sell this commodity quantity at the docked station.
+signal on_trade_sell_requested(commodity_id: StringName, quantity: int)
+
+## CargoService: hold contents or used volume changed.
+signal on_cargo_changed
+
+## CargoService: a buy or sell finished (credits already moved).
+signal on_trade_completed(
+	side: StringName, commodity_id: StringName, quantity: int, credits_delta: int
+)

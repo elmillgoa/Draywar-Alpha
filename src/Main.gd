@@ -1,12 +1,12 @@
 extends Node
 
-## Boot entry and composition root for Draywar Alpha — B2 session shell.
+## Boot entry and composition root for Draywar Alpha — B2/B3 session shell.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B2
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B2–B3
 ##
 ## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission /
-## Recovery / Wallet services, boots play from the main menu, and rebuilds the
-## world on gate jumps.
+## Recovery / Wallet / Cargo services, boots play from the main menu, and
+## rebuilds the world on gate jumps.
 
 const BOOT_BANNER: String = "Draywar Alpha — boot OK"
 
@@ -19,6 +19,7 @@ var _camera: ChaseCamera = null
 var _docking: DockingService = null
 var _gate_travel: GateTravelService = null
 var _wallet: WalletService = null
+var _cargo: CargoService = null
 var _hud: FlightHUD = null
 var _station_menu: StationMenu = null
 
@@ -253,6 +254,10 @@ func _boot_play_session() -> void:
 	_wallet.name = "WalletService"
 	add_child(_wallet)
 
+	_cargo = CargoService.new()
+	_cargo.name = "CargoService"
+	add_child(_cargo)
+
 	_station_menu = StationMenu.new()
 	_station_menu.name = "StationMenu"
 	add_child(_station_menu)
@@ -309,6 +314,9 @@ func _tear_down_play_session() -> void:
 	if _hud != null:
 		_hud.queue_free()
 		_hud = null
+	if _cargo != null:
+		_cargo.queue_free()
+		_cargo = null
 	if _wallet != null:
 		_wallet.queue_free()
 		_wallet = null

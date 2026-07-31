@@ -2,7 +2,7 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** Path C. **B0–B2 complete**. Next: **B3 Station depth + trade**. Final Alpha **not signed**.
+**Current position:** Path C. **B0–B3 complete**. Next: **B4 Thin combat**. Final Alpha **not signed**.
 
 | Doc | Role |
 |-----|------|
@@ -10,32 +10,29 @@
 | `Alpha/ALPHA_DECISION_PHASE_PLAN.md` | B0–B5 order + worktree parallel tracks (**agreed**) |
 | `docs/reputation_and_standing.md` | Standing law |
 
-**Last closed:** **B2 — Session shell** (main menu / pause / captain sheet / job tracking / save UX).
+**Last closed:** **B3 — Station depth + trade + money loop**.
 
 ## Honest now
 
 | Area | Status |
 |------|--------|
-| Multi-system **in play** | **Pass** — Alpha/Beta/Gamma linked; HUD NAV + world gate labels; F jump |
-| Presentation floor | **Pass** — starfield, per-system tint, distinct silhouettes, shared UI theme |
-| Session shell | **Pass** — main menu, pause, captain sheet, career save/load UX, job HUD |
-| Trade / station depth / combat | Missing (B3+) |
-| Flight / standing / recovery / thin money-jobs | Partial (A0–A5 mechanical + B0–B2 shell) |
+| Multi-system **in play** | **Pass** |
+| Presentation floor | **Pass** |
+| Session shell | **Pass** |
+| Trade / station depth | **Pass** — 6 commodities, buy/sell at dock, cargo hold, legal trade standing soft |
+| Combat | Missing (B4) |
+| Content drama / Final Alpha | Missing (B5) |
 
-## B2 evidence
+## B3 evidence
 
 **Acceptance**
 
-- Boot → main menu (not straight into flight). New Game → play. Esc pause → Save / Load / Captain sheet / Quit to menu. Continue restores career via optional sections.
-- Active job: HUD `JOB name → destination` (display name).
-- Tests: `tests/test_b2_session_shell.gd` (gather sections, round-trip wallet/mission/world, menu buttons, theme, mission section, named save, HUD dest). Suite **210/210**.
-- Verify-red: broke post-load credits assert → 1 fail; restored → green.
-- **Play smoke:** headless Main boot prints banner and lands on menu; full click loop is code path + unit composition (same style as B0).
-
-**Implementation**
-
-- `CareerSave` shared by console + menu; optional `world` + `mission` sections (schema v1, no envelope bump).
-- Free-fly position restore; docked-state restore deferred.
+- Dock → Trade section → Buy 1 / Sell 1 → credits + cargo change without console.
+- Sell price < buy price → same-station flip nets credit change (visible money loop).
+- Station menu sectioned (Jobs / Services / Trade / Contacts / Undock) with B1 theme.
+- Cargo optional save section; Captain sheet shows cargo used/capacity.
+- Tests: `tests/test_b3_trade.gd` (10). Suite **220/220**. Lint green.
+- Verify-red: broke cargo qty assert → 1 fail; restored green.
 
 ## Gates
 
@@ -44,23 +41,23 @@
 
 ## Open decisions
 
-- None blocking B3. Save schema: still ask if new **required** fields.
+- None blocking B4. Save: ask only for new **required** fields.
 
 ## Standing decisions
 
-- Path C hybrid; B0–B2 in main tree.
-- Godot 4.6.1 at `C:\Godot\`. Remote: `origin/main` → `https://github.com/elmillgoa/Draywar-Alpha`
-- Elliot: after phase wrap, free to start next phase in same chat.
+- Path C; B0–B3 main tree. Godot 4.6.1. Remote `origin/main`.
+- After phase wrap, free to chain next phase in same chat.
 
 ## Next session starts here
 
-1. `/start` — orient; plan is **B3 Station depth + trade + money loop**.
-2. **Go on B3** (station sections, commodities, buy/sell, cargo, money visible on sheet).
-3. B3 and B4 may parallel after B2 (B2 landed shared HUD/sheet and wallet seams).
+1. `/start` — orient; plan is **B4 Thin combat**.
+2. **Go on B4** (weapons, hostile NPC, damage, attribution standing).
+3. B5 content + drama + Final Alpha after B4.
 4. Final Alpha only after B5 checklist green.
 
 ## Session history
 
-- **2026-07-31** — B2: session shell (menu/pause/sheet/jobs/save UX); lint/tests green; wrap.
-- **2026-07-31** — B0+B1: multi-system travel + presentation floor.
-- **2026-07-30–31** — A0–A5 mechanical; Final Alpha refused (tech demonstrator); Path C + decision bar; B0–B5 plan agreed.
+- **2026-07-31** — B3: trade + cargo + station sections; 220 tests; wrap.
+- **2026-07-31** — B2: session shell.
+- **2026-07-31** — B0+B1: travel + presentation.
+- **2026-07-30–31** — A0–A5 mechanical; Path C plan.

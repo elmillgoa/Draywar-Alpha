@@ -15,12 +15,13 @@ what is inside a section.
 
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
-**`standing`** (A2), **`wallet`** (A5), **`world`** (B2), and **`mission`**
-(B2) maps. Missing `standing` means all-neutral content defaults. Missing
-`wallet` means starting credits/fuel/condition. Missing `world` keeps the
-boot system/spawn. Missing `mission` means no active job. Tests may still use
-a hostile probe fixture. New required career fields later bump the version
-with a migration step in `SaveMigrations.gd`.
+**`standing`** (A2), **`wallet`** (A5), **`cargo`** (B3), **`world`** (B2), and
+**`mission`** (B2) maps. Missing `standing` means all-neutral content defaults.
+Missing `wallet` means starting credits/fuel/condition. Missing `cargo` means
+empty hold. Missing `world` keeps the boot system/spawn. Missing `mission`
+means no active job. Tests may still use a hostile probe fixture. New required
+career fields later bump the version with a migration step in
+`SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -51,6 +52,19 @@ Console save merges this section when a wallet service is present (A5).
 | `condition` | `float` | Hull condition. |
 
 Missing section → boot defaults from `BalanceEconomy`.
+No envelope version bump — optional inside schema v1.
+
+### Optional section: `cargo` (schema v1)
+
+Written by `CargoService.to_section()` / applied by `apply_section()` when a
+cargo service is present (B3). The section body is the inventory map itself
+(not nested under a further key).
+
+| Key | Type | Meaning |
+|---|---|---|
+| *(commodity id string)* | `int` | Quantity held of that commodity (> 0). |
+
+Missing section → empty hold. Empty dictionary → empty hold.
 No envelope version bump — optional inside schema v1.
 
 ### Optional section: `world` (schema v1)

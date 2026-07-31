@@ -170,9 +170,9 @@ func test_full_service_loop_dock_then_menu_undock_frees_ship() -> void:
 	assert_true(service.controller().is_docked())
 	assert_true(menu.visible)
 
-	var launch: Button = _find_button(menu, "Launch")
-	assert_not_null(launch)
-	launch.pressed.emit()
+	var undock: Button = _find_button(menu, BalanceEconomy.STATION_UNDOCK_LABEL)
+	assert_not_null(undock)
+	undock.pressed.emit()
 
 	assert_eq(_undocked.size(), 1)
 	assert_false(service.controller().is_docked())

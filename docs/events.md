@@ -716,3 +716,52 @@ No parameters.
 
 **Emitted by** `PauseMenu`.
 **Listened to by** `Main`.
+
+## Trade / cargo
+
+### `on_trade_buy_requested(commodity_id: StringName, quantity: int)`
+
+UI asked to buy this commodity quantity at the docked station.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `commodity_id` | `StringName` | Commodity content id. |
+| `quantity` | `int` | Units to buy. |
+
+**Emitted by** `StationMenu`.
+**Listened to by** `CargoService`.
+
+### `on_trade_sell_requested(commodity_id: StringName, quantity: int)`
+
+UI asked to sell this commodity quantity at the docked station.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `commodity_id` | `StringName` | Commodity content id. |
+| `quantity` | `int` | Units to sell. |
+
+**Emitted by** `StationMenu`.
+**Listened to by** `CargoService`.
+
+### `on_cargo_changed()`
+
+Cargo hold contents or used volume changed.
+
+No parameters.
+
+**Emitted by** `CargoService`.
+**Listened to by** `StationMenu`, `CaptainSheet` (when open / refresh).
+
+### `on_trade_completed(side: StringName, commodity_id: StringName, quantity: int, credits_delta: int)`
+
+A legal buy or sell finished; credits and cargo already updated.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `side` | `StringName` | `&"buy"` or `&"sell"`. |
+| `commodity_id` | `StringName` | Commodity content id. |
+| `quantity` | `int` | Units traded. |
+| `credits_delta` | `int` | Credit change (negative for buy, positive for sell). |
+
+**Emitted by** `CargoService`.
+**Listened to by** (debug / future sheet money event; optional).

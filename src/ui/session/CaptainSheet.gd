@@ -11,6 +11,7 @@ extends CanvasLayer
 var _panel: PanelContainer = null
 var _ship_label: Label = null
 var _credits_label: Label = null
+var _cargo_label: Label = null
 var _fuel_label: Label = null
 var _hull_label: Label = null
 var _job_label: Label = null
@@ -25,6 +26,8 @@ func _ready() -> void:
 	_build_ui()
 	EventBus.on_captain_sheet_open_requested.connect(_on_open_requested)
 	EventBus.on_captain_sheet_close_requested.connect(_on_close_requested)
+	EventBus.on_cargo_changed.connect(_on_cargo_changed)
+	EventBus.on_credits_changed.connect(_on_credits_changed)
 
 
 func _exit_tree() -> void:
@@ -32,6 +35,10 @@ func _exit_tree() -> void:
 		EventBus.on_captain_sheet_open_requested.disconnect(_on_open_requested)
 	if EventBus.on_captain_sheet_close_requested.is_connected(_on_close_requested):
 		EventBus.on_captain_sheet_close_requested.disconnect(_on_close_requested)
+	if EventBus.on_cargo_changed.is_connected(_on_cargo_changed):
+		EventBus.on_cargo_changed.disconnect(_on_cargo_changed)
+	if EventBus.on_credits_changed.is_connected(_on_credits_changed):
+		EventBus.on_credits_changed.disconnect(_on_credits_changed)
 
 
 func _on_open_requested() -> void:
@@ -41,6 +48,16 @@ func _on_open_requested() -> void:
 
 func _on_close_requested() -> void:
 	visible = false
+
+
+func _on_cargo_changed() -> void:
+	if visible:
+		_refresh_wallet()
+
+
+func _on_credits_changed(_credits: int) -> void:
+	if visible:
+		_refresh_wallet()
 
 
 func _build_ui() -> void:
@@ -78,6 +95,7 @@ func _build_ui() -> void:
 
 	_ship_label = _add_line(layout)
 	_credits_label = _add_line(layout)
+	_cargo_label = _add_line(layout)
 	_fuel_label = _add_line(layout)
 	_hull_label = _add_line(layout)
 	_job_label = _add_line(layout)
@@ -141,12 +159,16 @@ func _ship_display_name() -> String:
 
 func _refresh_wallet() -> void:
 	var credits: int = 0
+	var cargo_used: int = 0
+	var cargo_cap: int = BalanceEconomy.CARGO_CAPACITY
 	var fuel_pct: int = int(BalanceEconomy.PERCENT_SCALE)
 	var hull_pct: int = int(BalanceEconomy.PERCENT_SCALE)
 	var tree: SceneTree = get_tree()
 	var wallet: Node = null
+	var cargo: Node = null
 	if tree != null:
 		wallet = tree.get_first_node_in_group(&"wallet_service")
+		cargo = tree.get_first_node_in_group(&"cargo_service")
 	if wallet != null:
 		if wallet.has_method(&"credits"):
 			credits = _variant_to_int(wallet.call(&"credits"))
@@ -160,7 +182,10 @@ func _refresh_wallet() -> void:
 			var condition_max: float = _variant_to_float(wallet.call(&"condition_max"))
 			if condition_max > 0.0:
 				hull_pct = int(roundf((condition / condition_max) * BalanceEconomy.PERCENT_SCALE))
+	if cargo != null and cargo.has_method(&"used_volume"):
+		cargo_used = _variant_to_int(cargo.call(&"used_volume"))
 	_credits_label.text = BalanceSession.SHEET_CREDITS_FORMAT % credits
+	_cargo_label.text = BalanceSession.SHEET_CARGO_FORMAT % [cargo_used, cargo_cap]
 	_fuel_label.text = BalanceSession.SHEET_FUEL_FORMAT % fuel_pct
 	_hull_label.text = BalanceSession.SHEET_HULL_FORMAT % hull_pct
 

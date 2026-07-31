@@ -5,8 +5,9 @@ extends RefCounted
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B2
 ##
-## Collects optional sections (standing + recovery, wallet, world, mission) and
-## applies meta sections after load. World placement is applied by Main.
+## Collects optional sections (standing + recovery, wallet, cargo, world,
+## mission) and applies meta sections after load. World placement is applied
+## by Main.
 
 const SaveServiceScript = preload("res://src/systems/save/SaveService.gd")
 
@@ -22,6 +23,8 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	if not wallet_section.is_empty():
 		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
 
+	_merge_cargo_section(tree, sections)
+
 	var world_section: Dictionary = _world_section(tree)
 	if not world_section.is_empty():
 		sections[BalanceSession.SAVE_SECTION_WORLD] = world_section
@@ -33,10 +36,11 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	return sections
 
 
-## Apply standing (+ recovery), wallet, and mission. Not world (Main owns that).
+## Apply standing (+ recovery), wallet, cargo, and mission. Not world (Main owns that).
 static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_standing_from_sections(tree, sections)
 	_apply_wallet_from_sections(tree, sections)
+	_apply_cargo_from_sections(tree, sections)
 	_apply_mission_from_sections(tree, sections)
 
 
@@ -100,6 +104,28 @@ static func _wallet_section(tree: SceneTree) -> Dictionary:
 	if typeof(section) != TYPE_DICTIONARY:
 		return {}
 	return section
+
+
+static func _merge_cargo_section(tree: SceneTree, sections: Dictionary) -> void:
+	# Always write when cargo service exists (empty hold is valid state).
+	var cargo: Node = _node_in_group(tree, &"cargo_service")
+	if cargo == null or not cargo.has_method(&"to_section"):
+		return
+	var section: Variant = cargo.call(&"to_section")
+	if typeof(section) != TYPE_DICTIONARY:
+		sections[BalanceEconomy.SAVE_SECTION_CARGO] = {}
+		return
+	sections[BalanceEconomy.SAVE_SECTION_CARGO] = section
+
+
+static func _apply_cargo_from_sections(tree: SceneTree, sections: Dictionary) -> void:
+	var cargo: Node = _node_in_group(tree, &"cargo_service")
+	if cargo == null:
+		return
+	if sections.has(BalanceEconomy.SAVE_SECTION_CARGO) and cargo.has_method(&"apply_section"):
+		cargo.call(&"apply_section", sections[BalanceEconomy.SAVE_SECTION_CARGO])
+	elif cargo.has_method(&"reset"):
+		cargo.call(&"reset")
 
 
 static func _mission_section(tree: SceneTree) -> Dictionary:
