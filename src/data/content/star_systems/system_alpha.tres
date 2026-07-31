@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StarSystem" load_steps=2 format=3]
+
+; Empty gray-box system — Alpha A0. Patrolled space held by nobody until A2.
+[ext_resource type="Script" path="res://src/data/shapes/StarSystem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"system_alpha"
+display_name = "Alpha Reach"
+held_by = &"nobody"
+policing = &"patrolled"

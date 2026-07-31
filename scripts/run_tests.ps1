@@ -26,10 +26,14 @@ if (-not $testFiles -or $testFiles.Count -eq 0) {
 }
 
 Write-Host "=== GUT ==="
-# GUT CLI varies by version; use -s runner if present
-$gutRunner = Join-Path $root "addons\gut\gut_cmdln.gd"
-if (-not (Test-Path $gutRunner)) {
-    $gutRunner = Join-Path $root "addons\gut\gut_cmdln.gd"
+# GUT CLI: Godot prints expected ERROR: lines for assert_push_error /
+# assert_engine_error_count tests. Those go to stderr; capture exit code
+# before PowerShell confuses $? with stream noise.
+& $godot --path $root --headless -s "res://addons/gut/gut_cmdln.gd" -gdir=res://tests -gexit 2>&1 | ForEach-Object { "$_" }
+$code = $LASTEXITCODE
+if ($code -eq 0) {
+    Write-Host "PASS  GUT" -ForegroundColor Green
+} else {
+    Write-Host "FAIL  GUT exit $code" -ForegroundColor Red
 }
-& $godot --path $root --headless -s "res://addons/gut/gut_cmdln.gd" -gdir=res://tests -gexit
-exit $LASTEXITCODE
+exit $code

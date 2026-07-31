@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/console/DebugConsole.gd" id="1_console"]
+
+[node name="DebugConsole" type="CanvasLayer"]
+layer = 100
+visible = false
+script = ExtResource("1_console")
+
+[node name="Frame" type="PanelContainer" parent="."]
+anchor_right = 1.0
+offset_bottom = 320.0
+grow_horizontal = 2
+
+[node name="Layout" type="VBoxContainer" parent="Frame"]
+layout_mode = 2
+
+[node name="Output" type="RichTextLabel" parent="Frame/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = false
+scroll_following = true
+
+[node name="Entry" type="LineEdit" parent="Frame/Layout"]
+layout_mode = 2
+placeholder_text = "type a command, or help"
+caret_blink = true
