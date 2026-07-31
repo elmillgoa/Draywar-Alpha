@@ -556,6 +556,67 @@ Ship hull condition changed.
 **Emitted by** `src/systems/wallet/WalletService.gd`.
 **Listened to by** `FlightHUD`, `StationMenu`.
 
+## Thin combat (B4)
+
+### `on_weapon_fired()`
+
+A hitscan weapon discharged (player or hostile).
+
+No parameters.
+
+**Emitted by** `PlayerShip`, `HostileNpc`.
+**Listened to by** (optional VFX / HUD later).
+
+### `on_hostile_damaged(remaining_hp: float)`
+
+A combat hostile took damage.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `remaining_hp` | `float` | Hull remaining after the hit (>= 0). |
+
+**Emitted by** `src/world/HostileNpc.gd`.
+
+### `on_hostile_killed(system_id: StringName, victim_entity_id: StringName)`
+
+A combat hostile died. Attribution is reported separately via kill signals.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `system_id` | `StringName` | System where the kill happened. |
+| `victim_entity_id` | `StringName` | Entity tag of the victim (e.g. Free Haulers). |
+
+**Emitted by** `src/world/HostileNpc.gd`.
+**Listened to by** `FlightHUD` (combat prompt clear).
+
+### `on_player_damaged(condition: float)`
+
+Player hull took combat damage (condition after the hit).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `condition` | `float` | Hull condition after damage. |
+
+**Emitted by** `src/systems/wallet/WalletService.gd` (`apply_damage`).
+
+### `on_player_crippled()`
+
+Hull condition reached zero — ship dead in the water until dock + repair.
+
+No parameters.
+
+**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Listened to by** `PlayerShip` (disables flight), `FlightHUD`.
+
+### `on_player_repaired_from_cripple()`
+
+Full repair restored condition after a cripple fail state.
+
+No parameters.
+
+**Emitted by** `src/systems/wallet/WalletService.gd` (`repair_full`).
+**Listened to by** `PlayerShip` (may re-enable flight if undocked), `FlightHUD`.
+
 ### `on_mission_complete_requested()`
 
 UI asked to complete the active mission (destination check in MissionService).

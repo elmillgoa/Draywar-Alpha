@@ -150,6 +150,21 @@ func wear_condition(delta_seconds: float, afterburning: bool) -> void:
 	_set_condition(clampf(next, BalanceEconomy.CONDITION_MIN, BalanceEconomy.CONDITION_MAX))
 
 
+## Combat (or test) hull damage. Returns applied amount. Emits player damage bus.
+func apply_damage(amount: float) -> float:
+	if amount <= 0.0:
+		return 0.0
+	var before: float = _condition
+	_set_condition(_condition - amount)
+	EventBus.on_player_damaged.emit(_condition)
+	return before - _condition
+
+
+## True when the ship can still fly (condition above the cripple floor).
+func can_fly() -> bool:
+	return _condition > BalanceEconomy.CONDITION_MIN
+
+
 ## Speed factor from hull condition (1.0 healthy → CONDITION_MIN_SPEED_FACTOR).
 func speed_factor() -> float:
 	var t: float = _condition / BalanceEconomy.CONDITION_MAX
@@ -212,15 +227,20 @@ func refuel_chunk() -> float:
 func repair_full() -> bool:
 	if _condition >= BalanceEconomy.CONDITION_MAX:
 		return false
+	var was_crippled: bool = _condition <= BalanceEconomy.CONDITION_MIN
 	var missing: float = BalanceEconomy.CONDITION_MAX - _condition
 	var fraction: float = missing / BalanceEconomy.CONDITION_MAX
 	var cost: int = _ceil_credits(float(BalanceEconomy.REPAIR_FULL_COST) * fraction)
 	if cost <= 0:
 		_set_condition(BalanceEconomy.CONDITION_MAX)
+		if was_crippled:
+			EventBus.on_player_repaired_from_cripple.emit()
 		return true
 	if not try_spend(cost):
 		return false
 	_set_condition(BalanceEconomy.CONDITION_MAX)
+	if was_crippled:
+		EventBus.on_player_repaired_from_cripple.emit()
 	return true
 
 
@@ -308,11 +328,15 @@ func _set_fuel(value: float) -> void:
 
 
 func _set_condition(value: float) -> void:
+	var previous: float = _condition
 	var next: float = clampf(value, BalanceEconomy.CONDITION_MIN, BalanceEconomy.CONDITION_MAX)
 	if is_equal_approx(next, _condition):
 		return
 	_condition = next
 	EventBus.on_condition_changed.emit(_condition, BalanceEconomy.CONDITION_MAX)
+	# Fail state: first time condition hits the floor, ship is dead in the water.
+	if previous > BalanceEconomy.CONDITION_MIN and next <= BalanceEconomy.CONDITION_MIN:
+		EventBus.on_player_crippled.emit()
 
 
 # --- Console ---------------------------------------------------------------

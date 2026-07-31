@@ -29,6 +29,8 @@ var _gate_dest_id: StringName = &""
 var _gate_can_jump: bool = false
 var _dock_prompt_id: StringName = &""
 var _dock_can_dock: bool = false
+var _crippled: bool = false
+var _hostile_present: bool = false
 
 
 func _ready() -> void:
@@ -51,6 +53,9 @@ func _ready() -> void:
 	EventBus.on_mission_completed.connect(_on_mission_closed)
 	EventBus.on_mission_failed.connect(_on_mission_closed)
 	EventBus.on_mission_abandoned.connect(_on_mission_closed)
+	EventBus.on_player_crippled.connect(_on_player_crippled)
+	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
+	EventBus.on_hostile_killed.connect(_on_hostile_killed)
 	_refresh_mission_line()
 
 
@@ -72,6 +77,9 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_mission_completed, _on_mission_closed)
 	_disconnect(EventBus.on_mission_failed, _on_mission_closed)
 	_disconnect(EventBus.on_mission_abandoned, _on_mission_closed)
+	_disconnect(EventBus.on_player_crippled, _on_player_crippled)
+	_disconnect(EventBus.on_player_repaired_from_cripple, _on_player_repaired_from_cripple)
+	_disconnect(EventBus.on_hostile_killed, _on_hostile_killed)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -259,7 +267,7 @@ func _refresh_status_line() -> void:
 
 
 func _refresh_prompt() -> void:
-	# Station dock prompt wins over gate jump.
+	# Cripple fail-state beats everything free-flying; dock still wins when near.
 	if _dock_prompt_id != &"":
 		var station_label: String = _content_name(_dock_prompt_id)
 		if _dock_can_dock:
@@ -277,6 +285,9 @@ func _refresh_prompt() -> void:
 			return
 		_prompt_label.text = "APPROACHING %s" % station_label.to_upper()
 		return
+	if _crippled and _docked_station_id == &"":
+		_prompt_label.text = BalanceCombat.HUD_CRIPPLED_MESSAGE
+		return
 	if _gate_dest_id != &"":
 		var dest_label: String = _content_name(_gate_dest_id)
 		if _gate_can_jump:
@@ -286,6 +297,9 @@ func _refresh_prompt() -> void:
 				BalanceEconomy.JUMP_PROMPT_NO_FUEL_FORMAT
 				% [str(int(BalanceEconomy.JUMP_FUEL_COST)), dest_label]
 			)
+		return
+	if _hostile_present and _docked_station_id == &"":
+		_prompt_label.text = BalanceCombat.HUD_COMBAT_PROMPT
 		return
 	_prompt_label.text = ""
 
@@ -371,6 +385,8 @@ func _on_system_entered(system_id: StringName) -> void:
 	_system_label.text = "SYSTEM  %s" % _content_name(system_id).to_upper()
 	_refresh_status_line()
 	_refresh_nav_panel()
+	_refresh_hostile_flag()
+	_refresh_prompt()
 
 
 ## Nav readout text for tests and external readers (HERE + GATES lines).
@@ -475,3 +491,31 @@ func _on_docked(station_id: StringName) -> void:
 func _on_undocked(_station_id: StringName) -> void:
 	_docked_station_id = &""
 	_refresh_status_line()
+	_refresh_hostile_flag()
+	_refresh_prompt()
+
+
+func _on_player_crippled() -> void:
+	_crippled = true
+	_refresh_prompt()
+
+
+func _on_player_repaired_from_cripple() -> void:
+	_crippled = false
+	_refresh_prompt()
+
+
+func _on_hostile_killed(_system_id: StringName, _victim_entity_id: StringName) -> void:
+	_refresh_hostile_flag()
+	_refresh_prompt()
+
+
+func _refresh_hostile_flag() -> void:
+	_hostile_present = false
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if is_instance_valid(node):
+			_hostile_present = true
+			return

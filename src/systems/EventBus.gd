@@ -215,3 +215,21 @@ signal on_cargo_changed
 signal on_trade_completed(
 	side: StringName, commodity_id: StringName, quantity: int, credits_delta: int
 )
+
+## PlayerShip: weapon discharged (hitscan attempt).
+signal on_weapon_fired
+
+## HostileNpc: took damage; remaining hull after the hit.
+signal on_hostile_damaged(remaining_hp: float)
+
+## HostileNpc: died (before / with attribution report).
+signal on_hostile_killed(system_id: StringName, victim_entity_id: StringName)
+
+## WalletService: player hull took combat damage (condition after hit).
+signal on_player_damaged(condition: float)
+
+## WalletService: condition reached zero — fail state until dock + repair.
+signal on_player_crippled
+
+## WalletService: repair restored condition after a cripple.
+signal on_player_repaired_from_cripple

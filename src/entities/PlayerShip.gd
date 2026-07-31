@@ -25,6 +25,8 @@ var _console_open: bool = false
 var _pause_open: bool = false
 var _camera: Camera3D = null
 var _last_reported_speed: float = -1.0
+var _fire_cooldown: float = 0.0
+var _crippled: bool = false
 
 
 func _ready() -> void:
@@ -33,6 +35,8 @@ func _ready() -> void:
 	_build_mesh()
 	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
 	EventBus.on_pause_changed.connect(_on_pause_changed)
+	EventBus.on_player_crippled.connect(_on_player_crippled)
+	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
 	# Seed HUD listeners that connect before the first physics tick.
 	EventBus.on_player_throttle_changed.emit(_throttle)
 	EventBus.on_player_speed_changed.emit(0.0)
@@ -43,6 +47,10 @@ func _exit_tree() -> void:
 		EventBus.on_console_visibility_changed.disconnect(_on_console_visibility_changed)
 	if EventBus.on_pause_changed.is_connected(_on_pause_changed):
 		EventBus.on_pause_changed.disconnect(_on_pause_changed)
+	if EventBus.on_player_crippled.is_connected(_on_player_crippled):
+		EventBus.on_player_crippled.disconnect(_on_player_crippled)
+	if EventBus.on_player_repaired_from_cripple.is_connected(_on_player_repaired_from_cripple):
+		EventBus.on_player_repaired_from_cripple.disconnect(_on_player_repaired_from_cripple)
 
 
 ## Wire the chase camera used for mouse-aim raycasts.
@@ -52,9 +60,24 @@ func set_aim_camera(camera: Camera3D) -> void:
 
 ## Enable or disable pilot control (docked ships are frozen).
 func set_flight_enabled(enabled: bool) -> void:
+	# Crippled ships stay dead in the water until repair (dock still allowed).
+	if enabled and _crippled:
+		_flight_enabled = false
+		velocity = Vector3.ZERO
+		return
 	_flight_enabled = enabled
 	if not enabled:
 		velocity = Vector3.ZERO
+
+
+## True when pilot control is on (not docked / not crippled lock).
+func is_flight_enabled() -> bool:
+	return _flight_enabled
+
+
+## True after condition hit zero until repair.
+func is_crippled() -> bool:
+	return _crippled
 
 
 ## Current throttle 0..1.
@@ -85,10 +108,16 @@ func _apply_hull_from_library(id: StringName) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var dt: float = TimeScale.scaled_delta(delta)
+	if _fire_cooldown > 0.0:
+		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
+
 	if not _flight_enabled or _input_blocked:
 		return
 
-	var dt: float = TimeScale.scaled_delta(delta)
+	if Input.is_action_just_pressed(FlightInput.ACTION_FIRE):
+		try_fire()
+
 	_update_throttle(dt)
 	_update_facing(dt)
 
@@ -128,6 +157,30 @@ func _physics_process(delta: float) -> void:
 	if speed != _last_reported_speed:
 		_last_reported_speed = speed
 		EventBus.on_player_speed_changed.emit(speed)
+
+
+## Fire hitscan if cooldown / flight allow. Returns true when a shot went out.
+func try_fire() -> bool:
+	if not _flight_enabled or _input_blocked or _crippled:
+		return false
+	if _fire_cooldown > 0.0:
+		return false
+	_fire_cooldown = BalanceCombat.PLAYER_FIRE_COOLDOWN
+	EventBus.on_weapon_fired.emit()
+
+	var origin: Vector3 = global_position
+	var forward: Vector3 = -global_transform.basis.z
+	var hit_point: Vector3 = origin + forward * BalanceCombat.HITSCAN_RANGE
+	# World-layer hostiles: group + method only (no class_name cross-layer).
+	var target: Node = _hitscan_hostile(origin, forward)
+	if target != null:
+		var as_node3d: Node3D = target as Node3D
+		if as_node3d != null:
+			hit_point = as_node3d.global_position
+		if target.has_method(&"take_damage"):
+			target.call(&"take_damage", BalanceCombat.PLAYER_WEAPON_DAMAGE)
+	_spawn_beam_flash(origin, hit_point, BalanceCombat.COLOR_BEAM)
+	return true
 
 
 func _update_throttle(dt: float) -> void:
@@ -265,3 +318,114 @@ func _wallet_speed_factor() -> float:
 		var as_int: int = factor
 		return float(as_int)
 	return 1.0
+
+
+func _on_player_crippled() -> void:
+	_crippled = true
+	set_flight_enabled(false)
+	_throttle = BalanceFlight.THROTTLE_MIN
+	EventBus.on_player_throttle_changed.emit(_throttle)
+
+
+func _on_player_repaired_from_cripple() -> void:
+	_crippled = false
+	# Stay frozen while docked; DockingService undock re-enables flight.
+	if _is_docked():
+		return
+	set_flight_enabled(true)
+
+
+func _is_docked() -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return false
+	var docking: Node = tree.get_first_node_in_group(&"docking_service")
+	if docking == null or not docking.has_method(&"docked_station_id"):
+		return false
+	var station_raw: Variant = docking.call(&"docked_station_id")
+	if typeof(station_raw) == TYPE_STRING_NAME:
+		var as_name: StringName = station_raw
+		return as_name != &""
+	if typeof(station_raw) == TYPE_STRING:
+		var as_text: String = station_raw
+		return not as_text.is_empty()
+	return false
+
+
+func _hitscan_hostile(origin: Vector3, forward: Vector3) -> Node:
+	var dir: Vector3 = forward.normalized()
+	var world: World3D = get_world_3d()
+	if world != null:
+		var space: PhysicsDirectSpaceState3D = world.direct_space_state
+		if space != null:
+			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+				origin, origin + dir * BalanceCombat.HITSCAN_RANGE
+			)
+			query.exclude = [get_rid()]
+			var result: Dictionary = space.intersect_ray(query)
+			if not result.is_empty() and result.has("collider"):
+				var found: Node = _as_hostile_node(result["collider"])
+				if found != null:
+					return found
+
+	# Group-scan fallback (reliable in headless / before physics settle).
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	var best: Node = null
+	var best_dist: float = BalanceCombat.HITSCAN_RANGE + 1.0
+	var cos_limit: float = cos(BalanceCombat.HITSCAN_CONE_HALF_ANGLE)
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if not is_instance_valid(node):
+			continue
+		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
+			continue
+		var body: Node3D = node as Node3D
+		if body == null:
+			continue
+		var to_target: Vector3 = body.global_position - origin
+		var dist: float = to_target.length()
+		if dist > BalanceCombat.HITSCAN_RANGE or dist < BalanceFlight.DIRECTION_EPSILON:
+			continue
+		var toward: Vector3 = to_target / dist
+		if toward.dot(dir) < cos_limit:
+			continue
+		if dist < best_dist:
+			best_dist = dist
+			best = node
+	return best
+
+
+func _as_hostile_node(collider: Variant) -> Node:
+	if not (collider is Node):
+		return null
+	var node: Node = collider
+	while node != null:
+		if node.is_in_group(BalanceCombat.GROUP_HOSTILE):
+			return node
+		node = node.get_parent()
+	return null
+
+
+func _spawn_beam_flash(from: Vector3, to: Vector3, color: Color) -> void:
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	var beam: MeshInstance3D = MeshInstance3D.new()
+	var box: BoxMesh = BoxMesh.new()
+	var length: float = maxf(from.distance_to(to), BalanceCombat.BEAM_WIDTH)
+	box.size = Vector3(BalanceCombat.BEAM_WIDTH, BalanceCombat.BEAM_WIDTH, length)
+	beam.mesh = box
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = color
+	beam.material_override = mat
+	parent.add_child(beam)
+	beam.global_position = from.lerp(to, BalanceCombat.BEAM_MIDPOINT)
+	if (to - from).length_squared() > BalanceFlight.DIRECTION_EPSILON:
+		beam.look_at(to, Vector3.UP)
+	var tree: SceneTree = get_tree()
+	if tree != null:
+		tree.create_timer(BalanceCombat.BEAM_DURATION).timeout.connect(beam.queue_free)
+	else:
+		beam.queue_free()

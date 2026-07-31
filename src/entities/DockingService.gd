@@ -193,7 +193,8 @@ func _on_undock_requested(station_id: StringName) -> void:
 	_ship.velocity = Vector3.ZERO
 	_ship.set_throttle(BalanceFlight.UNDOCK_THROTTLE)
 	_ship.visible = true
-	_ship.set_flight_enabled(true)
+	# Crippled ships stay frozen until repair (dock action still worked).
+	_ship.set_flight_enabled(_wallet_can_fly())
 	EventBus.on_undocked.emit(left)
 
 
@@ -203,3 +204,13 @@ func _on_console_visibility_changed(open: bool) -> void:
 
 func _on_pause_changed(open: bool) -> void:
 	_pause_open = open
+
+
+func _wallet_can_fly() -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return true
+	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
+	if wallet == null or not wallet.has_method(&"can_fly"):
+		return true
+	return wallet.call(&"can_fly") == true

@@ -16,6 +16,8 @@ const ACTION_AFTERBURNER: StringName = &"afterburner"
 const ACTION_DOCK: StringName = &"dock"
 ## Pause menu (Escape). Same id as BalanceSession.ACTION_PAUSE.
 const ACTION_PAUSE: StringName = &"pause_menu"
+## Combat fire (Space). Name matches BalanceCombat.ACTION_FIRE.
+const ACTION_FIRE: StringName = &"fire_weapon"
 
 
 ## Ensures every flight action exists with its default key. Idempotent.
@@ -27,6 +29,7 @@ static func ensure_actions() -> void:
 	_bind(ACTION_AFTERBURNER, KEY_SHIFT)
 	_bind(ACTION_DOCK, KEY_F)
 	_bind(ACTION_PAUSE, KEY_ESCAPE)
+	_bind(ACTION_FIRE, BalanceCombat.FIRE_KEY)
 
 
 static func _bind(action: StringName, physical_key: Key) -> void:

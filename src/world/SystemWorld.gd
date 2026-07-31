@@ -33,6 +33,7 @@ func build() -> void:
 	_place_stations(system)
 	_place_gates(system)
 	_spawn_npc_traffic()
+	_spawn_hostile()
 	built.emit(system_id)
 	EventBus.on_system_entered.emit(system_id)
 
@@ -249,6 +250,17 @@ func _spawn_npc_traffic() -> void:
 	_npc_traffic.name = "NpcTraffic"
 	add_child(_npc_traffic)
 	_npc_traffic.rebuild_for_system(system_id)
+
+
+## One combat hostile near the station so a fight is findable without console.
+func _spawn_hostile() -> void:
+	var pos: Vector3 = BalanceFlight.STATION_POSITION + BalanceCombat.SPAWN_OFFSET
+	HostileNpc.spawn_under(self, pos)
+
+
+## Test / console helper: place a hostile under this world at an offset from station.
+func spawn_hostile_at(offset: Vector3) -> HostileNpc:
+	return HostileNpc.spawn_under(self, BalanceFlight.STATION_POSITION + offset)
 
 
 func _make_station_body(pos: Vector3, color: Color) -> Node3D:
