@@ -31,3 +31,7 @@ desktop.ini
 # Session / agent worktrees
 .claude/worktrees/
 .grok/worktrees/
+
+# Vendor zips (install from C:\Godot\godot-mcp-pro)
+godot-mcp-pro*.zip
+
