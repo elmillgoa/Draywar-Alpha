@@ -89,3 +89,17 @@ Elliot’s words only. Agents never sign these.
 3. **More than flying shapes** — a real play session, not a tech demo  
 4. **Minimal content for real vetting** — enough places/jobs/people to test the fantasy properly  
 5. **Current build is below that bar** — less than the basics  
+
+### Path C — Hybrid (Elliot, same session)
+
+**Choice:** C (hybrid). Not full game. Enough game to decide if full/beta is worth building.
+
+**Elliot (paraphrase + intent locked):**
+
+- Does not need full game.  
+- Needs enough to decide if building the full game is worth it.  
+- Does **not** need full graphics and sounds.  
+- **Does** need menu, character sheet, job tracking, trade, combat, etc.  
+- Not at 100% — good enough to decide on beta.  
+
+**Authority doc:** `Alpha/ALPHA_DECISION_BAR.md` (checklist must be ratified before mass build).
