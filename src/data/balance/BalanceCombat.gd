@@ -19,46 +19,47 @@ const VICTIM_ENTITY_ID: StringName = &"entity_free_haulers"
 
 # --- Input -----------------------------------------------------------------
 
-## Fire action registered by FlightInput (Space — keeps mouse free for aim).
+## Fire action registered by FlightInput (Space + left mouse).
 const ACTION_FIRE: StringName = &"fire_weapon"
 const FIRE_KEY: Key = KEY_SPACE
+const FIRE_MOUSE_BUTTON: MouseButton = MOUSE_BUTTON_LEFT
 
 # --- Player weapon ---------------------------------------------------------
 
 ## Seconds between player shots.
-const PLAYER_FIRE_COOLDOWN: float = 0.35
+const PLAYER_FIRE_COOLDOWN: float = 0.28
 
 ## Hitscan max range (metres).
-const HITSCAN_RANGE: float = 180.0
+const HITSCAN_RANGE: float = 220.0
 
 ## Damage applied to a hostile on a successful hitscan hit.
-const PLAYER_WEAPON_DAMAGE: float = 34.0
+const PLAYER_WEAPON_DAMAGE: float = 40.0
 
-## Cone half-angle (radians) for group-scan hitscan fallback.
-const HITSCAN_CONE_HALF_ANGLE: float = 0.35
+## Cone half-angle (radians) for group-scan hitscan fallback (~35°).
+const HITSCAN_CONE_HALF_ANGLE: float = 0.60
 
 # --- Hostile ---------------------------------------------------------------
 
-## Hostile hull points (dies at 0).
+## Hostile hull points (dies at 0). ~3 player hits.
 const HOSTILE_HP: float = 100.0
 
-## Damage applied to player condition per hostile shot.
-const HOSTILE_DAMAGE: float = 18.0
+## Damage applied to player condition per hostile shot (not an instant melt).
+const HOSTILE_DAMAGE: float = 8.0
 
 ## Seconds between hostile shots while engaged.
-const HOSTILE_FIRE_COOLDOWN: float = 1.1
+const HOSTILE_FIRE_COOLDOWN: float = 1.6
 
 ## Distance at which the hostile turns and fires on the player (metres).
-const ENGAGE_RANGE: float = 140.0
+const ENGAGE_RANGE: float = 110.0
 
 ## Hostile turn rate while tracking the player (radians / second).
-const HOSTILE_TURN_RATE: float = 1.6
+const HOSTILE_TURN_RATE: float = 1.4
 
 ## Hostile closing speed while engaged (m/s).
-const HOSTILE_MOVE_SPEED: float = 22.0
+const HOSTILE_MOVE_SPEED: float = 18.0
 
 ## Stop closing when closer than this (metres).
-const HOSTILE_HOLD_DISTANCE: float = 35.0
+const HOSTILE_HOLD_DISTANCE: float = 40.0
 
 ## Red-tinted capsule silhouette.
 const COLOR_HOSTILE: Color = Color(0.92, 0.22, 0.18)
@@ -80,8 +81,15 @@ const HOSTILE_HITBOX_HEIGHT: float = 6.0
 
 # --- Spawn -----------------------------------------------------------------
 
-## World offset from station anchor for the one play hostile.
-const SPAWN_OFFSET: Vector3 = Vector3(55.0, 6.0, 95.0)
+## World offset from station anchor — near the gate line, NOT the undock pad.
+## Station is at origin; gate sits around GATE_POSITION — keep pirates there.
+const SPAWN_OFFSET: Vector3 = Vector3(200.0, 14.0, -130.0)
+
+## No hostile fire / engage inside this radius of any station (safe undock).
+const STATION_SAFE_RADIUS: float = 110.0
+
+## After undock, hostiles wait this long before they may fire (seconds).
+const UNDOCK_GRACE_SECONDS: float = 5.0
 
 ## Patrolled / government systems do not spawn combat hostiles (safe undock).
 ## Contested and lawless systems may place one thin pirate for B4 vetting.
@@ -107,7 +115,7 @@ const KILL_EVIDENCE: bool = false
 # --- HUD -------------------------------------------------------------------
 
 ## Shown while a combat hostile exists and the ship is free-flying.
-const HUD_COMBAT_PROMPT: String = "SPACE TO FIRE"
+const HUD_COMBAT_PROMPT: String = "HOSTILE — AIM + SPACE / LMB TO FIRE"
 
 ## Fail state when hull condition hits zero undocked.
 const HUD_CRIPPLED_MESSAGE: String = "SHIP CRIPPLED — DOCK FOR REPAIR"

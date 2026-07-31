@@ -105,8 +105,9 @@ const NEW_GAME_TIP_TITLE: String = "How to fly"
 const NEW_GAME_TIP_BODY: String = (
 	"Mouse aim · WASD move · Shift afterburn\n"
 	+ "F  dock at station / jump at gate\n"
-	+ "Space  fire\n"
-	+ "Esc  pause · captain sheet · save"
+	+ "Space or left mouse  fire (aim first)\n"
+	+ "Esc  pause · captain sheet · save\n"
+	+ "Pirates sit near gates — not on the undock pad"
 )
 const NEW_GAME_TIP_DISMISS: String = "Got it"
 

@@ -30,6 +30,7 @@ static func ensure_actions() -> void:
 	_bind(ACTION_DOCK, KEY_F)
 	_bind(ACTION_PAUSE, KEY_ESCAPE)
 	_bind(ACTION_FIRE, BalanceCombat.FIRE_KEY)
+	_bind_mouse(ACTION_FIRE, BalanceCombat.FIRE_MOUSE_BUTTON)
 
 
 static func _bind(action: StringName, physical_key: Key) -> void:
@@ -42,3 +43,15 @@ static func _bind(action: StringName, physical_key: Key) -> void:
 	var key: InputEventKey = InputEventKey.new()
 	key.physical_keycode = physical_key
 	InputMap.action_add_event(action, key)
+
+
+static func _bind_mouse(action: StringName, button: MouseButton) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	for existing: InputEvent in InputMap.action_get_events(action):
+		var existing_mouse: InputEventMouseButton = existing as InputEventMouseButton
+		if existing_mouse != null and existing_mouse.button_index == button:
+			return
+	var mouse: InputEventMouseButton = InputEventMouseButton.new()
+	mouse.button_index = button
+	InputMap.action_add_event(action, mouse)

@@ -14,17 +14,40 @@ var hp: float = BalanceCombat.HOSTILE_HP
 
 var _fire_cooldown: float = 0.0
 var _dead: bool = false
+## EventBus dock mirror — group lookup alone was missing docked state in play.
+var _player_docked: bool = false
+var _undock_grace: float = 0.0
 
 
 func _ready() -> void:
 	add_to_group(BalanceCombat.GROUP_HOSTILE)
 	_build_mesh()
 	TimeScale.set_combat_lock(true)
+	EventBus.on_docked.connect(_on_player_docked)
+	EventBus.on_undocked.connect(_on_player_undocked)
+	# If we spawn while already docked, do not open fire on the berth.
+	_player_docked = _query_docked_now()
 
 
 func _exit_tree() -> void:
+	if EventBus.on_docked.is_connected(_on_player_docked):
+		EventBus.on_docked.disconnect(_on_player_docked)
+	if EventBus.on_undocked.is_connected(_on_player_undocked):
+		EventBus.on_undocked.disconnect(_on_player_undocked)
 	if not _dead:
 		_release_combat_lock_if_last()
+
+
+func _on_player_docked(_station_id: StringName) -> void:
+	_player_docked = true
+	_undock_grace = 0.0
+	velocity = Vector3.ZERO
+
+
+func _on_player_undocked(_station_id: StringName) -> void:
+	_player_docked = false
+	# Safe undock window so station airspace is not a free kill.
+	_undock_grace = BalanceCombat.UNDOCK_GRACE_SECONDS
 
 
 ## Remaining hull.
@@ -62,14 +85,21 @@ func _physics_process(delta: float) -> void:
 	var dt: float = TimeScale.scaled_delta(delta)
 	if _fire_cooldown > 0.0:
 		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
+	if _undock_grace > 0.0:
+		_undock_grace = maxf(0.0, _undock_grace - dt)
 
-	# Docked ships are not combat targets (station airspace / storyboard safe).
-	if _player_is_docked():
+	# Docked / station airspace / undock grace: hold fire.
+	if _player_docked or _query_docked_now():
+		_player_docked = true
 		velocity = Vector3.ZERO
 		return
 
 	var player: Node3D = _player_ship()
 	if player == null:
+		return
+
+	if _player_in_station_safe_zone(player.global_position):
+		velocity = Vector3.ZERO
 		return
 
 	var to_player: Vector3 = player.global_position - global_position
@@ -80,11 +110,13 @@ func _physics_process(delta: float) -> void:
 	_face_toward(to_player, dt)
 	_close_distance(to_player, distance, dt)
 
+	if _undock_grace > 0.0:
+		return
 	if _fire_cooldown <= 0.0:
 		_fire_at_player(player)
 
 
-func _player_is_docked() -> bool:
+func _query_docked_now() -> bool:
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return false
@@ -99,6 +131,32 @@ func _player_is_docked() -> bool:
 		var as_text: String = station_raw
 		return not as_text.is_empty()
 	return false
+
+
+## Station approaches stay peaceful; fight is out near the gate / open space.
+func _player_in_station_safe_zone(player_pos: Vector3) -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return (
+			player_pos.distance_to(BalanceFlight.STATION_POSITION)
+			<= BalanceCombat.STATION_SAFE_RADIUS
+		)
+	var world: Node = tree.get_first_node_in_group(BalanceSession.GROUP_SYSTEM_WORLD)
+	if world != null and world.has_method(&"station_positions"):
+		var positions_raw: Variant = world.call(&"station_positions")
+		if typeof(positions_raw) == TYPE_DICTIONARY:
+			var positions: Dictionary = positions_raw
+			for key: Variant in positions.keys():
+				var anchor: Variant = positions[key]
+				if typeof(anchor) == TYPE_VECTOR3:
+					var pos: Vector3 = anchor
+					if player_pos.distance_to(pos) <= BalanceCombat.STATION_SAFE_RADIUS:
+						return true
+			if not positions.is_empty():
+				return false
+	return (
+		player_pos.distance_to(BalanceFlight.STATION_POSITION) <= BalanceCombat.STATION_SAFE_RADIUS
+	)
 
 
 func _face_toward(to_player: Vector3, dt: float) -> void:
@@ -138,6 +196,10 @@ func _close_distance(to_player: Vector3, distance: float, dt: float) -> void:
 
 
 func _fire_at_player(player: Node3D) -> void:
+	if _player_docked or _query_docked_now() or _undock_grace > 0.0:
+		return
+	if _player_in_station_safe_zone(player.global_position):
+		return
 	_fire_cooldown = BalanceCombat.HOSTILE_FIRE_COOLDOWN
 	EventBus.on_weapon_fired.emit()
 	_spawn_beam(global_position, player.global_position, BalanceCombat.COLOR_HOSTILE_BEAM)

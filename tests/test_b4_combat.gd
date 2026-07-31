@@ -278,11 +278,54 @@ func test_hostile_does_not_fire_while_player_docked() -> void:
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
 	space.add_child(ship)
-	ship.global_position = Vector3.ZERO
+	# Outside station safe radius so only the docked flag is protecting us.
+	ship.global_position = Vector3(0.0, 0.0, BalanceCombat.STATION_SAFE_RADIUS + 40.0)
 
-	var hostile: HostileNpc = HostileNpc.spawn_under(space, Vector3(0.0, 0.0, -20.0))
+	var hostile: HostileNpc = HostileNpc.spawn_under(
+		space, ship.global_position + Vector3(0.0, 0.0, -20.0)
+	)
+	EventBus.on_docked.emit(&"station_beta_hub")
 	await get_tree().process_frame
-	# Simulate engage ticks while reported docked.
 	for _i: int in 5:
 		hostile._physics_process(0.5)
 	assert_eq(wallet.condition(), start, "docked player must not take combat fire")
+
+
+func test_station_safe_zone_blocks_fire_when_undocked_near_station() -> void:
+	var space: Node3D = Node3D.new()
+	add_child_autofree(space)
+	var wallet: WalletService = WalletService.new()
+	space.add_child(wallet)
+	await get_tree().process_frame
+	wallet.reset()
+	var start: float = wallet.condition()
+
+	var ship: PlayerShip = PlayerShip.new()
+	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
+	space.add_child(ship)
+	ship.global_position = BalanceFlight.STATION_POSITION + Vector3(0.0, 5.0, 40.0)
+
+	var hostile: HostileNpc = HostileNpc.spawn_under(
+		space, ship.global_position + Vector3(10.0, 0.0, 10.0)
+	)
+	EventBus.on_undocked.emit(&"station_beta_hub")
+	# Skip undock grace so only the safe radius is tested.
+	hostile._undock_grace = 0.0
+	await get_tree().process_frame
+	for _i: int in 5:
+		hostile._physics_process(0.5)
+	assert_eq(wallet.condition(), start, "station airspace must stay peaceful on undock")
+
+
+func test_pirate_spawn_offset_is_outside_station_safe_radius() -> void:
+	var dist: float = BalanceCombat.SPAWN_OFFSET.length()
+	assert_gt(dist, BalanceCombat.STATION_SAFE_RADIUS, "pirates must not camp the undock pad")
+
+
+func test_player_can_fire_while_crippled_if_free_flying() -> void:
+	var ship: PlayerShip = PlayerShip.new()
+	add_child_autofree(ship)
+	await get_tree().process_frame
+	ship.set_flight_enabled(false)
+	ship._crippled = true
+	assert_true(ship.try_fire(), "crippled free-flying ship can still shoot back")

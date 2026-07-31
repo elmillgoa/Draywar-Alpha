@@ -112,11 +112,14 @@ func _physics_process(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
 
+	# Weapons work free-flying even when hull is crippled (last stand).
+	# Flight throttle still gated below.
+	if not _input_blocked and not _is_docked():
+		if Input.is_action_just_pressed(FlightInput.ACTION_FIRE):
+			try_fire()
+
 	if not _flight_enabled or _input_blocked:
 		return
-
-	if Input.is_action_just_pressed(FlightInput.ACTION_FIRE):
-		try_fire()
 
 	_update_throttle(dt)
 	_update_facing(dt)
@@ -159,9 +162,10 @@ func _physics_process(delta: float) -> void:
 		EventBus.on_player_speed_changed.emit(speed)
 
 
-## Fire hitscan if cooldown / flight allow. Returns true when a shot went out.
+## Fire hitscan if cooldown allows. Returns true when a shot went out.
+## Free-flying only (not docked / not menu-blocked). Aim follows mouse.
 func try_fire() -> bool:
-	if not _flight_enabled or _input_blocked or _crippled:
+	if _input_blocked or _is_docked():
 		return false
 	if _fire_cooldown > 0.0:
 		return false
@@ -169,10 +173,16 @@ func try_fire() -> bool:
 	EventBus.on_weapon_fired.emit()
 
 	var origin: Vector3 = global_position
-	var forward: Vector3 = -global_transform.basis.z
-	var hit_point: Vector3 = origin + forward * BalanceCombat.HITSCAN_RANGE
+	# Shoot toward mouse aim (same point the ship turns toward), not only nose.
+	var aim_point: Vector3 = _mouse_aim_point()
+	var aim_dir: Vector3 = aim_point - origin
+	if aim_dir.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		aim_dir = -global_transform.basis.z
+	else:
+		aim_dir = aim_dir.normalized()
+	var hit_point: Vector3 = origin + aim_dir * BalanceCombat.HITSCAN_RANGE
 	# World-layer hostiles: group + method only (no class_name cross-layer).
-	var target: Node = _hitscan_hostile(origin, forward)
+	var target: Node = _hitscan_hostile(origin, aim_dir)
 	if target != null:
 		var as_node3d: Node3D = target as Node3D
 		if as_node3d != null:
