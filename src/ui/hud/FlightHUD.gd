@@ -9,6 +9,8 @@ extends CanvasLayer
 ## Status line shows the protected standing moment (local controller only).
 ## Credits, fuel, hull, and gate jump prompts are session readouts.
 
+const CombatReticleScript = preload("res://src/ui/hud/CombatReticle.gd")
+
 var _system_label: Label = null
 var _speed_label: Label = null
 var _throttle_label: Label = null
@@ -23,6 +25,7 @@ var _nav_title_label: Label = null
 var _nav_here_label: Label = null
 var _nav_gates_label: Label = null
 var _root: Control = null
+var _combat_reticle: Control = null
 
 var _current_system_id: StringName = &""
 var _docked_station_id: StringName = &""
@@ -194,6 +197,10 @@ func _build_labels() -> void:
 		)
 	)
 	_target_label.text = BalanceCombat.HUD_TARGET_LOCK_NONE
+
+	_combat_reticle = CombatReticleScript.new()
+	_combat_reticle.name = "CombatReticle"
+	_root.add_child(_combat_reticle)
 
 	_build_nav_panel(_root)
 

@@ -87,6 +87,11 @@ func lock_display_name() -> String:
 	return BalanceCombat.TARGET_LOCK_DEFAULT_NAME
 
 
+## World velocity for lead intercept (CharacterBody3D velocity).
+func combat_velocity() -> Vector3:
+	return velocity
+
+
 ## Brighten silhouette while the player has this ship locked.
 func set_lock_highlight(on: bool) -> void:
 	_lock_highlighted = on

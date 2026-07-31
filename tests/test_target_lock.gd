@@ -51,25 +51,6 @@ func test_tab_cycles_near_to_far_then_wraps() -> void:
 	assert_eq(ship.locked_target(), a, "wrap back to closest")
 
 
-func test_fire_prefers_locked_target_in_range() -> void:
-	var space: Node3D = Node3D.new()
-	add_child_autofree(space)
-	var ship: PlayerShip = PlayerShip.new()
-	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
-	space.add_child(ship)
-	ship.global_position = Vector3.ZERO
-	await get_tree().process_frame
-
-	# Behind the ship; pure nose hitscan would miss without lock.
-	var hostile: HostileNpc = HostileNpc.spawn_under(space, Vector3(0.0, 0.0, 50.0))
-	await get_tree().process_frame
-	ship.cycle_target_lock()
-	assert_eq(ship.locked_target(), hostile)
-	var before: float = hostile.remaining_hp()
-	assert_true(ship.try_fire())
-	assert_lt(hostile.remaining_hp(), before, "lock should let fire hit off-nose targets")
-
-
 func test_lock_clears_when_no_hostiles() -> void:
 	var ship: PlayerShip = PlayerShip.new()
 	add_child_autofree(ship)

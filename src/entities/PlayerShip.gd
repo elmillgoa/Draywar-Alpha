@@ -10,6 +10,8 @@ extends CharacterBody3D
 ## session-only (no save). Ignores input while the debug console is open or
 ## while docked.
 
+const PlayerProjectileScript = preload("res://src/entities/PlayerProjectile.gd")
+
 var hull_id: StringName = BalanceFlight.PLAYER_HULL_ID
 var _max_speed: float = BalanceFlight.SHIP_MAX_SPEED
 var _acceleration: float = BalanceFlight.SHIP_ACCELERATION
@@ -195,8 +197,8 @@ func locked_target() -> Node:
 	return null
 
 
-## Fire hitscan if cooldown allows. Returns true when a shot went out.
-## Free-flying only. Prefers locked target in range; else mouse-aim hitscan.
+## Fire a bolt along the mouse aim. No auto-hit on lock (beginner freighter).
+## Lock only marks the target; put the reticle on the lead pip to score.
 func try_fire() -> bool:
 	if _input_blocked or _is_docked():
 		return false
@@ -212,18 +214,17 @@ func try_fire() -> bool:
 		aim_dir = -global_transform.basis.z
 	else:
 		aim_dir = aim_dir.normalized()
-	var hit_point: Vector3 = origin + aim_dir * BalanceCombat.HITSCAN_RANGE
 
-	var target: Node = _locked_target_in_weapon_range(origin)
-	if target == null:
-		target = _hitscan_hostile(origin, aim_dir)
-	if target != null:
-		var as_node3d: Node3D = target as Node3D
-		if as_node3d != null:
-			hit_point = as_node3d.global_position
-		if target.has_method(&"take_damage"):
-			target.call(&"take_damage", BalanceCombat.PLAYER_WEAPON_DAMAGE)
-	_spawn_beam_flash(origin, hit_point, BalanceCombat.COLOR_BEAM)
+	var parent: Node = get_parent()
+	if parent == null:
+		return false
+	var bolt: Node = PlayerProjectileScript.new()
+	parent.add_child(bolt)
+	if bolt is Node3D:
+		var bolt_3d: Node3D = bolt as Node3D
+		bolt_3d.global_position = origin + aim_dir * BalanceCombat.PROJECTILE_LENGTH
+	if bolt.has_method(&"launch"):
+		bolt.call(&"launch", aim_dir)
 	return true
 
 
@@ -310,18 +311,6 @@ func _refresh_lock_hud_if_needed() -> void:
 		_clear_target_lock(true)
 		return
 	_emit_lock_hud()
-
-
-func _locked_target_in_weapon_range(origin: Vector3) -> Node:
-	var target: Node = locked_target()
-	if target == null:
-		return null
-	var body: Node3D = target as Node3D
-	if body == null:
-		return null
-	if origin.distance_to(body.global_position) > BalanceCombat.HITSCAN_RANGE:
-		return null
-	return target
 
 
 func _on_hostile_killed_clear_lock(_system_id: StringName, _victim_entity_id: StringName) -> void:
@@ -502,82 +491,3 @@ func _is_docked() -> bool:
 		var as_text: String = station_raw
 		return not as_text.is_empty()
 	return false
-
-
-func _hitscan_hostile(origin: Vector3, forward: Vector3) -> Node:
-	var dir: Vector3 = forward.normalized()
-	var world: World3D = get_world_3d()
-	if world != null:
-		var space: PhysicsDirectSpaceState3D = world.direct_space_state
-		if space != null:
-			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-				origin, origin + dir * BalanceCombat.HITSCAN_RANGE
-			)
-			query.exclude = [get_rid()]
-			var result: Dictionary = space.intersect_ray(query)
-			if not result.is_empty() and result.has("collider"):
-				var found: Node = _as_hostile_node(result["collider"])
-				if found != null:
-					return found
-
-	# Group-scan fallback (reliable in headless / before physics settle).
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	var best: Node = null
-	var best_dist: float = BalanceCombat.HITSCAN_RANGE + 1.0
-	var cos_limit: float = cos(BalanceCombat.HITSCAN_CONE_HALF_ANGLE)
-	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
-		if not is_instance_valid(node):
-			continue
-		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
-			continue
-		var body: Node3D = node as Node3D
-		if body == null:
-			continue
-		var to_target: Vector3 = body.global_position - origin
-		var dist: float = to_target.length()
-		if dist > BalanceCombat.HITSCAN_RANGE or dist < BalanceFlight.DIRECTION_EPSILON:
-			continue
-		var toward: Vector3 = to_target / dist
-		if toward.dot(dir) < cos_limit:
-			continue
-		if dist < best_dist:
-			best_dist = dist
-			best = node
-	return best
-
-
-func _as_hostile_node(collider: Variant) -> Node:
-	if not (collider is Node):
-		return null
-	var node: Node = collider
-	while node != null:
-		if node.is_in_group(BalanceCombat.GROUP_HOSTILE):
-			return node
-		node = node.get_parent()
-	return null
-
-
-func _spawn_beam_flash(from: Vector3, to: Vector3, color: Color) -> void:
-	var parent: Node = get_parent()
-	if parent == null:
-		return
-	var beam: MeshInstance3D = MeshInstance3D.new()
-	var box: BoxMesh = BoxMesh.new()
-	var length: float = maxf(from.distance_to(to), BalanceCombat.BEAM_WIDTH)
-	box.size = Vector3(BalanceCombat.BEAM_WIDTH, BalanceCombat.BEAM_WIDTH, length)
-	beam.mesh = box
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = color
-	beam.material_override = mat
-	parent.add_child(beam)
-	beam.global_position = from.lerp(to, BalanceCombat.BEAM_MIDPOINT)
-	if (to - from).length_squared() > BalanceFlight.DIRECTION_EPSILON:
-		beam.look_at(to, Vector3.UP)
-	var tree: SceneTree = get_tree()
-	if tree != null:
-		tree.create_timer(BalanceCombat.BEAM_DURATION).timeout.connect(beam.queue_free)
-	else:
-		beam.queue_free()

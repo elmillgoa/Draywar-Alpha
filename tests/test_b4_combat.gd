@@ -208,24 +208,27 @@ func test_repair_restores_condition_and_can_reenable_flight() -> void:
 	assert_true(wallet.can_fly())
 
 
-func test_hitscan_fire_damages_hostile_in_range() -> void:
+func test_bolt_fire_spawns_projectile_along_aim() -> void:
 	var host: Node3D = Node3D.new()
 	add_child_autofree(host)
 
 	var ship: PlayerShip = PlayerShip.new()
 	host.add_child(ship)
 	ship.global_position = Vector3.ZERO
-	# Face -Z (default); place hostile along forward.
-	var hostile: HostileNpc = HostileNpc.spawn_under(host, Vector3(0.0, 0.0, -40.0))
 	await get_tree().process_frame
 
-	var before_hp: float = hostile.remaining_hp()
-	assert_true(ship.try_fire(), "flight-enabled ship should fire")
+	var before_children: int = host.get_child_count()
+	assert_true(ship.try_fire(), "free-flying ship should fire a bolt")
 	assert_eq(_weapon_fired, 1)
-	assert_lt(hostile.remaining_hp(), before_hp)
-	assert_almost_eq(
-		hostile.remaining_hp(), before_hp - BalanceCombat.PLAYER_WEAPON_DAMAGE, TOLERANCE
-	)
+	assert_gt(host.get_child_count(), before_children, "bolt parented under world/ship parent")
+	var found_bolt: bool = false
+	for child: Node in host.get_children():
+		if child.get_script() != null:
+			var path: String = str(child.get_script().resource_path)
+			if path.ends_with("PlayerProjectile.gd"):
+				found_bolt = true
+				break
+	assert_true(found_bolt, "PlayerProjectile spawned")
 
 
 func test_patrolled_alpha_does_not_spawn_hostile() -> void:

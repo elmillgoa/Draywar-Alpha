@@ -5,8 +5,8 @@ extends RefCounted
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B4
 ##
-## One weapon class, one hostile type. Hitscan only. Session combat state;
-## no save fields. Standing hits still go through AttributionService.
+## One weapon class, one hostile type. Player bolts travel (beginner freighter —
+## no auto-aim turret). Session combat only. Standing via AttributionService.
 
 # --- Groups / identity -----------------------------------------------------
 
@@ -31,19 +31,30 @@ const TARGET_LOCK_KEY: Key = KEY_TAB
 ## Max distance to include a hostile in the lock cycle (metres).
 const TARGET_LOCK_RANGE: float = 400.0
 
-# --- Player weapon ---------------------------------------------------------
+# --- Player weapon (bolts — no auto-hit on lock) ----------------------------
 
 ## Seconds between player shots.
 const PLAYER_FIRE_COOLDOWN: float = 0.28
 
-## Hitscan max range (metres).
-const HITSCAN_RANGE: float = 220.0
+## Bolt travel speed (m/s). Lead pip uses this; beginner ship is not hitscan.
+const PROJECTILE_SPEED: float = 280.0
 
-## Damage applied to a hostile on a successful hitscan hit.
+## Bolt lifetime (seconds) before it fizzles.
+const PROJECTILE_LIFETIME: float = 1.4
+
+## Max range derived from speed * life (used for UI / ranking).
+const HITSCAN_RANGE: float = 392.0
+
+## Damage applied to a hostile on a successful bolt hit.
 const PLAYER_WEAPON_DAMAGE: float = 40.0
 
-## Cone half-angle (radians) for group-scan hitscan fallback (~35°).
-const HITSCAN_CONE_HALF_ANGLE: float = 0.60
+## Bolt visual size.
+const PROJECTILE_RADIUS: float = 0.45
+const PROJECTILE_LENGTH: float = 2.8
+const COLOR_PROJECTILE: Color = Color(1.0, 0.85, 0.25)
+
+## Lead intercept solver iterations (classic space-combat lead pip).
+const LEAD_SOLVE_ITERATIONS: int = 4
 
 # --- Hostile ---------------------------------------------------------------
 
@@ -122,7 +133,7 @@ const KILL_EVIDENCE: bool = false
 # --- HUD -------------------------------------------------------------------
 
 ## Shown while a combat hostile exists and the ship is free-flying.
-const HUD_COMBAT_PROMPT: String = "HOSTILE — TAB LOCK · SPACE / LMB FIRE"
+const HUD_COMBAT_PROMPT: String = "TAB LOCK · AIM RETICLE AT LEAD · FIRE"
 
 ## Locked target readout (name + range metres).
 const HUD_TARGET_LOCK_FORMAT: String = "LOCK  %s  %dm"
@@ -137,3 +148,32 @@ const LOCK_HIGHLIGHT_LIGHTEN: float = 0.45
 
 ## Fail-state console / status line (optional string reuse).
 const FAIL_STATE_MESSAGE: String = "Ship crippled. Dock and repair to fly again."
+
+# --- Combat HUD: reticle, lock brackets, lead pip --------------------------
+
+## Aim reticle (where shots go — mouse).
+const RETICLE_RADIUS: float = 10.0
+const RETICLE_GAP: float = 4.0
+const RETICLE_ARM: float = 8.0
+const RETICLE_LINE_WIDTH: float = 2.0
+const COLOR_RETICLE: Color = Color(0.95, 0.95, 0.85, 0.9)
+
+## World-space lock brackets around locked target (corner ticks).
+const LOCK_BRACKET_HALF: float = 22.0
+const LOCK_BRACKET_CORNER: float = 10.0
+const LOCK_BRACKET_WIDTH: float = 2.0
+const COLOR_LOCK_BRACKET: Color = Color(0.35, 0.85, 1.0, 0.95)
+
+## Lead pip (where to aim so a bolt arrives as the target does).
+const LEAD_PIP_HALF: float = 7.0
+const LEAD_PIP_WIDTH: float = 2.0
+const COLOR_LEAD_PIP: Color = Color(1.0, 0.35, 0.25, 0.95)
+
+## Hide combat overlays while docked / no camera.
+const COMBAT_HUD_MIN_DEPTH: float = 0.5
+
+## Aim reticle arc segment count (circle smoothness).
+const RETICLE_ARC_SEGMENTS: int = 32
+
+## Projectile collision sphere scale vs visual radius.
+const PROJECTILE_HIT_RADIUS_SCALE: float = 2.0
