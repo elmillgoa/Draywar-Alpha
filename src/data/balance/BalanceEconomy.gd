@@ -159,6 +159,31 @@ const JUMP_PROMPT_FORMAT: String = "PRESS F TO JUMP — %s"
 ## Jump prompt when fuel is too low.
 const JUMP_PROMPT_NO_FUEL_FORMAT: String = "JUMP BLOCKED — need %s fuel for %s"
 
+# --- Nav panel (B0 discoverable gates without console) ---------------------
+
+## HUD line slots for nav block (right column; floats below title block).
+const HUD_LINE_NAV_TITLE: float = 0.0
+const HUD_LINE_NAV_HERE: float = 1.0
+const HUD_LINE_NAV_GATES: float = 2.0
+
+## Right-edge margin for the nav column.
+const NAV_PANEL_RIGHT_MARGIN: float = 18.0
+
+## Max gate lines listed on the HUD nav panel.
+const NAV_MAX_GATE_LINES: int = 4
+
+const NAV_TITLE_TEXT: String = "NAV"
+const NAV_HERE_FORMAT: String = "HERE  %s"
+const NAV_GATES_HEADER: String = "GATES"
+const NAV_GATE_LINE_FORMAT: String = "→ %s"
+const NAV_NO_GATES: String = "→ (none)"
+const GATE_WORLD_LABEL_FORMAT: String = "GATE → %s"
+
+## NPC capsule silhouette (distinct from station/gate/player).
+const NPC_CAPSULE_RADIUS_FACTOR: float = 0.45
+const NPC_MESH_PITCH_DEGREES: float = 90.0
+const NPC_CAPSULE_RADIAL_SEGMENTS: int = 8
+
 ## Station service button labels.
 const STATION_REFUEL_LABEL: String = "Refuel"
 const STATION_REPAIR_LABEL: String = "Repair ship"

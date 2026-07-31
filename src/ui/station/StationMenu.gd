@@ -85,6 +85,7 @@ func _build_ui() -> void:
 	root.add_child(dim)
 
 	_panel = PanelContainer.new()
+	_panel.theme = DraywarUiTheme.build()
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_panel.custom_minimum_size = Vector2(
 		BalanceFlight.STATION_MENU_WIDTH, BalanceEconomy.STATION_MENU_HEIGHT_A5
@@ -101,6 +102,7 @@ func _build_ui() -> void:
 
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", BalanceFlight.HUD_TITLE_FONT_SIZE)
+	_title.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.text = "Station"
 	layout.add_child(_title)

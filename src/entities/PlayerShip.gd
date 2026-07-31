@@ -175,19 +175,35 @@ func _mouse_aim_point() -> Vector3:
 
 
 func _build_mesh() -> void:
-	var mesh_instance: MeshInstance3D = MeshInstance3D.new()
-	var box: BoxMesh = BoxMesh.new()
-	box.size = BalanceFlight.SHIP_MESH_SIZE
-	mesh_instance.mesh = box
-	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = BalanceFlight.COLOR_SHIP
-	mesh_instance.material_override = material
-	add_child(mesh_instance)
+	# Pointed freighter silhouette (prism hull + rear engine block) — not a box.
+	var hull: MeshInstance3D = MeshInstance3D.new()
+	var prism: PrismMesh = PrismMesh.new()
+	prism.size = BalanceFlight.SHIP_PRISM_SIZE
+	hull.mesh = prism
+	var hull_mat: StandardMaterial3D = StandardMaterial3D.new()
+	hull_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	hull_mat.albedo_color = BalanceFlight.COLOR_SHIP
+	hull.material_override = hull_mat
+	# Prism default points +Y; lay it so the point faces ship forward (-Z).
+	hull.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
+	add_child(hull)
+
+	var engine: MeshInstance3D = MeshInstance3D.new()
+	var engine_box: BoxMesh = BoxMesh.new()
+	engine_box.size = BalanceFlight.SHIP_ENGINE_SIZE
+	engine.mesh = engine_box
+	var engine_mat: StandardMaterial3D = StandardMaterial3D.new()
+	engine_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	engine_mat.albedo_color = BalanceFlight.COLOR_SHIP_ENGINE
+	engine.material_override = engine_mat
+	engine.position = Vector3(
+		0.0, 0.0, BalanceFlight.SHIP_PRISM_SIZE.z * BalanceFlight.SHIP_ENGINE_Z_FACTOR
+	)
+	add_child(engine)
 
 	var collision: CollisionShape3D = CollisionShape3D.new()
 	var shape: BoxShape3D = BoxShape3D.new()
-	shape.size = BalanceFlight.SHIP_MESH_SIZE
+	shape.size = BalanceFlight.SHIP_PRISM_SIZE
 	collision.shape = shape
 	add_child(collision)
 

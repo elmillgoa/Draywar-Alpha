@@ -18,6 +18,10 @@ var _credits_label: Label = null
 var _fuel_label: Label = null
 var _condition_label: Label = null
 var _mission_label: Label = null
+var _nav_title_label: Label = null
+var _nav_here_label: Label = null
+var _nav_gates_label: Label = null
+var _root: Control = null
 
 var _current_system_id: StringName = &""
 var _docked_station_id: StringName = &""
@@ -76,16 +80,18 @@ func _disconnect(sig: Signal, callable: Callable) -> void:
 
 
 func _build_labels() -> void:
-	var root: Control = Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(root)
+	_root = Control.new()
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.theme = DraywarUiTheme.build()
+	add_child(_root)
 
-	_system_label = _make_label(root, BalanceFlight.HUD_TITLE_FONT_SIZE)
+	_system_label = _make_label(_root, BalanceFlight.HUD_TITLE_FONT_SIZE)
+	_system_label.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_system_label.position = Vector2(BalanceFlight.HUD_MARGIN, BalanceFlight.HUD_MARGIN)
 	_system_label.text = "SYSTEM"
 
-	_speed_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_speed_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_speed_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -95,7 +101,7 @@ func _build_labels() -> void:
 	)
 	_speed_label.text = "SPEED  0"
 
-	_throttle_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_throttle_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_throttle_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -106,7 +112,7 @@ func _build_labels() -> void:
 	)
 	_throttle_label.text = "THROTTLE  0%"
 
-	_status_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_status_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_status_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -117,7 +123,7 @@ func _build_labels() -> void:
 	)
 	_status_label.text = ""
 
-	_credits_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_credits_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_credits_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -128,7 +134,7 @@ func _build_labels() -> void:
 	)
 	_credits_label.text = BalanceEconomy.HUD_CREDITS_FORMAT % 0
 
-	_fuel_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_fuel_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_fuel_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -139,7 +145,7 @@ func _build_labels() -> void:
 	)
 	_fuel_label.text = (BalanceEconomy.HUD_FUEL_FORMAT % int(BalanceEconomy.PERCENT_SCALE))
 
-	_condition_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_condition_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_condition_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -152,7 +158,7 @@ func _build_labels() -> void:
 		BalanceEconomy.HUD_CONDITION_FORMAT % int(BalanceEconomy.PERCENT_SCALE)
 	)
 
-	_mission_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_mission_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_mission_label.position = Vector2(
 		BalanceFlight.HUD_MARGIN,
 		(
@@ -163,7 +169,9 @@ func _build_labels() -> void:
 	)
 	_mission_label.text = ""
 
-	_prompt_label = _make_label(root, BalanceFlight.HUD_PROMPT_FONT_SIZE)
+	_build_nav_panel(_root)
+
+	_prompt_label = _make_label(_root, BalanceFlight.HUD_PROMPT_FONT_SIZE)
 	_prompt_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_prompt_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_prompt_label.offset_bottom = -BalanceFlight.HUD_MARGIN * BalanceFlight.HUD_LINE_THROTTLE
@@ -172,12 +180,50 @@ func _build_labels() -> void:
 		- float(BalanceFlight.HUD_PROMPT_FONT_SIZE)
 	)
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
 	_prompt_label.text = ""
+
+
+func _build_nav_panel(parent: Control) -> void:
+	# Right-side nav: current system + gate destinations from ContentLibrary.
+	_nav_title_label = _make_label(parent, BalanceFlight.HUD_TITLE_FONT_SIZE)
+	_nav_title_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
+	_nav_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_nav_title_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_nav_title_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_nav_title_label.offset_right = -BalanceEconomy.NAV_PANEL_RIGHT_MARGIN
+	_nav_title_label.offset_top = BalanceFlight.HUD_MARGIN
+	_nav_title_label.text = BalanceEconomy.NAV_TITLE_TEXT
+
+	_nav_here_label = _make_label(parent, BalanceFlight.HUD_FONT_SIZE)
+	_nav_here_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_nav_here_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_nav_here_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_nav_here_label.offset_right = -BalanceEconomy.NAV_PANEL_RIGHT_MARGIN
+	_nav_here_label.offset_top = (
+		BalanceFlight.HUD_MARGIN
+		+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+		+ float(BalanceFlight.HUD_FONT_SIZE) * BalanceEconomy.HUD_LINE_NAV_HERE
+	)
+	_nav_here_label.text = BalanceEconomy.NAV_HERE_FORMAT % "—"
+
+	_nav_gates_label = _make_label(parent, BalanceFlight.HUD_FONT_SIZE)
+	_nav_gates_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_nav_gates_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_nav_gates_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_nav_gates_label.offset_right = -BalanceEconomy.NAV_PANEL_RIGHT_MARGIN
+	_nav_gates_label.offset_top = (
+		BalanceFlight.HUD_MARGIN
+		+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+		+ float(BalanceFlight.HUD_FONT_SIZE) * (BalanceEconomy.HUD_LINE_NAV_GATES + 1.0)
+	)
+	_nav_gates_label.text = BalanceEconomy.NAV_GATES_HEADER
 
 
 func _make_label(parent: Control, font_size: int) -> Label:
 	var label: Label = Label.new()
 	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
 	return label
@@ -324,6 +370,57 @@ func _on_system_entered(system_id: StringName) -> void:
 	_current_system_id = system_id
 	_system_label.text = "SYSTEM  %s" % _content_name(system_id).to_upper()
 	_refresh_status_line()
+	_refresh_nav_panel()
+
+
+## Nav readout text for tests and external readers (HERE + GATES lines).
+func nav_here_text() -> String:
+	if _nav_here_label == null:
+		return ""
+	return _nav_here_label.text
+
+
+## Gate list block from the nav panel (header + lines).
+func nav_gates_text() -> String:
+	if _nav_gates_label == null:
+		return ""
+	return _nav_gates_label.text
+
+
+func _refresh_nav_panel() -> void:
+	if _nav_here_label == null or _nav_gates_label == null:
+		return
+	var here_name: String = _content_name(_current_system_id)
+	if here_name.is_empty():
+		here_name = "—"
+	_nav_here_label.text = BalanceEconomy.NAV_HERE_FORMAT % here_name.to_upper()
+
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append(BalanceEconomy.NAV_GATES_HEADER)
+	var destinations: Array[StringName] = _gate_destinations_for(_current_system_id)
+	if destinations.is_empty():
+		lines.append(BalanceEconomy.NAV_NO_GATES)
+	else:
+		var shown: int = 0
+		for dest_id: StringName in destinations:
+			if shown >= BalanceEconomy.NAV_MAX_GATE_LINES:
+				break
+			lines.append(BalanceEconomy.NAV_GATE_LINE_FORMAT % _content_name(dest_id))
+			shown += 1
+	_nav_gates_label.text = "\n".join(lines)
+
+
+func _gate_destinations_for(system_id: StringName) -> Array[StringName]:
+	var result: Array[StringName] = []
+	if String(system_id).is_empty() or not ContentLibrary.has_item(system_id):
+		return result
+	var item: ContentItem = ContentLibrary.item(system_id)
+	var system: StarSystem = item as StarSystem
+	if system == null:
+		return result
+	for dest_id: StringName in system.gate_destination_ids:
+		result.append(dest_id)
+	return result
 
 
 func _on_status_moment(

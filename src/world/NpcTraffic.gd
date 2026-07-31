@@ -108,12 +108,17 @@ func _color_for_policing(policing: StringName) -> Color:
 
 
 func _make_npc(color: Color) -> MeshInstance3D:
+	# Capsule hull — distinct from station cylinders, gate rings, player prism.
 	var mesh_instance: MeshInstance3D = MeshInstance3D.new()
-	var box: BoxMesh = BoxMesh.new()
-	box.size = BalanceEconomy.NPC_MESH_SIZE
-	mesh_instance.mesh = box
+	var capsule: CapsuleMesh = CapsuleMesh.new()
+	capsule.radius = BalanceEconomy.NPC_MESH_SIZE.x * BalanceEconomy.NPC_CAPSULE_RADIUS_FACTOR
+	capsule.height = BalanceEconomy.NPC_MESH_SIZE.z
+	capsule.radial_segments = BalanceEconomy.NPC_CAPSULE_RADIAL_SEGMENTS
+	mesh_instance.mesh = capsule
 	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
 	mesh_instance.material_override = material
+	# Capsule long axis is Y; lay along flight forward.
+	mesh_instance.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
 	return mesh_instance

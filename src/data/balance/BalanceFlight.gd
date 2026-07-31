@@ -105,15 +105,76 @@ const STATION_MESH_SIZE: Vector3 = Vector3(36.0, 22.0, 36.0)
 const GATE_MESH_SIZE: Vector3 = Vector3(12.0, 28.0, 6.0)
 const SHIP_MESH_SIZE: Vector3 = Vector3(2.2, 0.9, 4.5)
 
-## Unshaded gray-box colours.
-const COLOR_STATION: Color = Color(0.48, 0.52, 0.58)
-const COLOR_GATE: Color = Color(0.32, 0.55, 0.78)
-const COLOR_SHIP: Color = Color(0.9, 0.78, 0.28)
+## Unshaded silhouette colours (distinct shapes + colours — B1).
+const COLOR_STATION: Color = Color(0.55, 0.58, 0.64)
+const COLOR_GATE: Color = Color(0.25, 0.75, 0.95)
+const COLOR_GATE_CORE: Color = Color(0.85, 0.95, 1.0)
+const COLOR_SHIP: Color = Color(0.95, 0.78, 0.22)
+const COLOR_SHIP_ENGINE: Color = Color(0.35, 0.75, 1.0)
 const COLOR_SPACE: Color = Color(0.015, 0.02, 0.04)
 const COLOR_AMBIENT: Color = Color(0.12, 0.14, 0.18)
 
+## Per-system backdrop / ambient (B0 readable distinction + B1 presentation).
+const COLOR_SPACE_ALPHA: Color = Color(0.02, 0.04, 0.09)
+const COLOR_AMBIENT_ALPHA: Color = Color(0.14, 0.18, 0.28)
+const COLOR_SPACE_BETA: Color = Color(0.07, 0.03, 0.02)
+const COLOR_AMBIENT_BETA: Color = Color(0.28, 0.14, 0.10)
+const COLOR_SPACE_GAMMA: Color = Color(0.03, 0.06, 0.03)
+const COLOR_AMBIENT_GAMMA: Color = Color(0.12, 0.22, 0.14)
+
+## Station silhouette colour per system (still readable as a station).
+const COLOR_STATION_ALPHA: Color = Color(0.52, 0.58, 0.72)
+const COLOR_STATION_BETA: Color = Color(0.72, 0.48, 0.38)
+const COLOR_STATION_GAMMA: Color = Color(0.42, 0.62, 0.48)
+
+## Starfield (procedural points — not pure black void).
+const STARFIELD_COUNT: int = 220
+const STARFIELD_RADIUS_MIN: float = 380.0
+const STARFIELD_RADIUS_MAX: float = 720.0
+const STARFIELD_STAR_SIZE: float = 1.6
+const COLOR_STAR: Color = Color(0.85, 0.9, 1.0)
+const COLOR_STAR_WARM: Color = Color(1.0, 0.88, 0.7)
+
+## Gate world label (Label3D) — discoverable without HUD.
+const GATE_LABEL_HEIGHT: float = 22.0
+const GATE_LABEL_FONT_SIZE: int = 48
+const GATE_LABEL_PIXEL_SIZE: float = 0.12
+const GATE_LABEL_OUTLINE_SIZE: int = 8
+const GATE_LABEL_OUTLINE_ALPHA: float = 0.85
+const GATE_BEACON_HEIGHT: float = 36.0
+const GATE_BEACON_RADIUS: float = 1.4
+const GATE_BEACON_Y_FACTOR: float = 0.5
+const GATE_BEACON_LIGHTEN: float = 0.25
+const GATE_RING_INNER: float = 4.0
+const GATE_RING_OUTER: float = 14.0
+const GATE_RING_HEIGHT: float = 2.2
+const GATE_RING_SEGMENTS: int = 24
+const GATE_RING_RING_SEGMENTS: int = 12
+const GATE_CORE_RADIUS_FACTOR: float = 0.55
+const GATE_CORE_HEIGHT_FACTOR: float = 1.1
+const GATE_RING_PITCH_DEGREES: float = 90.0
+const STATION_CYLINDER_RADIUS: float = 16.0
+const STATION_CYLINDER_HEIGHT: float = 28.0
+const STATION_CYLINDER_SEGMENTS: int = 12
+const STATION_DISC_RADIUS: float = 22.0
+const STATION_DISC_HEIGHT: float = 3.5
+const STATION_DISC_SEGMENTS: int = 16
+const STATION_DISC_LIGHTEN: float = 0.15
+const STATION_LABEL_HEIGHT_FACTOR: float = 0.65
+const SHIP_PRISM_SIZE: Vector3 = Vector3(2.4, 1.1, 5.2)
+const SHIP_ENGINE_SIZE: Vector3 = Vector3(1.0, 0.55, 1.4)
+const SHIP_MESH_PITCH_DEGREES: float = 90.0
+const SHIP_ENGINE_Z_FACTOR: float = 0.35
+const STARFIELD_Y_SPREAD: float = 0.55
+const STARFIELD_SPHERE_RADIUS_FACTOR: float = 0.5
+const STARFIELD_RADIAL_SEGMENTS: int = 4
+const STARFIELD_RINGS: int = 2
+const STARFIELD_WARM_EVERY: int = 3
+
 ## Directional light pitch (degrees, negative looks down).
 const SUN_PITCH_DEGREES: float = -42.0
+const SUN_PITCH_BETA_DEGREES: float = -28.0
+const SUN_PITCH_GAMMA_DEGREES: float = -55.0
 
 ## How far the mouse aim ray is projected when no geometry is hit (metres).
 const MOUSE_AIM_FALLBACK_DISTANCE: float = 250.0
@@ -149,3 +210,53 @@ const STATION_MENU_DIM_ALPHA: float = 0.55
 const HUD_LINE_SPEED: float = 1.0
 const HUD_LINE_THROTTLE: float = 2.0
 const HUD_LINE_STATUS: float = 3.0
+
+
+## Backdrop colour for a system id (falls back to default space colour).
+static func space_color_for(system_id: StringName) -> Color:
+	match system_id:
+		&"system_alpha":
+			return COLOR_SPACE_ALPHA
+		&"system_beta":
+			return COLOR_SPACE_BETA
+		&"system_gamma":
+			return COLOR_SPACE_GAMMA
+		_:
+			return COLOR_SPACE
+
+
+## Ambient fill colour for a system id.
+static func ambient_color_for(system_id: StringName) -> Color:
+	match system_id:
+		&"system_alpha":
+			return COLOR_AMBIENT_ALPHA
+		&"system_beta":
+			return COLOR_AMBIENT_BETA
+		&"system_gamma":
+			return COLOR_AMBIENT_GAMMA
+		_:
+			return COLOR_AMBIENT
+
+
+## Station mesh colour for a system id.
+static func station_color_for(system_id: StringName) -> Color:
+	match system_id:
+		&"system_alpha":
+			return COLOR_STATION_ALPHA
+		&"system_beta":
+			return COLOR_STATION_BETA
+		&"system_gamma":
+			return COLOR_STATION_GAMMA
+		_:
+			return COLOR_STATION
+
+
+## Sun pitch for a system id.
+static func sun_pitch_for(system_id: StringName) -> float:
+	match system_id:
+		&"system_beta":
+			return SUN_PITCH_BETA_DEGREES
+		&"system_gamma":
+			return SUN_PITCH_GAMMA_DEGREES
+		_:
+			return SUN_PITCH_DEGREES

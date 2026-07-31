@@ -2,7 +2,7 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** Path C **agreed**. Decision bar + phase plan B0–B5 **locked**. Build **not started** on B0. Final Alpha **not signed**.
+**Current position:** Path C. **B0 + B1 complete** (world travel + presentation floor). Next: **B2 Session shell**. Final Alpha **not signed**.
 
 | Doc | Role |
 |-----|------|
@@ -10,16 +10,33 @@
 | `Alpha/ALPHA_DECISION_PHASE_PLAN.md` | B0–B5 order + worktree parallel tracks (**agreed**) |
 | `docs/reputation_and_standing.md` | Standing law |
 
-**Next contract:** **B0 — World you can actually travel** (3 systems reachable in play; discoverable jump). Optional parallel: **B1 presentation tracks** per phase plan.
+**Last closed:** **B0 — World you can actually travel** + **B1 — Presentation floor** (same session, main tree).
 
-## Honest now (before B0)
+## Honest now
 
 | Area | Status |
 |------|--------|
-| Multi-system **in play** | Fail (one start + hard-to-read gate) |
-| Menu / sheet / trade / combat | Missing |
-| Presentation floor | Fail |
+| Multi-system **in play** | **Pass** — Alpha/Beta/Gamma linked; HUD NAV + world gate labels; F jump |
+| Presentation floor | **Pass** — starfield, per-system tint, distinct silhouettes, shared UI theme |
+| Menu / sheet / trade / combat | Missing (B2+) |
 | Flight / standing / recovery / thin money-jobs | Partial (A0–A5 mechanical debt) |
+
+## B0 / B1 evidence
+
+**B0 acceptance**
+
+- Cold boot multi-system path (no console): undock → fly to cyan gate / follow HUD NAV → F jump → dock → next system → return. Guided by SYSTEM title, NAV (HERE + GATES), world `GATE → …` labels, status moment on entry.
+- Player can name system from HUD SYSTEM / NAV HERE without editor.
+- Tests: `tests/test_b0_travel.gd` (gate graph, jump rebuild α→β→γ→α, gate labels, distinct backdrops, HUD nav, fuel block, arrival). Suite **203/203**.
+- **Play smoke (recorded):** Automated rebuild loop + nav/label proof stands in for human cold-boot until Elliot flies; path above is the manual smoke.
+
+**B1 acceptance**
+
+- Scene reads as game: starfield (220), not pure black; per-system space/ambient/station colours; station cylinder+disc, gate torus+beacon, player prism, NPC capsules.
+- Theme: `DraywarUiTheme` / `BalanceUi` on **StationMenu** and **FlightHUD**.
+- Tests: `tests/test_b1_presentation.gd`.
+
+**Verify-red:** broke gate-graph assert → red (202 pass); restored → 203 green.
 
 ## Gates
 
@@ -28,22 +45,22 @@
 
 ## Open decisions
 
-- None blocking B0. Save schema changes after A0 still need ask if required fields.
+- None blocking B2. Save schema changes still need ask if required fields change.
 
 ## Standing decisions
 
-- Path C hybrid: enough game to decide on beta/full — not full art/sound, not gray-box-only.
-- Worktrees for parallel tracks; serialize Main / EventBus / Standing / save merges.
-- Godot 4.6.1 at `C:\Godot\`. Subagents build; main verifies.
-- Remote: `origin/main` → `https://github.com/elmillgoa/Draywar-Alpha`
+- Path C hybrid; worktrees when tracks do not thrash Main/EventBus/Standing/save.
+- B0+B1 landed in main tree (SystemWorld + HUD thrash made worktree split costly).
+- Godot 4.6.1 at `C:\Godot\`. Remote: `origin/main` → `https://github.com/elmillgoa/Draywar-Alpha`
 
 ## Next session starts here
 
-1. `/start` — orient; plan is B0 next.
-2. **Go on B0** (or **go on B0+B1 parallel** per phase plan).
-3. Worktrees for B0 tracks; merge; lint + tests; update state.
-4. Continue B1→B5; Final Alpha gate only after checklist green.
+1. `/start` — orient; plan is **B2 Session shell**.
+2. **Go on B2** (main menu / pause / captain sheet / job tracking / save UX per phase plan).
+3. Do not skip to B3/B4 until B2 lands shared HUD/sheet and wallet/cargo seams.
+4. Final Alpha only after B5 checklist green.
 
 ## Session history
 
-- **2026-07-30–31** — A0–A5 mechanical; Final Alpha refused (tech demonstrator); Path C + decision bar; **B0–B5 plan agreed**; wrap for fresh build chat.
+- **2026-07-31** — B0+B1: multi-system discoverable travel + presentation floor; lint/tests green; wrap.
+- **2026-07-30–31** — A0–A5 mechanical; Final Alpha refused (tech demonstrator); Path C + decision bar; B0–B5 plan agreed.
