@@ -42,14 +42,15 @@
 | Target lock | Tab → HUD `LOCK name range HULL %` updates on damage |
 | Your guns | Travel bolts; aim reticle at red lead; no auto-hit |
 | Their guns | Travel bolts (lead on you); **strafe to dodge** |
-| Aim | With lock, mouse aim depth uses the target plane |
+| Aim | With lock, mouse aim depth uses the **lead intercept** plane |
 | Hostile AI | Close / hold band / **jink**; fires only when facing you |
 | Fairness kept | Alpha no hostiles; station safe zone; undock grace; cripple→repair; kill→attribution only |
 
 ## Evidence
 
-- Suite **265/265**. Lint green.
+- Suite **265/265**. Lint green. Commit `d76fa39` (Combat Fairness Pass).
 - New/updated: `test_hostile_projectiles.gd` (physics hit, strafe dodge, jink), hull lock HUD, lead aim plane.
+- Bolts poll overlaps after each step (teleport moves miss pure `body_entered`).
 
 ## Gates
 
@@ -67,14 +68,17 @@
 
 ## Next session starts here
 
-1. **Elliot plays combat** (Beta/Gamma): lock → hull %, aim lead, dodge bolts, kill or limp home.
-2. Then full Final Alpha cold script in `docs/gates.md` (or combat-only re-check first).
-3. Record verdict **verbatim** in `docs/gates.md` + journal `GATE`.
-4. If signed → Path C Alpha closed. If refused → iterate from his list only.
+1. `/start` — orient; tree should be clean on `main` after wrap push.
+2. **Elliot plays combat** (Beta/Gamma cold): Tab lock → hull %, aim red lead, strafe to dodge their bolts, kill or repair.
+3. Then full Final Alpha cold script in `docs/gates.md` (or combat-only first).
+4. Record verdict **verbatim** in `docs/gates.md` + journal `GATE`.
+5. If signed → Path C Alpha closed. If refused → iterate from his list only.
+6. Do **not** start Destination work until Final Alpha signs.
 
 ## Session history
 
-- **2026-07-31 (this session)** — Combat refuse; fairness pass planned and implemented (hull %, travel enemy bolts, aim depth, jink); 261 tests.
+- **2026-07-31 (this wrap)** — Combat Fairness Pass: hull %, travel enemy bolts, lead aim, jink; 265 tests; Final Alpha still open.
+
 - **2026-07-31** — Play fixes: docked start, undock footer, turn-in, combat lock/reticle/lead/bolts; Final Alpha still open.
 - **2026-07-31** — B2 → B3 → B4 → B5 content/gate prep.
 - **2026-07-30–31** — A0–A5 mechanical; Path C; Final Alpha Attempt 1 refused (tech demo).
