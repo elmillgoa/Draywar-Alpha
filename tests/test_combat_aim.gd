@@ -58,6 +58,4 @@ func test_projectile_damages_hostile_on_contact() -> void:
 	assert_true(bolt.has_method(&"try_hit"))
 	bolt.call(&"try_hit", hostile)
 	assert_lt(hostile.remaining_hp(), before, "bolt contact damages hostile")
-	assert_almost_eq(
-		hostile.remaining_hp(), before - BalanceCombat.PLAYER_WEAPON_DAMAGE, 0.001
-	)
+	assert_almost_eq(hostile.remaining_hp(), before - BalanceCombat.PLAYER_WEAPON_DAMAGE, 0.001)
