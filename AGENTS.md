@@ -33,6 +33,13 @@ Ambiguity: resolve with Destination **Fidelity** + **Tone** filters. If those fa
   A0), finish **the whole phase** before stopping. Ask every blocking question
   **before** building. Same rule for every phase. Human feel **gates** still
   wait for him when the phase plan marks a gate — that is not a mid-phase stop.
+- **Phase end = commit + wrap, automatic.** When a phase is complete (definition
+  of done, adversary/verify as required, state updated; any plan-marked human
+  gate signed or not required), do **not** wait for him to say wrap. Commit,
+  run `/wrap` (includes push), then end. The **last line** of that final
+  message must be exactly: `Chat ready to close.`
+  If a human gate is still open, stop after the gate report — wrap only once
+  the phase is actually closed.
 - Fix obvious bugs without asking.
 - Gate anything irreversible.
 - Never drive design reviews — options and findings; he decides.
@@ -98,9 +105,17 @@ Between contracts, re-read `docs/state.md`. Never start work you cannot finish a
 | Before complete | `/adversary` then `/verify` |
 | Human feel gates | `/gate` (A1 flight, A4 recovery, Final Alpha) |
 | Plan vs reality | `/escalate` — implement nothing while open |
-| Session end | `/wrap` |
+| Phase complete | Commit + `/wrap` + push — **automatic** (do not wait for "wrap") |
+| Session end | `/wrap` (also used mid-session if room dies) |
 
 **Do not start building off the back of `/start`.** Report and wait.
+
+**Phase close-out closing line:** after automatic wrap, the final message's last
+line is exactly:
+
+```
+Chat ready to close.
+```
 
 ---
 

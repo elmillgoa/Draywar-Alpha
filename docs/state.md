@@ -39,6 +39,7 @@
 - **Talk plain / short / blunt to Elliot.** Subagents build; main chat verifies.
 - **Memory system on disk** — state + journal + traps + eras + compact hooks. Files beat chat memory.
 - **Full phase per go.** "Go on Phase N / A0" means finish the whole phase, then stop.
+- **Phase end = commit + wrap, automatic.** When phase is closed (DoD + verify; gates signed if any), commit, `/wrap` (push), last line exactly `Chat ready to close.` Do not wait for him to say wrap.
 - **Save schema is v1.** Bump only with a migration step when real sections arrive.
 
 ## Next session starts here

@@ -50,7 +50,23 @@ python scripts/journal.py add CONTRACT "Ax complete" --detail "criteria + eviden
 
 Update `docs/state.md`. Commit with contract-ID prefix.
 
-## Report to Elliot
+## Step 7 — Phase complete → automatic wrap
+
+If this contract **closes the phase** (all phase work done; any plan-marked
+human gate signed or not required for this phase):
+
+1. Do **not** wait for Elliot to say wrap or push.
+2. Run `/wrap` (commit any handoff docs, push `origin/main`).
+3. Final message ends with the wrap report, then **exactly** this last line:
+
+```
+Chat ready to close.
+```
+
+If a human gate is still open, report and stop — wrap only after the phase is
+closed.
+
+## Report to Elliot (mid-phase or pre-gate)
 
 > **Now working:** [what the game can do]
 >

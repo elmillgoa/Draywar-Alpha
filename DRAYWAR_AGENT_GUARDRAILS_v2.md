@@ -60,6 +60,9 @@ A contract is complete only when all hold:
 - Start: read state log, confirm current contract, restate acceptance criteria.
 - Work: one contract at a time.
 - End: state log updated, tests green, clean commit with contract-ID-prefixed message.
+- **Phase complete:** automatically commit, run `/wrap` (push), and end with the
+  exact last line `Chat ready to close.` Do not wait for Elliot to ask. Human
+  gates still block phase close until signed.
 - Honesty rule: report what is actually true.
 
 ---

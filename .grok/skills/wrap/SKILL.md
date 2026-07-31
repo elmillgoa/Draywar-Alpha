@@ -56,3 +56,14 @@ A session that ends unpushed leaves everything since the last push on one machin
 > **Waiting on you:** …
 >
 > **Next chat:** `/start` picks up at [contract]
+
+## Closing line (required)
+
+After the report above, the **last line** of the message must be exactly:
+
+```
+Chat ready to close.
+```
+
+Nothing after it. Phase-end wrap runs automatically when a phase completes
+(`AGENTS.md` §2 / `/work` Step 7) — do not wait for him to ask.
