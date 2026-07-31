@@ -2,42 +2,42 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **A2 — Standing Core complete** (2026-07-31).
+**Current position:** **A3 — Attribution & Everyday Change complete** (2026-07-31).
 
 - Project skeleton ✓
 - Strict typing ✓
-- EventBus ✓ (A0–A2 standing/status/dock-refused catalogued)
-- Data pipeline ✓ — ContentItem, StarSystem, Station, Hull, **Entity, Person, EntityLink**
-- Content: 3 systems, Alpha Port, courier hull, **4 Entities, 12 People**
-- Save schema v1 ✓ — envelope + optional `sections.standing`
-- Debug console ✓ — includes `standing` commands
-- Basic time control ✓
-- **A1 flight:** mouse-aim courier, chase camera, throttle/strafe/afterburner, dock loop
-- **A2 standing:** StandingService single writer; continuous −100..+100 + tiers; status moment on system/station entry (local controller only); docking refusal ≤ threshold; console set by value/tier; save/load standing section
+- EventBus ✓ (A0–A3; kill + mission signals catalogued)
+- Data pipeline ✓ — + **ContractType** (`contract_types`)
+- Content: 3 systems (patrolled/contested/lawless), Alpha Port, courier hull, 4 Entities, 12 People, **2 courier contracts**
+- Save schema v1 ✓ — standing section; missions session-only (A3)
+- Debug console ✓ — `standing`, `kill`, `trade legal`, `mission …`
+- **A1 flight** ✓ · **A2 standing** ✓
+- **A3:** AttributionService (security/witnesses/evidence); MissionService (one active); StandingService deltas + stickiness + one-hop ripple; light legal trade soft-cap
 
-**Next contract:** **A3 — Attribution & Everyday Change** (per `Alpha/ALPHA_PHASE_PLAN.md`)
+**Next contract:** **A4 — Personal Recovery Path** (per `Alpha/ALPHA_PHASE_PLAN.md`)
 
-## Proof (A2 acceptance)
+## Proof (A3 acceptance)
 
 | Criterion | Evidence |
 |-----------|----------|
-| Status moment on system + station entry (local controller only) | `test_system_enter_emits_status_moment`, `test_dock_emits_station_status_moment`, `test_status_for_*_uses_*_only`, `test_flight_hud_shows_status_moment` |
-| Dock refused/allowed by standing | `test_can_dock_respects_threshold_and_nobody`, `test_docking_service_refuses_when_hostile`, `test_docking_service_allows_when_friendly` |
-| Console drives standing; world reacts | `test_console_sets_entity_standing_by_value_and_tier` + dock/HUD tests |
+| Patrolled kill hits standing; clean lawless does not; evidence does | `test_patrolled_kill_drops_controller_standing`, `test_lawless_kill_without_evidence_no_standing_change`, `test_lawless_kill_with_evidence_hits_controller`, contested witness tests |
+| Mission complete / fail / abandon direction + magnitude | `test_mission_complete_positive_delta`, `test_mission_fail_milder_negative_than_abandon`, `test_mission_complete_magnitude_matches_balance_default` |
+| Stickiness on deep negative | `test_stickiness_reduces_positive_at_deep_negative` |
 
 ## Gates
 
 - `scripts/lint.ps1` exit 0
-- GUT **139/139** pass (as of A2 close)
+- GUT **160/160** pass (as of A3 close)
 - A1 flight feel **signed** (2026-07-31)
-- No human gate on A2
+- No human gate on A3
 
 ## Open decisions
 
-- None blocking A3.
+- None blocking A4.
 - Dock refusal default: standing **at or below −50** (Hostile) refuses; per-Entity override on content.
 - Nobody controller: Uncontrolled / always allows dock.
 - Standing save is optional section inside schema v1 (no envelope version bump).
+- Active mission is **session-only** for A3 (not in save).
 
 ## Standing decisions that bind upcoming work
 

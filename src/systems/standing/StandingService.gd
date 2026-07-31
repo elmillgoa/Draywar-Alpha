@@ -1,13 +1,14 @@
 extends Node
 
-## Single writer for player standing with Entities and People — Alpha A2.
+## Single writer for player standing with Entities and People — Alpha A3.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A2
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A2–A3
 ## Law: docs/reputation_and_standing.md
 ##
 ## Autoload named `StandingService`. Nothing else writes standing. All mutations
 ## clamp to the balance scale and emit on EventBus. Status moments fire on
-## system entry and successful dock.
+## system entry and successful dock. Deltas apply stickiness and optional
+## one-hop Entity ripples (combat/mission only).
 
 const StandingConsoleCommands = preload("res://src/systems/standing/StandingConsoleCommands.gd")
 
@@ -19,6 +20,9 @@ const STATUS_KEY_TIER_DISPLAY: StringName = &"tier_display"
 const STATUS_KEY_ENTITY_DISPLAY: StringName = &"entity_display"
 const STATUS_KEY_UNCONTROLLED: StringName = &"uncontrolled"
 const STATUS_KEY_LINE: StringName = &"line"
+
+## Last reason tag passed to apply_entity_delta / apply_person_delta (debug/tests).
+var last_delta_reason: StringName = &""
 
 var _entity_standing: Dictionary[StringName, float] = {}
 var _person_standing: Dictionary[StringName, float] = {}
@@ -72,6 +76,60 @@ func set_person_standing(person_id: StringName, value: float) -> void:
 		return
 	var tier: StringName = tier_for(new_value)
 	EventBus.on_person_standing_changed.emit(person_id, old_value, new_value, tier)
+
+
+## Apply a raw Entity delta with stickiness. Returns the applied delta
+## (after stickiness and clamp). When `with_ripple` is true, one-hop echoes
+## fire on direct relationship_links (no multi-hop).
+func apply_entity_delta(
+	entity_id: StringName, raw_delta: float, reason: StringName, with_ripple: bool = false
+) -> float:
+	last_delta_reason = reason
+	var old_value: float = get_entity_standing(entity_id)
+	var adjusted: float = adjust_for_stickiness(old_value, raw_delta)
+	var new_value: float = clampf(
+		old_value + adjusted, BalanceStanding.STANDING_MIN, BalanceStanding.STANDING_MAX
+	)
+	var applied: float = new_value - old_value
+	set_entity_standing(entity_id, new_value)
+	if with_ripple and not is_equal_approx(applied, 0.0):
+		_apply_one_hop_ripple(entity_id, applied)
+	return applied
+
+
+## Apply a raw Person delta with stickiness. No Entity ripple on person layer.
+func apply_person_delta(person_id: StringName, raw_delta: float, reason: StringName) -> float:
+	last_delta_reason = reason
+	var old_value: float = get_person_standing(person_id)
+	var adjusted: float = adjust_for_stickiness(old_value, raw_delta)
+	var new_value: float = clampf(
+		old_value + adjusted, BalanceStanding.STANDING_MIN, BalanceStanding.STANDING_MAX
+	)
+	var applied: float = new_value - old_value
+	set_person_standing(person_id, new_value)
+	return applied
+
+
+## Small legal-trade gain, soft-capped so trade alone cannot exceed the cap.
+## Returns applied delta (0 when already at/above soft cap).
+func record_legal_trade(entity_id: StringName) -> float:
+	var old_value: float = get_entity_standing(entity_id)
+	if old_value >= BalanceStanding.TRADE_STANDING_SOFT_CAP:
+		return 0.0
+	var adjusted: float = adjust_for_stickiness(old_value, BalanceStanding.TRADE_LEGAL_DELTA)
+	var uncapped: float = old_value + adjusted
+	var new_value: float = minf(uncapped, BalanceStanding.TRADE_STANDING_SOFT_CAP)
+	new_value = clampf(new_value, BalanceStanding.STANDING_MIN, BalanceStanding.STANDING_MAX)
+	var applied: float = new_value - old_value
+	set_entity_standing(entity_id, new_value)
+	return applied
+
+
+## Stickiness: positives shrink when standing is deeply negative; negatives full.
+func adjust_for_stickiness(current: float, raw_delta: float) -> float:
+	if raw_delta > 0.0 and current <= BalanceStanding.STICKY_NEGATIVE_FLOOR:
+		return raw_delta * BalanceStanding.STICKY_POSITIVE_FACTOR
+	return raw_delta
 
 
 ## Display tier id for a raw standing value.
@@ -315,3 +373,44 @@ func _on_docked(station_id: StringName) -> void:
 		status[STATUS_KEY_STANDING],
 		status[STATUS_KEY_TIER]
 	)
+
+
+## Direct relationship_links only: ally same-sign echo, rival inverse. No hop-2.
+func _apply_one_hop_ripple(source_entity_id: StringName, source_applied: float) -> void:
+	if not ContentLibrary.has_item(source_entity_id):
+		return
+	var item: ContentItem = ContentLibrary.item(source_entity_id)
+	if not (item is Entity):
+		return
+	var entity: Entity = item as Entity
+	for link: EntityLink in entity.relationship_links:
+		if link == null:
+			continue
+		var target_id: StringName = link.target_id
+		if String(target_id).strip_edges().is_empty():
+			continue
+		if target_id == source_entity_id:
+			continue
+		var fraction: float = _ripple_fraction_for(link.relation_type)
+		if is_equal_approx(fraction, 0.0):
+			continue
+		var raw_ripple: float = source_applied * fraction
+		raw_ripple = clampf(
+			raw_ripple, -BalanceStanding.RIPPLE_MAX_ABS, BalanceStanding.RIPPLE_MAX_ABS
+		)
+		if is_equal_approx(raw_ripple, 0.0):
+			continue
+		# No multi-hop: ripple applies without further ripple.
+		apply_entity_delta(target_id, raw_ripple, BalanceStanding.REASON_RIPPLE, false)
+
+
+func _ripple_fraction_for(relation_type: StringName) -> float:
+	if (
+		relation_type == EntityLink.RELATION_ALLIED
+		or relation_type == EntityLink.RELATION_SUBSIDIARY
+		or relation_type == EntityLink.RELATION_MEMBER_OF
+	):
+		return BalanceStanding.RIPPLE_ALLY_FRACTION
+	if relation_type == EntityLink.RELATION_RIVAL or relation_type == EntityLink.RELATION_ENEMY:
+		return -BalanceStanding.RIPPLE_RIVAL_FRACTION
+	return 0.0

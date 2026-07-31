@@ -285,3 +285,101 @@ Dock blocked because standing is at or below the controller's refusal threshold.
 
 **Emitted by** `src/entities/DockingService.gd` when a dock request fails standing.
 **Listened to by** `FlightHUD` (refusal prompt).
+
+## Attribution & missions (A3)
+
+### `on_kill_reported(system_id: StringName, victim_entity_id: StringName, witness_count: int, evidence: bool)`
+
+A kill was reported for attribution (before the security decision).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `system_id` | `StringName` | System where the kill occurred. |
+| `victim_entity_id` | `StringName` | Victim's primary Entity (may be empty). |
+| `witness_count` | `int` | Ships that would report the kill. |
+| `evidence` | `bool` | Player left an evidence trail. |
+
+**Emitted by** `src/systems/attribution/AttributionService.gd`.
+**Listened to by** tests / future UI.
+
+### `on_kill_attributed(system_id: StringName, entity_id: StringName, delta: float, reason: StringName)`
+
+Kill was attributed; StandingService already applied the delta (and any ripple).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `system_id` | `StringName` | System where the kill occurred. |
+| `entity_id` | `StringName` | Entity whose standing moved (local controller). |
+| `delta` | `float` | Applied standing change (after stickiness/clamp). |
+| `reason` | `StringName` | Mutation tag (e.g. `&"combat_kill"`). |
+
+**Emitted by** `src/systems/attribution/AttributionService.gd`.
+
+### `on_kill_unattributed(system_id: StringName, victim_entity_id: StringName)`
+
+Kill was not attributed; no standing change from this report.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `system_id` | `StringName` | System where the kill occurred. |
+| `victim_entity_id` | `StringName` | Victim's primary Entity (may be empty). |
+
+**Emitted by** `src/systems/attribution/AttributionService.gd`.
+
+### `on_mission_accept_requested(template_id: StringName)`
+
+UI or console asked to accept this contract template.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | ContractType content id. |
+
+**Emitted by** `StationMenu` (Accept courier job) and may be used by other UI.
+**Listened to by** `MissionService`.
+
+### `on_mission_accepted(template_id: StringName, offering_entity_id: StringName)`
+
+Player accepted a mission (one active max).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | ContractType content id. |
+| `offering_entity_id` | `StringName` | Entity that offered the job. |
+
+**Emitted by** `src/systems/mission/MissionService.gd`.
+
+### `on_mission_completed(template_id: StringName, entity_id: StringName, delta: float)`
+
+Mission completed; standing delta already applied via StandingService.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | ContractType content id. |
+| `entity_id` | `StringName` | Offering Entity. |
+| `delta` | `float` | Applied standing change. |
+
+**Emitted by** `src/systems/mission/MissionService.gd`.
+
+### `on_mission_failed(template_id: StringName, entity_id: StringName, delta: float)`
+
+Mission failed after an attempt; milder negative standing already applied.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | ContractType content id. |
+| `entity_id` | `StringName` | Offering Entity. |
+| `delta` | `float` | Applied standing change. |
+
+**Emitted by** `src/systems/mission/MissionService.gd`.
+
+### `on_mission_abandoned(template_id: StringName, entity_id: StringName, delta: float)`
+
+Mission abandoned; stronger negative standing already applied.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | ContractType content id. |
+| `entity_id` | `StringName` | Offering Entity. |
+| `delta` | `float` | Applied standing change. |
+
+**Emitted by** `src/systems/mission/MissionService.gd`.

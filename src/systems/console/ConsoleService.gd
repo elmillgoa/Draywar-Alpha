@@ -14,6 +14,12 @@ const HELP_SUMMARY: String = "List every command the console knows about."
 var _usage: Dictionary[StringName, String] = {}
 var _summary: Dictionary[StringName, String] = {}
 
+## True only while `start()` is rebuilding the roster. Orphan ConsoleService
+## instances stay connected to the bus; they must ignore later rebuilds so a
+## second console in tests (or a second start elsewhere) does not treat
+## legitimate re-registrations as double-claims.
+var _accepting_registrations: bool = false
+
 
 func _init() -> void:
 	EventBus.on_console_command_registered.connect(_on_command_registered)
@@ -25,7 +31,9 @@ func start() -> void:
 	_summary.clear()
 	_usage[HELP] = HELP_USAGE
 	_summary[HELP] = HELP_SUMMARY
+	_accepting_registrations = true
 	EventBus.on_console_commands_requested.emit()
+	_accepting_registrations = false
 
 
 ## Every command name the console knows, in reading order.
@@ -109,6 +117,8 @@ func _print_help() -> void:
 
 
 func _on_command_registered(name_of_command: StringName, usage: String, summary: String) -> void:
+	if not _accepting_registrations:
+		return
 	if _usage.has(name_of_command):
 		var complaint: String = (
 			(

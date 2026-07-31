@@ -69,3 +69,31 @@ signal on_status_moment(
 signal on_dock_refused(
 	station_id: StringName, entity_id: StringName, standing: float, tier: StringName
 )
+
+## AttributionService: a kill was reported (before attribution decision).
+signal on_kill_reported(
+	system_id: StringName, victim_entity_id: StringName, witness_count: int, evidence: bool
+)
+
+## AttributionService: kill was attributed; standing delta already applied.
+signal on_kill_attributed(
+	system_id: StringName, entity_id: StringName, delta: float, reason: StringName
+)
+
+## AttributionService: kill was not attributed (no standing change from this kill).
+signal on_kill_unattributed(system_id: StringName, victim_entity_id: StringName)
+
+## UI / console: request to accept this mission template.
+signal on_mission_accept_requested(template_id: StringName)
+
+## MissionService: player accepted a mission.
+signal on_mission_accepted(template_id: StringName, offering_entity_id: StringName)
+
+## MissionService: mission completed; standing delta already applied.
+signal on_mission_completed(template_id: StringName, entity_id: StringName, delta: float)
+
+## MissionService: mission failed; standing delta already applied.
+signal on_mission_failed(template_id: StringName, entity_id: StringName, delta: float)
+
+## MissionService: mission abandoned; standing delta already applied.
+signal on_mission_abandoned(template_id: StringName, entity_id: StringName, delta: float)

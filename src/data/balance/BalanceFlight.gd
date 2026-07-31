@@ -136,11 +136,11 @@ const AIM_UP_FLIP_DOT: float = 0.95
 ## Throttle fraction → percent readout (0..1 becomes 0..100).
 const THROTTLE_PERCENT_SCALE: float = 100.0
 
-## Station menu layout.
+## Station menu layout (taller for A3 Accept courier job button).
 const STATION_MENU_WIDTH: float = 360.0
-const STATION_MENU_HEIGHT: float = 200.0
+const STATION_MENU_HEIGHT: float = 260.0
 const STATION_MENU_HALF_WIDTH: float = 180.0
-const STATION_MENU_HALF_HEIGHT: float = 100.0
+const STATION_MENU_HALF_HEIGHT: float = 130.0
 const STATION_MENU_BUTTON_WIDTH: float = 220.0
 const STATION_MENU_BUTTON_HEIGHT: float = 40.0
 const STATION_MENU_DIM_ALPHA: float = 0.55

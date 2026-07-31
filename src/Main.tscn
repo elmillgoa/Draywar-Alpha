@@ -1,14 +1,22 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/Main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/systems/save/SaveConsoleCommands.gd" id="2_savecmds"]
 [ext_resource type="PackedScene" path="res://src/ui/console/DebugConsole.tscn" id="3_console"]
+[ext_resource type="Script" path="res://src/systems/attribution/AttributionService.gd" id="4_attr"]
+[ext_resource type="Script" path="res://src/systems/mission/MissionService.gd" id="5_mission"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
 
 [node name="SaveConsoleCommands" type="Node" parent="."]
 script = ExtResource("2_savecmds")
+
+[node name="AttributionService" type="Node" parent="."]
+script = ExtResource("4_attr")
+
+[node name="MissionService" type="Node" parent="."]
+script = ExtResource("5_mission")
 
 [node name="DebugConsole" parent="." instance=ExtResource("3_console")]
 
