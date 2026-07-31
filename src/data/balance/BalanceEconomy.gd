@@ -44,6 +44,34 @@ const DOCK_FEE_LAWLESS: int = 5
 ## Default fee when policing is unknown.
 const DOCK_FEE_DEFAULT: int = 18
 
+# --- E1.5 enforcement lite (standing surcharge / service friction) ---------
+# Applied from station controller standing via StandingService.tier_for only.
+# No new tiers or standing math — docs/reputation_and_standing.md is law.
+
+## Dock fee multiplier when controller standing is Neutral or better.
+const DOCK_FEE_STANDING_MULT_DEFAULT: float = 1.0
+
+## Dock fee multiplier at Unfriendly (controller).
+const DOCK_FEE_STANDING_MULT_UNFRIENDLY: float = 1.5
+
+## Dock fee multiplier at Hostile (controller).
+const DOCK_FEE_STANDING_MULT_HOSTILE: float = 2.0
+
+## Dock fee multiplier at Hated (controller) — worse than Hostile.
+const DOCK_FEE_STANDING_MULT_HATED: float = 2.5
+
+## Refuel/repair cost multiplier when Neutral or better.
+const SERVICE_COST_MULT_DEFAULT: float = 1.0
+
+## Refuel/repair cost multiplier at Unfriendly (controller).
+const SERVICE_COST_MULT_UNFRIENDLY: float = 1.35
+
+## Refuel cost multiplier at Hostile (repair is refused at Hostile+).
+const SERVICE_COST_MULT_HOSTILE: float = 2.0
+
+## Refuel cost multiplier at Hated (repair refused; leave-path fuel only).
+const SERVICE_COST_MULT_HATED: float = 2.5
+
 # --- Station services ------------------------------------------------------
 
 ## Credits per fuel unit when refueling.
@@ -294,7 +322,15 @@ const NPC_FIN_LIGHTEN: float = 0.2
 
 ## Station service button labels.
 const STATION_REFUEL_LABEL: String = "Refuel"
+const STATION_REFUEL_MARKUP_LABEL: String = "Refuel (standing markup)"
 const STATION_REPAIR_LABEL: String = "Repair ship"
+## Repair button when Hostile/Hated with controller (still docked via recovery).
+const STATION_REPAIR_DENIED_LABEL: String = "Repair refused — standing"
+## Trade section banner when Hostile/Hated with controller.
+const STATION_TRADE_DENIED_MESSAGE: String = "Trade closed — standing too low"
+## Dock fee readout while docked (base rate for this system + standing mult).
+const STATION_DOCK_FEE_FORMAT: String = "Dock fee here: %d credits"
+const STATION_DOCK_FEE_SURCHARGE_FORMAT: String = "Dock fee here: %d credits (standing surcharge)"
 const STATION_TURN_IN_JOB_LABEL: String = "Turn in job"
 const STATION_ABANDON_JOB_LABEL: String = "Abandon job"
 const STATION_COMPLETE_RECOVERY_LABEL: String = "Complete recovery work"
@@ -374,6 +410,38 @@ const PERCENT_SCALE: float = 100.0
 const REFUEL_MIN_UNITS: float = 0.01
 
 # --- Trade price resolution (B5 system contrast) ---------------------------
+
+
+## Dock fee standing multiplier for a display tier id (StandingService.tier_for).
+static func dock_fee_mult_for_tier(tier: StringName) -> float:
+	if tier == BalanceStanding.TIER_UNFRIENDLY:
+		return DOCK_FEE_STANDING_MULT_UNFRIENDLY
+	if tier == BalanceStanding.TIER_HOSTILE:
+		return DOCK_FEE_STANDING_MULT_HOSTILE
+	if tier == BalanceStanding.TIER_HATED:
+		return DOCK_FEE_STANDING_MULT_HATED
+	return DOCK_FEE_STANDING_MULT_DEFAULT
+
+
+## Station service cost multiplier (refuel always; repair only when allowed).
+static func service_cost_mult_for_tier(tier: StringName) -> float:
+	if tier == BalanceStanding.TIER_UNFRIENDLY:
+		return SERVICE_COST_MULT_UNFRIENDLY
+	if tier == BalanceStanding.TIER_HOSTILE:
+		return SERVICE_COST_MULT_HOSTILE
+	if tier == BalanceStanding.TIER_HATED:
+		return SERVICE_COST_MULT_HATED
+	return SERVICE_COST_MULT_DEFAULT
+
+
+## True when repair is refused at this controller standing tier.
+static func service_repair_denied_for_tier(tier: StringName) -> bool:
+	return tier == BalanceStanding.TIER_HOSTILE or tier == BalanceStanding.TIER_HATED
+
+
+## True when buy/sell is refused at this controller standing tier.
+static func trade_denied_for_tier(tier: StringName) -> bool:
+	return service_repair_denied_for_tier(tier)
 
 
 ## Buy multiplier for a commodity in a system (1.0 when unlisted).

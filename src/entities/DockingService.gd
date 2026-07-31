@@ -188,7 +188,9 @@ func _charge_dock_fee() -> void:
 		elif typeof(system_raw) == TYPE_STRING:
 			var as_text: String = system_raw
 			system_id = StringName(as_text)
-	wallet_node.call(&"charge_dock_fee", system_id)
+	# Station controller standing drives E1.5 fee surcharge when available.
+	var station_id: StringName = _controller.docked_station_id()
+	wallet_node.call(&"charge_dock_fee", system_id, station_id)
 
 
 func _emit_dock_refused(station_id: StringName) -> void:

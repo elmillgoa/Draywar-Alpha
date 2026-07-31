@@ -28,9 +28,11 @@ var _favor_btn: Button = null
 var _betray_btn: Button = null
 var _refuel_btn: Button = null
 var _repair_btn: Button = null
+var _dock_fee_label: Label = null
 var _undock_btn: Button = null
 var _status_label: Label = null
 var _trade_box: VBoxContainer = null
+var _trade_denied_label: Label = null
 var _docked_station_id: StringName = &""
 var _offer_person_id: StringName = &""
 var _favor_person_id: StringName = &""
@@ -181,6 +183,13 @@ func _build_ui() -> void:
 
 	# --- Services ---
 	_add_section_header(layout, BalanceEconomy.STATION_SECTION_SERVICES)
+	_dock_fee_label = Label.new()
+	_dock_fee_label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
+	_dock_fee_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_dock_fee_label.text = ""
+	_dock_fee_label.visible = false
+	layout.add_child(_dock_fee_label)
+
 	_refuel_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REFUEL_LABEL)
 	_refuel_btn.pressed.connect(_on_refuel_pressed)
 
@@ -189,6 +198,12 @@ func _build_ui() -> void:
 
 	# --- Trade ---
 	_add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
+	_trade_denied_label = Label.new()
+	_trade_denied_label.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
+	_trade_denied_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_trade_denied_label.text = BalanceEconomy.STATION_TRADE_DENIED_MESSAGE
+	_trade_denied_label.visible = false
+	layout.add_child(_trade_denied_label)
 	_trade_box = VBoxContainer.new()
 	_trade_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	layout.add_child(_trade_box)
@@ -308,6 +323,11 @@ func _on_undocked(_station_id: StringName) -> void:
 		_contacts_header.add_theme_color_override("font_color", BalanceUi.ACCENT)
 	_hide_action_buttons()
 	_clear_trade_rows()
+	if _dock_fee_label != null:
+		_dock_fee_label.visible = false
+		_dock_fee_label.text = ""
+	if _trade_denied_label != null:
+		_trade_denied_label.visible = false
 	visible = false
 
 
@@ -710,9 +730,56 @@ func _is_deep_negative_with_controller() -> bool:
 func _refresh_services() -> void:
 	if _refuel_btn == null:
 		return
-	# Always show while docked; wallet refuses if full/broke.
+	# Always show while docked; wallet refuses if full/broke or repair denied.
 	_refuel_btn.visible = visible
 	_repair_btn.visible = visible
+	_refresh_dock_fee_line()
+	if not visible:
+		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_LABEL
+		_repair_btn.text = BalanceEconomy.STATION_REPAIR_LABEL
+		_refuel_btn.disabled = false
+		_repair_btn.disabled = false
+		return
+
+	var tier: StringName = StationDockQueries.controller_tier(_docked_station_id)
+	var service_mult: float = BalanceEconomy.service_cost_mult_for_tier(tier)
+	if service_mult > BalanceEconomy.SERVICE_COST_MULT_DEFAULT:
+		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_MARKUP_LABEL
+	else:
+		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_LABEL
+	_refuel_btn.disabled = false
+
+	if BalanceEconomy.service_repair_denied_for_tier(tier):
+		_repair_btn.text = BalanceEconomy.STATION_REPAIR_DENIED_LABEL
+		_repair_btn.disabled = true
+	else:
+		_repair_btn.text = BalanceEconomy.STATION_REPAIR_LABEL
+		_repair_btn.disabled = false
+
+
+func _refresh_dock_fee_line() -> void:
+	if _dock_fee_label == null:
+		return
+	if not visible or String(_docked_station_id).is_empty():
+		_dock_fee_label.visible = false
+		_dock_fee_label.text = ""
+		return
+	var wallet: Node = _wallet_service()
+	if wallet == null or not wallet.has_method(&"dock_fee_for_system"):
+		_dock_fee_label.visible = false
+		return
+	var system_id: StringName = StationDockQueries.system_id(_docked_station_id)
+	var fee: int = _variant_to_int(
+		wallet.call(&"dock_fee_for_system", system_id, _docked_station_id)
+	)
+	var mult: float = BalanceEconomy.dock_fee_mult_for_tier(
+		StationDockQueries.controller_tier(_docked_station_id)
+	)
+	if mult > BalanceEconomy.DOCK_FEE_STANDING_MULT_DEFAULT:
+		_dock_fee_label.text = BalanceEconomy.STATION_DOCK_FEE_SURCHARGE_FORMAT % fee
+	else:
+		_dock_fee_label.text = BalanceEconomy.STATION_DOCK_FEE_FORMAT % fee
+	_dock_fee_label.visible = true
 
 
 func _clear_trade_rows() -> void:
@@ -726,9 +793,19 @@ func _refresh_trade() -> void:
 	if _trade_box == null:
 		return
 	_clear_trade_rows()
+	if _trade_denied_label != null:
+		_trade_denied_label.visible = false
 	if not visible:
 		return
 	var cargo: Node = _cargo_service()
+	var trade_ok: bool = true
+	if cargo != null and cargo.has_method(&"trade_allowed_at_dock"):
+		trade_ok = cargo.call(&"trade_allowed_at_dock") == true
+	if not trade_ok:
+		if _trade_denied_label != null:
+			_trade_denied_label.text = BalanceEconomy.STATION_TRADE_DENIED_MESSAGE
+			_trade_denied_label.visible = true
+		return
 	var system_id: StringName = _dock_system_id()
 	for commodity_id: StringName in ContentLibrary.ids_in(
 		BalanceEconomy.COMMODITY_CONTENT_CATEGORY
@@ -801,6 +878,13 @@ func _cargo_service() -> Node:
 	if tree == null:
 		return null
 	return tree.get_first_node_in_group(&"cargo_service")
+
+
+func _wallet_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"wallet_service")
 
 
 func _mission_is_active() -> bool:
@@ -878,118 +962,29 @@ func _offered_template_for_dock() -> StringName:
 	return offered[0]
 
 
-## All contract templates offered by the dock controller (board stock).
 func _offered_templates_for_dock() -> Array[StringName]:
-	var out: Array[StringName] = []
-	if String(_docked_station_id).is_empty():
-		return out
-	if not ContentLibrary.has_item(_docked_station_id):
-		return out
-	var station_item: ContentItem = ContentLibrary.item(_docked_station_id)
-	if not (station_item is Station):
-		return out
-	var station: Station = station_item as Station
-	var controller: StringName = station.controller_entity_id
-	if controller == Station.CONTROLLER_NOBODY or String(controller).is_empty():
-		return out
-	for id: StringName in ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY):
-		var item: ContentItem = ContentLibrary.item(id)
-		if item == null:
-			continue
-		var offering_raw: Variant = item.get("offering_entity_id")
-		if offering_raw == null:
-			continue
-		var offering: StringName = StringName(str(offering_raw))
-		if offering == controller:
-			out.append(id)
-	return out
+	return StationDockQueries.offered_templates(_docked_station_id)
 
 
 func _offered_recovery_person_for_dock() -> StringName:
-	var found: StringName = &""
-	var controller: StringName = _dock_controller()
-	if String(controller).is_empty():
-		return found
 	var tree: SceneTree = get_tree()
 	if tree == null:
-		return found
+		return &""
 	var service: Node = tree.get_first_node_in_group(&"recovery_service")
-	if service == null:
-		return found
-	return _first_offerable_person(service, controller)
+	return StationDockQueries.offered_recovery_person(_docked_station_id, service)
 
 
 func _favor_person_for_dock() -> StringName:
-	## Show favor for the recovery contact of this station's controller when
-	## not closed and not yet Friendly enough for an offer (bootstrap path).
-	var controller: StringName = _dock_controller()
-	if String(controller).is_empty():
-		return &""
-	for chain_id: StringName in ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY):
-		var item: ContentItem = ContentLibrary.item(chain_id)
-		if item == null:
-			continue
-		var entity_raw: Variant = item.get("entity_id")
-		var person_raw: Variant = item.get("person_id")
-		if entity_raw == null or person_raw == null:
-			continue
-		var entity_id: StringName = StringName(str(entity_raw))
-		var person_id: StringName = StringName(str(person_raw))
-		if entity_id != controller:
-			continue
-		if StandingService.is_person_closed(person_id):
-			continue
-		if StandingService.can_offer_recovery(person_id):
-			# Already offerable Ã¢â‚¬â€ talk button covers it; favor still ok for top-up.
-			return person_id
-		return person_id
-	return &""
+	return StationDockQueries.favor_person(_docked_station_id)
 
 
 func _dock_controller() -> StringName:
-	var station: Station = _docked_station()
-	if station == null:
-		return &""
-	var controller: StringName = station.controller_entity_id
-	if controller == Station.CONTROLLER_NOBODY or String(controller).is_empty():
-		return &""
-	return controller
+	return StationDockQueries.controller(_docked_station_id)
 
 
 func _dock_system_id() -> StringName:
-	var station: Station = _docked_station()
-	if station == null:
-		return &""
-	return station.system_id
+	return StationDockQueries.system_id(_docked_station_id)
 
 
 func _docked_station() -> Station:
-	if String(_docked_station_id).is_empty() or not ContentLibrary.has_item(_docked_station_id):
-		return null
-	var station_item: ContentItem = ContentLibrary.item(_docked_station_id)
-	if station_item is Station:
-		return station_item as Station
-	return null
-
-
-func _first_offerable_person(service: Node, controller: StringName) -> StringName:
-	var found: StringName = &""
-	for chain_id: StringName in ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY):
-		var item: ContentItem = ContentLibrary.item(chain_id)
-		if item == null:
-			continue
-		var entity_raw: Variant = item.get("entity_id")
-		var person_raw: Variant = item.get("person_id")
-		if entity_raw == null or person_raw == null:
-			continue
-		var entity_id: StringName = StringName(str(entity_raw))
-		var person_id: StringName = StringName(str(person_raw))
-		if entity_id != controller:
-			continue
-		if not service.has_method(&"has_offer_for_person"):
-			continue
-		var offerable: Variant = service.call(&"has_offer_for_person", person_id)
-		if offerable == true:
-			found = person_id
-			break
-	return found
+	return StationDockQueries.station_resource(_docked_station_id)

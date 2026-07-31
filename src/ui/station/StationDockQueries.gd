@@ -1,0 +1,109 @@
+class_name StationDockQueries
+extends RefCounted
+
+## Pure station-board lookups shared by StationMenu (jobs, contacts, recovery).
+##
+## Keeps StationMenu under the file-length lint cap without changing behavior.
+
+
+static func station_resource(station_id: StringName) -> Station:
+	if String(station_id).is_empty() or not ContentLibrary.has_item(station_id):
+		return null
+	var station_item: ContentItem = ContentLibrary.item(station_id)
+	if station_item is Station:
+		return station_item as Station
+	return null
+
+
+static func controller(station_id: StringName) -> StringName:
+	var station: Station = station_resource(station_id)
+	if station == null:
+		return &""
+	var controller_id: StringName = station.controller_entity_id
+	if controller_id == Station.CONTROLLER_NOBODY or String(controller_id).is_empty():
+		return &""
+	return controller_id
+
+
+static func system_id(station_id: StringName) -> StringName:
+	var station: Station = station_resource(station_id)
+	if station == null:
+		return &""
+	return station.system_id
+
+
+## Controller standing display tier (Neutral when no controller).
+static func controller_tier(station_id: StringName) -> StringName:
+	var controller_id: StringName = controller(station_id)
+	if String(controller_id).is_empty():
+		return BalanceStanding.TIER_NEUTRAL
+	var standing: float = StandingService.get_entity_standing(controller_id)
+	return StandingService.tier_for(standing)
+
+
+## All contract templates offered by the dock controller (board stock).
+static func offered_templates(station_id: StringName) -> Array[StringName]:
+	var out: Array[StringName] = []
+	var controller_id: StringName = controller(station_id)
+	if String(controller_id).is_empty():
+		return out
+	for id: StringName in ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY):
+		var item: ContentItem = ContentLibrary.item(id)
+		if item == null:
+			continue
+		var offering_raw: Variant = item.get("offering_entity_id")
+		if offering_raw == null:
+			continue
+		var offering: StringName = StringName(str(offering_raw))
+		if offering == controller_id:
+			out.append(id)
+	return out
+
+
+static func favor_person(station_id: StringName) -> StringName:
+	## Recovery contact of this station's controller when not closed.
+	var controller_id: StringName = controller(station_id)
+	if String(controller_id).is_empty():
+		return &""
+	for chain_id: StringName in ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY):
+		var item: ContentItem = ContentLibrary.item(chain_id)
+		if item == null:
+			continue
+		var entity_raw: Variant = item.get("entity_id")
+		var person_raw: Variant = item.get("person_id")
+		if entity_raw == null or person_raw == null:
+			continue
+		var entity_id: StringName = StringName(str(entity_raw))
+		var person_id: StringName = StringName(str(person_raw))
+		if entity_id != controller_id:
+			continue
+		if StandingService.is_person_closed(person_id):
+			continue
+		return person_id
+	return &""
+
+
+static func offered_recovery_person(station_id: StringName, service: Node) -> StringName:
+	var found: StringName = &""
+	var controller_id: StringName = controller(station_id)
+	if String(controller_id).is_empty() or service == null:
+		return found
+	if not service.has_method(&"has_offer_for_person"):
+		return found
+	for chain_id: StringName in ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY):
+		var item: ContentItem = ContentLibrary.item(chain_id)
+		if item == null:
+			continue
+		var entity_raw: Variant = item.get("entity_id")
+		var person_raw: Variant = item.get("person_id")
+		if entity_raw == null or person_raw == null:
+			continue
+		var entity_id: StringName = StringName(str(entity_raw))
+		var person_id: StringName = StringName(str(person_raw))
+		if entity_id != controller_id:
+			continue
+		var offerable: Variant = service.call(&"has_offer_for_person", person_id)
+		if offerable == true:
+			found = person_id
+			break
+	return found

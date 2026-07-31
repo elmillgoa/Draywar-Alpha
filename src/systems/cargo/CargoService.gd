@@ -134,9 +134,23 @@ func apply_section(raw: Variant) -> void:
 	EventBus.on_cargo_changed.emit()
 
 
+## True when the docked station controller allows trade (Hostile/Hated refuse).
+func trade_allowed_at_dock() -> bool:
+	if not _is_docked():
+		return false
+	var controller: StringName = _dock_controller()
+	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
+		return true
+	var standing: float = StandingService.get_entity_standing(controller)
+	var tier: StringName = StandingService.tier_for(standing)
+	return not BalanceEconomy.trade_denied_for_tier(tier)
+
+
 ## True when docked and can afford + fit a buy of this qty.
 func can_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
 	if qty <= 0 or not _is_docked():
+		return false
+	if not trade_allowed_at_dock():
 		return false
 	var commodity: Commodity = _commodity(commodity_id)
 	if commodity == null:
@@ -154,6 +168,8 @@ func can_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT)
 func can_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
 	if qty <= 0 or not _is_docked():
 		return false
+	if not trade_allowed_at_dock():
+		return false
 	if _commodity(commodity_id) == null:
 		return false
 	return quantity(commodity_id) >= qty
@@ -162,7 +178,7 @@ func can_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT
 ## Buy from the docked station. Returns true on success.
 func try_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
 	var ok: bool = false
-	if qty > 0 and _is_docked():
+	if qty > 0 and _is_docked() and trade_allowed_at_dock():
 		var commodity: Commodity = _commodity(commodity_id)
 		if commodity != null and can_add(commodity_id, qty):
 			var cost: int = _unit_buy_price(commodity) * qty
@@ -184,7 +200,7 @@ func try_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT)
 ## Sell to the docked station. Returns true on success.
 func try_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
 	var ok: bool = false
-	if qty > 0 and _is_docked():
+	if qty > 0 and _is_docked() and trade_allowed_at_dock():
 		var commodity: Commodity = _commodity(commodity_id)
 		if commodity != null and quantity(commodity_id) >= qty:
 			var payout: int = _unit_sell_price(commodity) * qty

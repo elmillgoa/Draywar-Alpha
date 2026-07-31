@@ -171,8 +171,96 @@ func speed_factor() -> float:
 	return lerpf(BalanceEconomy.CONDITION_MIN_SPEED_FACTOR, 1.0, clampf(t, 0.0, 1.0))
 
 
-## Docking fee for a system id from ContentLibrary policing.
-func dock_fee_for_system(system_id: StringName) -> int:
+## Docking fee for a system id: policing base × standing mult (E1.5).
+## Prefer `station_id` so fee uses the station controller when present.
+func dock_fee_for_system(system_id: StringName, station_id: StringName = &"") -> int:
+	var base_fee: int = _base_dock_fee_for_system(system_id)
+	if base_fee <= 0:
+		return 0
+	var mult: float = _dock_fee_standing_mult(system_id, station_id)
+	if is_equal_approx(mult, BalanceEconomy.DOCK_FEE_STANDING_MULT_DEFAULT):
+		return base_fee
+	return _ceil_credits(float(base_fee) * mult)
+
+
+## Charge docking fee (partial if broke — fee floors at remaining credits).
+## Pass `station_id` from the dock charge path for controller standing.
+func charge_dock_fee(system_id: StringName, station_id: StringName = &"") -> int:
+	var fee: int = dock_fee_for_system(system_id, station_id)
+	if fee <= 0:
+		return 0
+	var paid: int = mini(fee, _credits)
+	if paid > 0:
+		_set_credits(_credits - paid)
+	return paid
+
+
+## True when repair is allowed at this station (Hostile/Hated refuse).
+## Empty id uses currently docked station; undocked → allow (tests / non-menu).
+func can_repair_at_station(station_id: StringName = &"") -> bool:
+	var resolved: StringName = station_id
+	if String(resolved).is_empty():
+		resolved = _docked_station_id()
+	if String(resolved).is_empty():
+		return true
+	var system_id: StringName = _system_id_for_station(resolved)
+	var tier: StringName = _standing_tier_for_place(system_id, resolved)
+	return not BalanceEconomy.service_repair_denied_for_tier(tier)
+
+
+## Refuel one chunk (or remaining capacity). Returns fuel added (0 if broke/full).
+## Applies standing service mult when docked at a controlled station (E1.5).
+func refuel_chunk() -> float:
+	var room: float = BalanceEconomy.FUEL_MAX - _fuel
+	if room <= BalanceEconomy.FUEL_EMPTY_EPSILON:
+		return 0.0
+	var mult: float = _service_cost_mult_for_station()
+	var unit_rate: float = BalanceEconomy.REFUEL_CREDITS_PER_UNIT * mult
+	var units: float = minf(BalanceEconomy.REFUEL_CHUNK, room)
+	var cost: int = _ceil_credits(units * unit_rate)
+	if cost > 0 and not try_spend(cost):
+		# Buy as much as credits allow.
+		if _credits <= 0:
+			return 0.0
+		if unit_rate <= 0.0:
+			return 0.0
+		units = float(_credits) / unit_rate
+		units = minf(units, room)
+		if units <= BalanceEconomy.FUEL_EMPTY_EPSILON:
+			return 0.0
+		cost = _ceil_credits(units * unit_rate)
+		if not try_spend(cost):
+			return 0.0
+	_set_fuel(minf(BalanceEconomy.FUEL_MAX, _fuel + units))
+	return units
+
+
+## Full repair toward CONDITION_MAX. Returns true if any repair applied.
+## Hostile/Hated at docked controller station: refused (E1.5). Cost uses mult.
+func repair_full() -> bool:
+	if _condition >= BalanceEconomy.CONDITION_MAX:
+		return false
+	if not can_repair_at_station():
+		return false
+	var was_crippled: bool = _condition <= BalanceEconomy.CONDITION_MIN
+	var missing: float = BalanceEconomy.CONDITION_MAX - _condition
+	var fraction: float = missing / BalanceEconomy.CONDITION_MAX
+	var mult: float = _service_cost_mult_for_station()
+	var cost: int = _ceil_credits(float(BalanceEconomy.REPAIR_FULL_COST) * fraction * mult)
+	if cost <= 0:
+		_set_condition(BalanceEconomy.CONDITION_MAX)
+		if was_crippled:
+			EventBus.on_player_repaired_from_cripple.emit()
+		return true
+	if not try_spend(cost):
+		return false
+	_set_condition(BalanceEconomy.CONDITION_MAX)
+	if was_crippled:
+		EventBus.on_player_repaired_from_cripple.emit()
+	return true
+
+
+func _base_dock_fee_for_system(system_id: StringName) -> int:
 	if not ContentLibrary.has_item(system_id):
 		return BalanceEconomy.DOCK_FEE_DEFAULT
 	var item: ContentItem = ContentLibrary.item(system_id)
@@ -190,58 +278,68 @@ func dock_fee_for_system(system_id: StringName) -> int:
 			return BalanceEconomy.DOCK_FEE_DEFAULT
 
 
-## Charge docking fee (partial if broke — fee floors at remaining credits).
-func charge_dock_fee(system_id: StringName) -> int:
-	var fee: int = dock_fee_for_system(system_id)
-	if fee <= 0:
-		return 0
-	var paid: int = mini(fee, _credits)
-	if paid > 0:
-		_set_credits(_credits - paid)
-	return paid
+func _standing_tier_for_place(system_id: StringName, station_id: StringName = &"") -> StringName:
+	var controller: StringName = &""
+	if not String(station_id).is_empty() and ContentLibrary.has_item(station_id):
+		var station_item: ContentItem = ContentLibrary.item(station_id)
+		if station_item is Station:
+			var station: Station = station_item as Station
+			controller = station.controller_entity_id
+	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
+		if ContentLibrary.has_item(system_id):
+			var sys_item: ContentItem = ContentLibrary.item(system_id)
+			if sys_item is StarSystem:
+				var system: StarSystem = sys_item as StarSystem
+				controller = system.held_by
+	if (
+		String(controller).is_empty()
+		or controller == Station.CONTROLLER_NOBODY
+		or controller == StarSystem.HELD_BY_NOBODY
+	):
+		return BalanceStanding.TIER_NEUTRAL
+	var standing: float = StandingService.get_entity_standing(controller)
+	return StandingService.tier_for(standing)
 
 
-## Refuel one chunk (or remaining capacity). Returns fuel added (0 if broke/full).
-func refuel_chunk() -> float:
-	var room: float = BalanceEconomy.FUEL_MAX - _fuel
-	if room <= BalanceEconomy.FUEL_EMPTY_EPSILON:
-		return 0.0
-	var units: float = minf(BalanceEconomy.REFUEL_CHUNK, room)
-	var cost: int = _ceil_credits(units * BalanceEconomy.REFUEL_CREDITS_PER_UNIT)
-	if cost > 0 and not try_spend(cost):
-		# Buy as much as credits allow.
-		if _credits <= 0:
-			return 0.0
-		units = float(_credits) / BalanceEconomy.REFUEL_CREDITS_PER_UNIT
-		units = minf(units, room)
-		if units <= BalanceEconomy.FUEL_EMPTY_EPSILON:
-			return 0.0
-		cost = _ceil_credits(units * BalanceEconomy.REFUEL_CREDITS_PER_UNIT)
-		if not try_spend(cost):
-			return 0.0
-	_set_fuel(minf(BalanceEconomy.FUEL_MAX, _fuel + units))
-	return units
+func _dock_fee_standing_mult(system_id: StringName, station_id: StringName = &"") -> float:
+	return BalanceEconomy.dock_fee_mult_for_tier(_standing_tier_for_place(system_id, station_id))
 
 
-## Full repair toward CONDITION_MAX. Returns true if any repair applied.
-func repair_full() -> bool:
-	if _condition >= BalanceEconomy.CONDITION_MAX:
-		return false
-	var was_crippled: bool = _condition <= BalanceEconomy.CONDITION_MIN
-	var missing: float = BalanceEconomy.CONDITION_MAX - _condition
-	var fraction: float = missing / BalanceEconomy.CONDITION_MAX
-	var cost: int = _ceil_credits(float(BalanceEconomy.REPAIR_FULL_COST) * fraction)
-	if cost <= 0:
-		_set_condition(BalanceEconomy.CONDITION_MAX)
-		if was_crippled:
-			EventBus.on_player_repaired_from_cripple.emit()
-		return true
-	if not try_spend(cost):
-		return false
-	_set_condition(BalanceEconomy.CONDITION_MAX)
-	if was_crippled:
-		EventBus.on_player_repaired_from_cripple.emit()
-	return true
+func _service_cost_mult_for_station(station_id: StringName = &"") -> float:
+	var resolved: StringName = station_id
+	if String(resolved).is_empty():
+		resolved = _docked_station_id()
+	if String(resolved).is_empty():
+		return BalanceEconomy.SERVICE_COST_MULT_DEFAULT
+	var system_id: StringName = _system_id_for_station(resolved)
+	return BalanceEconomy.service_cost_mult_for_tier(_standing_tier_for_place(system_id, resolved))
+
+
+func _docked_station_id() -> StringName:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return &""
+	var dock_node: Node = tree.get_first_node_in_group(&"docking_service")
+	if dock_node == null or not dock_node.has_method(&"docked_station_id"):
+		return &""
+	var raw: Variant = dock_node.call(&"docked_station_id")
+	if typeof(raw) == TYPE_STRING_NAME:
+		var as_name: StringName = raw
+		return as_name
+	if typeof(raw) == TYPE_STRING:
+		var as_text: String = raw
+		return StringName(as_text)
+	return &""
+
+
+func _system_id_for_station(station_id: StringName) -> StringName:
+	if String(station_id).is_empty() or not ContentLibrary.has_item(station_id):
+		return &""
+	var item: ContentItem = ContentLibrary.item(station_id)
+	if item is Station:
+		var station: Station = item as Station
+		return station.system_id
+	return &""
 
 
 ## Optional save section dictionary.

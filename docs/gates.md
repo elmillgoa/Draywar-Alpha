@@ -186,3 +186,24 @@ Elliot’s words only. Agents never sign these.
 4. Start full-game roadmap work
 
 **Notes:** Path C Alpha closed. Do **not** re-open Final Alpha for residual demo feel. Destination / expansion planning is authorized. Sequence the four priorities; do not treat Destination Phase 0 as greenfield — Alpha already proved standing, flight, combat shell, and save.
+
+---
+
+## E1 feel — Legible Sector
+
+**Criteria:** Does this feel like a **small game** worth another phase of expansion?  
+Not a re-open of Final Alpha. Refuse → iterate E1 list only. Sign → open roadmap E2+.
+
+### Play script (cold, ~30–45 min)
+
+1. **New Game** — docked Alpha Port. Note sky/silhouettes (not pure black boxes).
+2. **Undock** — freighter shape, station modules, second station **Alpha Yard** visible off-offset. Jump **Beta**.
+3. **Beta Spit** — dock secondary; jobs board has courier + **bounty**. Accept bounty → undock → kill hostile → turn in.
+4. **Trade** — buy grain at Alpha, sell Gamma; or scrap/ore Gamma → Alpha. Watch credits.
+5. **Standing teeth** — abandon jobs or fight until Unfriendly/Hostile at Reach. Re-dock (recovery if needed): higher fees, repair/trade friction when hated. Mendi recovery still works.
+6. **Save / Continue** once.
+7. Judge: small game worth E2, or still tech demo?
+
+### Attempt log
+
+*(none yet — waiting on Elliot)*
