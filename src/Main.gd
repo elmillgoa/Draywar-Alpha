@@ -28,8 +28,12 @@ var _main_menu: MainMenu = null
 var _pause_menu: PauseMenu = null
 var _captain_sheet: CaptainSheet = null
 var _new_game_tip: NewGameTip = null
+var _life_path_create: LifePathCreate = null
+var _opening_annexation: OpeningAnnexation = null
 
 var _in_play: bool = false
+## True while create / annexation are open — no tip, dock, or undock yet.
+var _opening_in_progress: bool = false
 var _pause_open: bool = false
 var _console_open: bool = false
 var _jump_busy: bool = false
@@ -52,7 +56,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed(FlightInput.ACTION_PAUSE):
 		return
-	if not _in_play or _console_open or _jump_busy:
+	if not _in_play or _console_open or _jump_busy or _opening_in_progress:
 		return
 	if _captain_sheet != null and _captain_sheet.visible:
 		EventBus.on_captain_sheet_close_requested.emit()
@@ -72,6 +76,9 @@ func _wire_session_bus() -> void:
 	EventBus.on_continue_requested.connect(_on_continue_requested)
 	EventBus.on_quit_to_desktop_requested.connect(_on_quit_to_desktop_requested)
 	EventBus.on_quit_to_menu_requested.connect(_on_quit_to_menu_requested)
+	EventBus.on_life_path_confirmed.connect(_on_life_path_confirmed)
+	EventBus.on_life_path_cancel_requested.connect(_on_life_path_cancel_requested)
+	EventBus.on_annexation_continue_requested.connect(_on_annexation_continue_requested)
 	EventBus.on_manual_save_requested.connect(_on_manual_save_requested)
 	EventBus.on_manual_load_requested.connect(_on_manual_load_requested)
 	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
@@ -94,6 +101,14 @@ func _create_session_ui() -> void:
 	_new_game_tip = NewGameTip.new()
 	_new_game_tip.name = "NewGameTip"
 	add_child(_new_game_tip)
+
+	_life_path_create = LifePathCreate.new()
+	_life_path_create.name = "LifePathCreate"
+	add_child(_life_path_create)
+
+	_opening_annexation = OpeningAnnexation.new()
+	_opening_annexation.name = "OpeningAnnexation"
+	add_child(_opening_annexation)
 
 	_raise_debug_console()
 
@@ -139,17 +154,83 @@ func _on_new_game_requested() -> void:
 
 
 func _start_new_game() -> void:
+	# E4.2–E4.3 order (locked): create → annexation → fly tip → station dock.
+	# Boot services first so Confirm can apply teeth + wallet debt; do not dock
+	# or set _in_play until annexation continues. Cancel tears everything down.
 	_reset_career_services()
 	await _tear_down_play_session()
 	_boot_play_session()
-	# Storyboard entry: always wake up docked at the starter station, not
-	# free-flying into pirates. Government Alpha has no combat hostiles.
-	_enter_career_docked()
-	_in_play = true
+	_freeze_ship_for_opening()
+	_opening_in_progress = true
+	_in_play = false
 	_hide_main_menu()
 	_set_pause(false)
 	if _new_game_tip != null:
+		_new_game_tip.hide_tip()
+	if _opening_annexation != null:
+		_opening_annexation.hide_annexation()
+	if _life_path_create != null:
+		_life_path_create.show_create()
+
+
+func _on_life_path_confirmed(
+	origin_id: StringName, trade_id: StringName, mark_id: StringName
+) -> void:
+	if not _opening_in_progress:
+		return
+	if _wallet == null:
+		return
+	# StandingService is the only writer (via CareerStart). No world-control mutate.
+	CareerStart.apply(origin_id, trade_id, mark_id, _wallet)
+	# Status moment for system + starter station after path (E4.3 / D6).
+	if _world != null:
+		StandingService.emit_status_for_system(_world.system_id)
+		var station_id: StringName = _primary_station_id()
+		if not String(station_id).is_empty():
+			StandingService.emit_status_for_station(station_id)
+	if _life_path_create != null:
+		_life_path_create.hide_create()
+	var baggage: String = BalanceSession.ANNEXATION_BAGGAGE_UNCONTROLLED
+	if _world != null:
+		var status: Dictionary = StandingService.status_for_system(_world.system_id)
+		baggage = OpeningAnnexation.baggage_from_status(status)
+	if _opening_annexation != null:
+		_opening_annexation.show_annexation(baggage)
+
+
+func _on_life_path_cancel_requested() -> void:
+	if not _opening_in_progress:
+		return
+	_opening_in_progress = false
+	if _life_path_create != null:
+		_life_path_create.hide_create()
+	if _opening_annexation != null:
+		_opening_annexation.hide_annexation()
+	CareerStart.reset()
+	# Tear down so no partial career (standing reset + no live world) remains.
+	await _return_to_menu()
+
+
+func _on_annexation_continue_requested() -> void:
+	if not _opening_in_progress:
+		return
+	_opening_in_progress = false
+	if _opening_annexation != null:
+		_opening_annexation.hide_annexation()
+	CareerStart.mark_opening_complete()
+	# Storyboard entry: always wake up docked at the starter station.
+	_enter_career_docked()
+	_in_play = true
+	_set_pause(false)
+	if _new_game_tip != null:
 		_new_game_tip.show_tip()
+
+
+## Hold the ship still while create / annexation block the viewport.
+func _freeze_ship_for_opening() -> void:
+	if _ship != null:
+		_ship.set_flight_enabled(false)
+		_ship.velocity = Vector3.ZERO
 
 
 ## Dock at the primary station of the current system (new career only; no fee).
@@ -195,6 +276,12 @@ func _continue_career() -> void:
 	_boot_play_session()
 	CareerSave.apply_meta_sections(get_tree(), sections)
 	await _apply_world_section(sections)
+	# D11: Continue/load skips create + annexation entirely.
+	_opening_in_progress = false
+	if _life_path_create != null:
+		_life_path_create.hide_create()
+	if _opening_annexation != null:
+		_opening_annexation.hide_annexation()
 	_in_play = true
 	_hide_main_menu()
 	_set_pause(false)
@@ -212,10 +299,15 @@ func _on_quit_to_menu_requested() -> void:
 
 func _return_to_menu() -> void:
 	_set_pause(false)
+	_opening_in_progress = false
 	if _captain_sheet != null:
 		_captain_sheet.visible = false
 	if _new_game_tip != null:
 		_new_game_tip.hide_tip()
+	if _life_path_create != null:
+		_life_path_create.hide_create()
+	if _opening_annexation != null:
+		_opening_annexation.hide_annexation()
 	await _tear_down_play_session()
 	_reset_career_services()
 	_in_play = false
@@ -254,6 +346,12 @@ func _load_into_play() -> void:
 	var sections: Dictionary = _sections_of(loaded.envelope)
 	CareerSave.apply_meta_sections(get_tree(), sections)
 	await _apply_world_section(sections)
+	# D11: load never re-shows create / annexation.
+	_opening_in_progress = false
+	if _life_path_create != null:
+		_life_path_create.hide_create()
+	if _opening_annexation != null:
+		_opening_annexation.hide_annexation()
 	if _pause_menu != null:
 		_pause_menu.show_feedback(BalanceSession.LOAD_OK_FORMAT % path.get_file())
 	_set_pause(false)
@@ -270,6 +368,7 @@ func _sections_of(envelope: Dictionary) -> Dictionary:
 
 func _reset_career_services() -> void:
 	StandingService.reset_to_defaults()
+	CareerStart.reset()
 	var mission: Node = get_node_or_null("MissionService")
 	if mission != null and mission.has_method(&"reset"):
 		mission.call(&"reset")

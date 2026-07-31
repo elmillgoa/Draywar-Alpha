@@ -95,7 +95,7 @@ func test_grain_sell_price_differs_by_system() -> void:
 
 func test_recovery_chain_and_station_surfaces_favor_person() -> void:
 	var chains: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(chains.size(), 1)
+	assert_eq(chains.size(), 2, "E4.4: Mendi + Jax")
 	assert_true(ContentLibrary.has_item(CHAIN_MENDI))
 	var chain: RecoveryChain = ContentLibrary.item(CHAIN_MENDI) as RecoveryChain
 	assert_ne(chain, null)

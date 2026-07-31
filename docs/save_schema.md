@@ -16,13 +16,14 @@ what is inside a section.
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
 **`standing`** (A2), **`wallet`** (A5), **`cargo`** (B3), **`ship`** (E2.5),
-**`world`** (B2), and **`mission`** (B2) maps. Missing `standing` means
-all-neutral content defaults. Missing `wallet` means starting credits/fuel/
-condition. Missing `cargo` means empty hold. Missing `ship` means Hauler only
-(starter owned, active Hauler). Missing `world` keeps the boot system/spawn.
-Missing `mission` means no active job. Tests may still use a hostile probe
-fixture. New required career fields later bump the version with a migration
-step in `SaveMigrations.gd`.
+**`world`** (B2), **`mission`** (B2), and **`career`** (E4.6) maps. Missing
+`standing` means all-neutral content defaults. Missing `wallet` means starting
+credits/fuel/condition. Missing `cargo` means empty hold. Missing `ship` means
+Hauler only (starter owned, active Hauler). Missing `world` keeps the boot
+system/spawn. Missing `mission` means no active job. Missing `career` means no
+life-path ids on the captain sheet (old saves). Tests may still use a hostile
+probe fixture. New required career fields later bump the version with a
+migration step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -119,6 +120,22 @@ Smuggle (E3.4) does **not** add mission keys. Cargo for the job lives in the
 crates (so save/load does not double the hold).
 
 Missing section → no active mission. No envelope version bump.
+
+### Optional section: `career` (schema v1)
+
+Written by `CareerPathState.to_section()` / applied by `apply_section()` when
+gathered through `CareerSave` (E4.6). Holds the three life-path option ids and
+whether the opening beat finished. No envelope version bump.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `origin_id` | `String` | Life-path origin option content id. |
+| `trade_id` | `String` | Life-path former-trade option content id. |
+| `mark_id` | `String` | Life-path mark option content id. |
+| `opening_complete` | `bool` | True after annexation continue (or restored past opening). |
+
+Missing section → old save; captain sheet hides Origin/Trade/Mark. Empty path
+ids with no flag → clear path memory.
 
 Saving is deterministic to the byte: the same state always produces the same
 file, and loading a file and saving it again reproduces it exactly.

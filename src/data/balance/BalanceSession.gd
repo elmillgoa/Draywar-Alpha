@@ -15,6 +15,14 @@ const DEFAULT_SAVE_NAME: String = "career"
 ## Optional section keys.
 const SAVE_SECTION_WORLD: StringName = &"world"
 const SAVE_SECTION_MISSION: StringName = &"mission"
+## Optional life-path career section (E4.6 / D10). Missing = old save, no path lines.
+const SAVE_SECTION_CAREER: StringName = &"career"
+
+## Career section keys (optional strings + bool; no envelope bump).
+const CAREER_KEY_ORIGIN_ID: StringName = &"origin_id"
+const CAREER_KEY_TRADE_ID: StringName = &"trade_id"
+const CAREER_KEY_MARK_ID: StringName = &"mark_id"
+const CAREER_KEY_OPENING_COMPLETE: StringName = &"opening_complete"
 
 ## World section keys.
 const WORLD_KEY_SYSTEM_ID: StringName = &"system_id"
@@ -37,18 +45,20 @@ const CAPTAIN_SHEET_CANVAS_LAYER: int = 36
 # --- Menu layout -----------------------------------------------------------
 
 const MENU_WIDTH: float = 380.0
-const MENU_HEIGHT: float = 320.0
+## Room for optional tagline under title (E4.5).
+const MENU_HEIGHT: float = 360.0
 const MENU_HALF_WIDTH: float = 190.0
-const MENU_HALF_HEIGHT: float = 160.0
+const MENU_HALF_HEIGHT: float = 180.0
 const MENU_BUTTON_WIDTH: float = 240.0
 const MENU_BUTTON_HEIGHT: float = 44.0
 const MENU_DIM_ALPHA: float = 0.62
 const MENU_SPACER_HEIGHT: float = 12.0
 
 const SHEET_WIDTH: float = 420.0
-const SHEET_HEIGHT: float = 470.0
+## Taller for Origin/Trade/Mark lines (E4.5).
+const SHEET_HEIGHT: float = 530.0
 const SHEET_HALF_WIDTH: float = 210.0
-const SHEET_HALF_HEIGHT: float = 235.0
+const SHEET_HALF_HEIGHT: float = 265.0
 const SHEET_BUTTON_WIDTH: float = 200.0
 const SHEET_BUTTON_HEIGHT: float = 40.0
 const SHEET_SPACER_HEIGHT: float = 8.0
@@ -57,6 +67,8 @@ const SHEET_MAX_STANDING_LINES: int = 6
 # --- Copy ------------------------------------------------------------------
 
 const MAIN_TITLE: String = "DRAYWAR"
+## Optional main-menu tagline under title (E4.5). Empty string hides it.
+const MAIN_TAGLINE: String = "The empire fell. The contracts didn't."
 const MAIN_NEW_GAME: String = "New Game"
 const MAIN_CONTINUE: String = "Continue"
 const MAIN_QUIT: String = "Quit"
@@ -71,6 +83,10 @@ const PAUSE_QUIT_TO_MENU: String = "Quit to menu"
 const SHEET_TITLE: String = "CAPTAIN"
 const SHEET_STANDING_HEADER: String = "Standing"
 const SHEET_CLOSE: String = "Close"
+## Captain sheet life-path lines (E4.5). Shown only when CareerStart.has_path().
+const SHEET_ORIGIN_FORMAT: String = "Origin  %s"
+const SHEET_TRADE_FORMAT: String = "Trade  %s"
+const SHEET_MARK_FORMAT: String = "Mark  %s"
 const SHEET_SHIP_FORMAT: String = "Ship  %s"
 const SHEET_CREDITS_FORMAT: String = "Credits  %d"
 ## E3.2 debt line on captain sheet (only when debt_owed > 0).
@@ -125,6 +141,67 @@ const NEW_GAME_TIP_BODY: String = (
 	+ "Pirates sit near gates — not on the undock pad"
 )
 const NEW_GAME_TIP_DISMISS: String = "Got it"
+
+# --- Life path create (E4.2) -----------------------------------------------
+
+## Above main menu (40); full-screen modal until confirm/cancel.
+const LIFE_PATH_CREATE_CANVAS_LAYER: int = 42
+
+const LIFE_PATH_CREATE_WIDTH: float = 720.0
+const LIFE_PATH_CREATE_HEIGHT: float = 560.0
+const LIFE_PATH_CREATE_HALF_WIDTH: float = 360.0
+const LIFE_PATH_CREATE_HALF_HEIGHT: float = 280.0
+const LIFE_PATH_CREATE_BUTTON_WIDTH: float = 200.0
+const LIFE_PATH_CREATE_BUTTON_HEIGHT: float = 40.0
+const LIFE_PATH_CREATE_OPTION_MIN_HEIGHT: float = 72.0
+const LIFE_PATH_CREATE_SPACER: float = 8.0
+const LIFE_PATH_CREATE_AXIS_GAP: float = 10.0
+const LIFE_PATH_CREATE_ACTION_GAP: int = 16
+const LIFE_PATH_CREATE_DIM_ALPHA: float = 0.72
+const LIFE_PATH_CREATE_COLUMN_MIN_WIDTH: float = 210.0
+
+const LIFE_PATH_CREATE_TITLE: String = "WHO WERE YOU"
+const LIFE_PATH_CREATE_SUBTITLE: String = (
+	"Three picks. Each one leaves standing teeth. " + "No free rides."
+)
+const LIFE_PATH_CREATE_AXIS_ORIGIN: String = "Origin"
+const LIFE_PATH_CREATE_AXIS_TRADE: String = "Former trade"
+const LIFE_PATH_CREATE_AXIS_MARK: String = "The mark"
+const LIFE_PATH_CREATE_CONFIRM: String = "Confirm"
+const LIFE_PATH_CREATE_CANCEL: String = "Cancel"
+const LIFE_PATH_CREATE_NEED_ALL: String = "Pick one on each column to continue."
+const LIFE_PATH_CREATE_TEETH_NONE: String = "No standing change"
+const LIFE_PATH_CREATE_TEETH_DEBT: String = "Free Haulers loan — +%d credits, owe %d"
+const LIFE_PATH_CREATE_TEETH_DELTA_FORMAT: String = "%s %+d"
+const LIFE_PATH_CREATE_TEETH_JOIN: String = " · "
+const LIFE_PATH_CREATE_BLURB_FALLBACK: String = "—"
+## Option button: display name, blurb, teeth summary.
+const LIFE_PATH_CREATE_OPTION_FORMAT: String = "%s\n%s\n%s"
+
+# --- Opening annexation (E4.3) ---------------------------------------------
+
+## Same band as create; shown after path apply, before fly tip.
+const ANNEXATION_CANVAS_LAYER: int = 42
+
+const ANNEXATION_WIDTH: float = 520.0
+const ANNEXATION_HEIGHT: float = 320.0
+const ANNEXATION_HALF_WIDTH: float = 260.0
+const ANNEXATION_HALF_HEIGHT: float = 160.0
+const ANNEXATION_BUTTON_WIDTH: float = 200.0
+const ANNEXATION_BUTTON_HEIGHT: float = 40.0
+const ANNEXATION_SPACER: float = 12.0
+const ANNEXATION_DIM_ALPHA: float = 0.72
+
+const ANNEXATION_TITLE: String = "The corridor is claimed"
+const ANNEXATION_BODY: String = (
+	"Your last neutral berth is gone.\n"
+	+ "Reach Authority runs the pad under your feet.\n"
+	+ "Alpha Port is theirs now. So is the ledger that greets you."
+)
+## Args: tier display, controller display (status moment line pieces).
+const ANNEXATION_BAGGAGE_FORMAT: String = "Your standing here: %s — %s"
+const ANNEXATION_BAGGAGE_UNCONTROLLED: String = "Your standing here: uncontrolled space"
+const ANNEXATION_CONTINUE: String = "Continue"
 
 # --- Input -----------------------------------------------------------------
 

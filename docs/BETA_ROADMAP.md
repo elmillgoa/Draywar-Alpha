@@ -65,13 +65,12 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 - Integration / balance pass — **done**
 - **[GATE] E3.6 economy feel** — open (`docs/gates.md`); sign → E4
 
-### E4 — Opening & cast
+### E4 — Opening & cast — **CODE COMPLETE** (gate E4.7 open)
 **Job:** Career starts as a story, not mid-dock.
 
-- Life-path / start situation (thin)
-- Annexation-adjacent beat if Dest opening locked
-- 2nd recovery foothold (different Entity)
-- Named presentation pass 2 (still placeholders OK if stronger)
+- Life-path 3×3 + create UI + annexation + Jax recovery — **done**
+- Plan: `docs/BETA_E4_OPENING_CAST.md`
+- **[GATE] E4.7 Opening feel** — open (`docs/gates.md`); sign → E5
 
 ### E5 — Content scale toward Beta
 **Job:** Sector large enough for multi-hour vetting.

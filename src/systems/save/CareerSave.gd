@@ -34,10 +34,15 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	if not mission_section.is_empty():
 		sections[BalanceSession.SAVE_SECTION_MISSION] = mission_section
 
+	# E4.6 optional career path ids (data-layer memory — no systems/career ref).
+	var career_section: Dictionary = CareerPathState.to_section()
+	if not career_section.is_empty():
+		sections[BalanceSession.SAVE_SECTION_CAREER] = career_section
+
 	return sections
 
 
-## Apply standing (+ recovery), wallet, cargo, ship, and mission. Not world (Main owns that).
+## Apply standing (+ recovery), wallet, cargo, ship, mission, career. Not world (Main owns that).
 static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_standing_from_sections(tree, sections)
 	_apply_wallet_from_sections(tree, sections)
@@ -47,6 +52,7 @@ static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	# D2: cargo applied after ship — re-clamp if hold is overweight for active.
 	_clamp_ship_to_cargo_fit(tree)
 	_apply_mission_from_sections(tree, sections)
+	_apply_career_from_sections(sections)
 
 
 ## Write a named career save under user://saves/.
@@ -257,6 +263,14 @@ static func _apply_mission_from_sections(tree: SceneTree, sections: Dictionary) 
 		mission.call(&"apply_section", sections[BalanceSession.SAVE_SECTION_MISSION])
 	elif mission.has_method(&"reset"):
 		mission.call(&"reset")
+
+
+static func _apply_career_from_sections(sections: Dictionary) -> void:
+	if sections.has(BalanceSession.SAVE_SECTION_CAREER):
+		CareerPathState.apply_section(sections[BalanceSession.SAVE_SECTION_CAREER])
+	else:
+		# Old saves: no path memory (sheet hides Origin/Trade/Mark).
+		CareerPathState.reset()
 
 
 static func _apply_recovery_progress(tree: SceneTree, standing_raw: Variant) -> void:

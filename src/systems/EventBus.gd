@@ -196,6 +196,15 @@ signal on_quit_to_desktop_requested
 ## Pause menu: leave play and return to the main menu.
 signal on_quit_to_menu_requested
 
+## Life-path create UI: player confirmed three axis picks (E4.2).
+signal on_life_path_confirmed(origin_id: StringName, trade_id: StringName, mark_id: StringName)
+
+## Life-path create UI: player cancelled back to main menu (E4.2).
+signal on_life_path_cancel_requested
+
+## Opening annexation UI: player dismissed the beat (E4.3).
+signal on_annexation_continue_requested
+
 ## Main: pause overlay opened or closed.
 signal on_pause_changed(open: bool)
 

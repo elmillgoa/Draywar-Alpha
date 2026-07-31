@@ -1,14 +1,14 @@
 class_name RecoveryChain
 extends ContentItem
 
-## One personal recovery chain — Alpha A4.
+## One personal recovery chain — Alpha A4 / E4.4.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A4
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A4; docs/BETA_E4_OPENING_CAST.md E4.4
 ## Law: docs/reputation_and_standing.md §5
-## Scope: Alpha/ALPHA_SCOPE.md — one recovery chain total.
+## Scope: E4.4 budget ceiling 2 (Mendi/Reach + Jax/Drift).
 ##
 ## A Person under an Entity offers deniable work so the player can climb sticky
-## deep-negative Entity standing. Full-sized shape; Alpha ships exactly one.
+## deep-negative Entity standing. Full-sized shape; one chain per foothold Entity.
 
 ## Person who offers this chain (must match a loaded Person id).
 @export var person_id: StringName = &""

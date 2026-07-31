@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="RecoveryChain" load_steps=7 format=3]
+
+; E4.4 — second recovery foothold. Cut Jax (low rank, Drift Syndicate)
+; offers deniable work so a player hated by the Syndicate can climb back.
+; Same law as Mendi: Friendly personal required; deniable first step;
+; StandingService only. Rank influence: low-rank → tiny Entity deltas.
+
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryChain.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryStep.gd" id="2"]
+
+[sub_resource type="Resource" id="step_side_crate"]
+script = ExtResource("2")
+id = &"step_side_crate"
+display_name = "Side-crate handoff"
+personal_standing_delta = 12.0
+entity_standing_delta = 2.0
+requires_prior_success = false
+
+[sub_resource type="Resource" id="step_alley_word"]
+script = ExtResource("2")
+id = &"step_alley_word"
+display_name = "Alley word for Jax"
+personal_standing_delta = 10.0
+entity_standing_delta = 2.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_cover_run"]
+script = ExtResource("2")
+id = &"step_cover_run"
+display_name = "Cover a short run"
+personal_standing_delta = 8.0
+entity_standing_delta = 3.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_syndicate_chit"]
+script = ExtResource("2")
+id = &"step_syndicate_chit"
+display_name = "A chit that sticks"
+personal_standing_delta = 8.0
+entity_standing_delta = 4.0
+requires_prior_success = true
+
+[resource]
+script = ExtResource("1")
+id = &"recovery_drift_jax"
+display_name = "Jax's Back Channel"
+person_id = &"person_bs_jax"
+entity_id = &"entity_beta_syndicate"
+steps = Array[ExtResource("2")]([SubResource("step_side_crate"), SubResource("step_alley_word"), SubResource("step_cover_run"), SubResource("step_syndicate_chit")])

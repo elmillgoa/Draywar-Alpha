@@ -93,7 +93,7 @@ func _bootstrap_friendly_personal() -> void:
 
 func test_recovery_chain_loaded_under_budget() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(ids.size(), 1, "Alpha ships exactly one recovery chain")
+	assert_eq(ids.size(), 2, "E4.4 ships exactly two recovery chains")
 	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceStanding.RECOVERY_CONTENT_CATEGORY])
 	assert_true(ContentLibrary.has_item(CHAIN_MENDI))
 	var problems: PackedStringArray = ContentLibrary.problems()

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LifePathOption" load_steps=3 format=3]
+
+; E4.1 — Mark: Debt. Starts the E3 Free Haulers loan (owe 480, +400 credits).
+[ext_resource type="Script" path="res://src/data/shapes/LifePathOption.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/LifePathStandingDelta.gd" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"mark_debt"
+display_name = "Debt"
+blurb = "You already borrowed from Free Haulers. Principal in the wallet; the rest is owed."
+axis = &"mark"
+entity_deltas = Array[ExtResource("2")]([])
+person_deltas = Array[ExtResource("2")]([])
+starts_with_debt = true

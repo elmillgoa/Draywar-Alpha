@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LifePathOption" load_steps=3 format=3]
+
+; E4.1 — Mark: Clean (default). No extra standing or debt.
+[ext_resource type="Script" path="res://src/data/shapes/LifePathOption.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/LifePathStandingDelta.gd" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"mark_clean"
+display_name = "Clean"
+blurb = "No open loan, no cancelled paper. The slate starts with origin and trade only."
+axis = &"mark"
+entity_deltas = Array[ExtResource("2")]([])
+person_deltas = Array[ExtResource("2")]([])
+starts_with_debt = false

@@ -498,7 +498,25 @@ func _default_person_standing(person_id: StringName) -> float:
 	return BalanceStanding.DEFAULT_STANDING
 
 
+## Re-fire the system status moment (E4.1 D6 after life-path apply).
+func emit_status_for_system(system_id: StringName) -> void:
+	_emit_system_status(system_id)
+
+
+## Re-fire the station status moment (E4.1 D6 after life-path apply).
+func emit_status_for_station(station_id: StringName) -> void:
+	_emit_station_status(station_id)
+
+
 func _on_system_entered(system_id: StringName) -> void:
+	_emit_system_status(system_id)
+
+
+func _on_docked(station_id: StringName) -> void:
+	_emit_station_status(station_id)
+
+
+func _emit_system_status(system_id: StringName) -> void:
 	var status: Dictionary = status_for_system(system_id)
 	EventBus.on_status_moment.emit(
 		BalanceStanding.STATUS_KIND_SYSTEM,
@@ -509,7 +527,7 @@ func _on_system_entered(system_id: StringName) -> void:
 	)
 
 
-func _on_docked(station_id: StringName) -> void:
+func _emit_station_status(station_id: StringName) -> void:
 	var status: Dictionary = status_for_station(station_id)
 	EventBus.on_status_moment.emit(
 		BalanceStanding.STATUS_KIND_STATION,

@@ -292,3 +292,37 @@ Not a re-open of E2. Refuse → iterate E3 list only. Sign → open roadmap E4.
 
 *(No attempts yet — E3 code complete 2026-07-31; awaiting Elliot play.)*
 
+---
+
+## E4.7 — Opening feel
+
+**Criteria:** Does New Game feel like a career starting — picks with teeth, annexation landing, and a playable first dock — without softlocks or dead ends?
+
+Not a re-open of E2/E3. Refuse → iterate E4 list only. Sign → E4 closed; roadmap continues.
+
+**What that means in play (plain):**
+
+- Create screen makes three picks matter (standing / debt teeth visible before Confirm).
+- Annexation beat lands the corridor-claimed story without rewriting the map (Alpha was already Reach).
+- You wake docked with status/standing that match your path; Captain sheet shows Origin / Trade / Mark.
+- Continue skips create + annexation; save/load keeps path lines.
+- Two recovery footholds exist (Mendi at Reach, Jax at Drift) without needing the console.
+- No softlock: default-ish path is playable; debt start has a loan; ugly standing still has a recovery contact path.
+
+### Play script (cold, ~25–40 min)
+
+1. **Main menu** — see **DRAYWAR** + tagline. **New Game**.
+2. **Create** — Confirm disabled until all three columns picked. Read teeth on Smuggler vs Ex-Navy (different). Cancel once → back to menu clean; **New Game** again.
+3. **Pick a path with teeth** — e.g. Periphery-born + Merchant marine + Clean (or Core + Navy + Clean). Confirm.
+4. **Annexation** — title about the corridor claimed; body that Reach runs the pad; baggage line shows your standing. Continue.
+5. **Tip → docked** — Got it. Station menu at Alpha Port. Read flavor (Reach / pad). HUD standing matches path.
+6. **Captain sheet** (Esc → Captain sheet) — Origin / Trade / Mark lines match your picks. Credits/fuel/hull sane. Close.
+7. **Optional debt path (second New Game)** — Mark **Debt**. Confirm → annexation → dock. Sheet shows Free Haulers debt (~480 owed) and higher credits.
+8. **Optional ugly path** — Cancelled + Smuggler. Confirm. Reach standing worse; sheet still shows path. Undock/re-dock ok. At **Beta Hub** Contacts, **Jax** recovery path exists when Friendly personal; at Alpha, **Mendi** still the Reach foothold.
+9. **Save / Quit to menu / Continue** — Continue must **not** re-show create or annexation. Sheet still shows Origin/Trade/Mark after load.
+10. Judge: does opening feel like a career start worth keeping, or still a menu gluing onto Alpha?
+
+### Attempt log
+
+*(No attempts yet — E4 code complete 2026-07-31; awaiting Elliot play.)*
+

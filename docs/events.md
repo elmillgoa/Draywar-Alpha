@@ -779,6 +779,38 @@ No parameters.
 **Emitted by** `PauseMenu`.
 **Listened to by** `Main`.
 
+### `on_life_path_confirmed(origin_id: StringName, trade_id: StringName, mark_id: StringName)`
+
+Life-path create screen confirmed three axis picks. Main applies teeth via
+CareerStart then shows annexation.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `origin_id` | `StringName` | Chosen origin option content id. |
+| `trade_id` | `StringName` | Chosen former-trade option content id. |
+| `mark_id` | `StringName` | Chosen mark option content id. |
+
+**Emitted by** `LifePathCreate`.
+**Listened to by** `Main`.
+
+### `on_life_path_cancel_requested()`
+
+Life-path create screen cancelled. Main tears play down and returns to menu.
+
+No parameters.
+
+**Emitted by** `LifePathCreate`.
+**Listened to by** `Main`.
+
+### `on_annexation_continue_requested()`
+
+Opening annexation beat dismissed. Main docks at starter and shows fly tip.
+
+No parameters.
+
+**Emitted by** `OpeningAnnexation`.
+**Listened to by** `Main`.
+
 ### `on_pause_changed(open: bool)`
 
 Pause overlay opened or closed. Flight input freezes while open.

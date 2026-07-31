@@ -9,6 +9,9 @@ extends CanvasLayer
 ## entity standings. Standing is display-only (StandingService is the writer).
 
 var _panel: PanelContainer = null
+var _origin_label: Label = null
+var _trade_label: Label = null
+var _mark_label: Label = null
 var _ship_label: Label = null
 var _credits_label: Label = null
 var _debt_label: Label = null
@@ -118,6 +121,9 @@ func _build_ui() -> void:
 	title.text = BalanceSession.SHEET_TITLE
 	layout.add_child(title)
 
+	_origin_label = _add_line(layout)
+	_trade_label = _add_line(layout)
+	_mark_label = _add_line(layout)
 	_ship_label = _add_line(layout)
 	_credits_label = _add_line(layout)
 	_debt_label = _add_line(layout)
@@ -166,11 +172,41 @@ func _on_close_pressed() -> void:
 
 
 func _refresh() -> void:
+	_refresh_life_path()
 	_ship_label.text = BalanceSession.SHEET_SHIP_FORMAT % _ship_display_name()
 	_refresh_wallet()
 	_refresh_job()
 	_refresh_status()
 	_refresh_standings()
+
+
+## Origin / Trade / Mark when a life path is set (E4.5). Hidden for old saves.
+func _refresh_life_path() -> void:
+	if _origin_label == null or _trade_label == null or _mark_label == null:
+		return
+	if not CareerPathState.has_path():
+		_origin_label.visible = false
+		_trade_label.visible = false
+		_mark_label.visible = false
+		_origin_label.text = ""
+		_trade_label.text = ""
+		_mark_label.text = ""
+		return
+	_origin_label.visible = true
+	_trade_label.visible = true
+	_mark_label.visible = true
+	_origin_label.text = (
+		BalanceSession.SHEET_ORIGIN_FORMAT
+		% CareerPathState.option_display_name(CareerPathState.origin_id)
+	)
+	_trade_label.text = (
+		BalanceSession.SHEET_TRADE_FORMAT
+		% CareerPathState.option_display_name(CareerPathState.trade_id)
+	)
+	_mark_label.text = (
+		BalanceSession.SHEET_MARK_FORMAT
+		% CareerPathState.option_display_name(CareerPathState.mark_id)
+	)
 
 
 func _ship_display_name() -> String:

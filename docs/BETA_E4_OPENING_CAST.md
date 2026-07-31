@@ -1,9 +1,9 @@
 # Beta E4 — Opening & cast
 
-**Status:** Active after E3 code-complete  
+**Status:** Active — **E4.1–E4.6 done**; **[GATE] E4.7** open  
 **Date:** 2026-07-31  
 **Authority:** Destination opening rhyme + character axes + standing law  
-**Gates open for later play:** E2.7, E3.6 (Elliot tests when ready)
+**Gates open for later play:** E2.7, E3.6, E4.7 (Elliot tests when ready)
 
 ## Job
 
@@ -36,13 +36,98 @@ Career starts as a story: life-path picks with teeth, annexation opening, second
 
 | ID | Name | Status |
 |----|------|--------|
-| E4.1 | Life path data + apply | pending |
-| E4.2 | Create UI | pending |
-| E4.3 | Annexation beat | pending |
-| E4.4 | Second recovery (Jax/Drift) | pending |
-| E4.5 | Named presentation pass 2 | pending |
-| E4.6 | Integration / save | pending |
-| E4.7 | **[GATE] Opening feel** | after code |
+| E4.1 | Life path data + apply | **done** 2026-07-31 |
+| E4.2 | Create UI | **done** 2026-07-31 |
+| E4.3 | Annexation beat | **done** 2026-07-31 |
+| E4.4 | Second recovery (Jax/Drift) | **done** 2026-07-31 |
+| E4.5 | Named presentation pass 2 | **done** 2026-07-31 |
+| E4.6 | Integration / save | **done** 2026-07-31 |
+| E4.7 | **[GATE] Opening feel** | **open** — play script in `docs/gates.md` |
+
+## E4.1 done — Life path data + apply
+
+**What the game does:** nine life-path options; `CareerStart.apply` / `apply_default`; standing only via StandingService; debt mark reuses E3 loan; status moment re-fires after path.
+
+| Option id | Display | Teeth |
+|-----------|---------|-------|
+| origin_core | Core World | Reach +15; Free Haulers −5 |
+| origin_periphery | Periphery-born | Fringe Collective +15 |
+| origin_charterfall | Stateless Charterfall refugee | Free Haulers +12; Reach −10; Grease Wren +8 |
+| trade_navy | Ex-Navy | Reach +18; Drift −12 |
+| trade_merchant | Merchant marine | Free Haulers +15; Mate Dace +10 |
+| trade_smuggler | Smuggler | Drift +18; Reach −15; Cut Jax +12 |
+| mark_cancelled | Cancelled charter | Reach −25; Free Haulers +5 |
+| mark_debt | Debt | Start E3 loan (owe 480, principal 400) |
+| mark_clean | Clean | no extra |
+
+**Evidence:** `tests/test_e4_life_path.gd` (9).
+
+## E4.2 done — Create UI
+
+**What the game does on New Game:**
+
+- Shows **WHO WERE YOU** create screen with three columns (Origin / Former trade / The mark).
+- Each option shows name, blurb, and teeth summary.
+- Confirm disabled until all three picked; Cancel → main menu with clean teardown (no half career).
+- Confirm emits `on_life_path_confirmed` → Main calls `CareerStart.apply` → annexation.
+
+**Does not** auto-apply default on human New Game. Headless/tests still call `apply_default` directly.
+
+**Evidence:** `tests/test_e4_create_ui.gd`.
+
+## E4.3 done — Annexation beat
+
+**What the game does after path confirm:**
+
+- Dismissible panel: title **The corridor is claimed**; body that Reach runs the pad.
+- Baggage line from post-path local standing (tier + controller).
+- Status moment for Alpha system + starter station after path apply.
+- Continue → tip → docked play.
+- Continue/load never shows annexation (D11). Presentation only (D5) — no world-control mutate.
+
+**Evidence:** `tests/test_e4_opening.gd`.
+
+## E4.4 done — Second recovery (Drift / Cut Jax)
+
+**What the game does:**
+
+- Two personal recovery chains (`recovery_chains` budget **2**).
+- **Dockhand Mendi** at Reach docks; **Cut Jax** at Drift docks.
+- Same Friendly personal + deniable rules; StandingService only.
+
+| Chain id | Person | Entity | Steps |
+|----------|--------|--------|-------|
+| `recovery_reach_mendi` | `person_ra_mendi` | `entity_reach_authority` | 4 |
+| `recovery_drift_jax` | `person_bs_jax` | `entity_beta_syndicate` | 4 |
+
+**Evidence:** `tests/test_e4_recovery_jax.gd` (12).
+
+## E4.5 done — Named presentation pass 2
+
+**What the game does:**
+
+- Captain sheet shows **Origin / Trade / Mark** when path is set; hides lines for old saves.
+- Main menu tagline under DRAYWAR.
+- Alpha Port / Yard flavor mentions Reach-run pad / claimed corridor (copy only).
+
+**Evidence:** `tests/test_e4_integration.gd` (sheet + tagline + flavor).
+
+## E4.6 done — Integration / save
+
+**What the game does:**
+
+- Optional save section `career`: `origin_id`, `trade_id`, `mark_id`, `opening_complete`.
+- `CareerPathState` holds ids (data layer); `CareerStart` applies teeth + updates state.
+- Round-trip save; missing keys = old saves.
+- Softlocks: default playable (not all-neutral); debt start has debt; cancelled+smuggler still has Mendi/Jax recovery content open.
+
+**Evidence:** `tests/test_e4_integration.gd`. Lint + full GUT **478/478**. **Not committed.**
+
+## New Game order (locked)
+
+create UI (3 picks) → annexation → fly tip → station menu docked.
+
+Continue/load skips create + annexation.
 
 ## OUT
 

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="LifePathOption" load_steps=4 format=3]
+
+; E4.1 — Origin: Periphery-born (default). Fringe Collective soft open.
+[ext_resource type="Script" path="res://src/data/shapes/LifePathOption.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/LifePathStandingDelta.gd" id="2"]
+
+[sub_resource type="Resource" id="delta_fringe"]
+script = ExtResource("2")
+target_id = &"entity_gamma_collective"
+delta = 15.0
+
+[resource]
+script = ExtResource("1")
+id = &"origin_periphery"
+display_name = "Periphery-born"
+blurb = "Rim stations and thin law. The Fringe already knows your kind of face."
+axis = &"origin"
+entity_deltas = Array[ExtResource("2")]([SubResource("delta_fringe")])
+person_deltas = Array[ExtResource("2")]([])
+starts_with_debt = false

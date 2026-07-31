@@ -117,7 +117,7 @@ const MISSION_CONTENT_CATEGORY: StringName = &"contract_types"
 
 # --- Personal recovery (A4) ------------------------------------------------
 
-## Content category for RecoveryChain resources. Alpha ceiling is 1.
+## Content category for RecoveryChain resources. E4.4 ceiling is 2.
 const RECOVERY_CONTENT_CATEGORY: StringName = &"recovery_chains"
 
 ## Alpha chain step count bounds (law §5: short chain of further jobs).
@@ -201,6 +201,67 @@ const REASON_DEBT_GRACE_EXPIRED: StringName = &"debt_grace_expired"
 
 ## E3.3: dock inspection found jurisdictional contraband for the controller.
 const REASON_CONTRABAND: StringName = &"contraband"
+
+## E4.1: life-path teeth applied at career start (StandingService only).
+const REASON_LIFE_PATH: StringName = &"life_path"
+
+# --- Life path career start (E4.1 / D1–D4) ---------------------------------
+# Content category holds the nine options. Magnitudes live here so tests and
+# content share one source; content .tres mirrors these numbers.
+
+## Content category directory for life-path options.
+const LIFE_PATH_CONTENT_CATEGORY: StringName = &"life_path_options"
+
+const LIFE_PATH_AXIS_ORIGIN: StringName = &"origin"
+const LIFE_PATH_AXIS_TRADE: StringName = &"trade"
+const LIFE_PATH_AXIS_MARK: StringName = &"mark"
+
+const LIFE_PATH_AXES: Array[StringName] = [
+	LIFE_PATH_AXIS_ORIGIN,
+	LIFE_PATH_AXIS_TRADE,
+	LIFE_PATH_AXIS_MARK,
+]
+
+## Headless / default New Game combo (D4): periphery + merchant + clean.
+const LIFE_PATH_DEFAULT_ORIGIN: StringName = &"origin_periphery"
+const LIFE_PATH_DEFAULT_TRADE: StringName = &"trade_merchant"
+const LIFE_PATH_DEFAULT_MARK: StringName = &"mark_clean"
+
+## Exactly three options per axis (D1).
+const LIFE_PATH_OPTIONS_PER_AXIS: int = 3
+
+## Total options ceiling (also Balance.CONTENT_BUDGET[&"life_path_options"]).
+const LIFE_PATH_OPTION_COUNT: int = 9
+
+# Origin teeth
+const PATH_ORIGIN_CORE_REACH: float = 15.0
+const PATH_ORIGIN_CORE_HAULERS: float = -5.0
+const PATH_ORIGIN_PERIPHERY_FRINGE: float = 15.0
+const PATH_ORIGIN_CHARTERFALL_HAULERS: float = 12.0
+const PATH_ORIGIN_CHARTERFALL_REACH: float = -10.0
+const PATH_ORIGIN_CHARTERFALL_WREN: float = 8.0
+
+# Trade teeth
+const PATH_TRADE_NAVY_REACH: float = 18.0
+const PATH_TRADE_NAVY_DRIFT: float = -12.0
+const PATH_TRADE_MERCHANT_HAULERS: float = 15.0
+const PATH_TRADE_MERCHANT_DACE: float = 10.0
+const PATH_TRADE_SMUGGLER_DRIFT: float = 18.0
+const PATH_TRADE_SMUGGLER_REACH: float = -15.0
+const PATH_TRADE_SMUGGLER_JAX: float = 12.0
+
+# Mark teeth (standing only; debt mark uses E3 loan constants in BalanceEconomy)
+const PATH_MARK_CANCELLED_REACH: float = -25.0
+const PATH_MARK_CANCELLED_HAULERS: float = 5.0
+
+## Entity / person content ids used by life-path teeth (real content keys).
+const PATH_ENTITY_REACH: StringName = &"entity_reach_authority"
+const PATH_ENTITY_HAULERS: StringName = &"entity_free_haulers"
+const PATH_ENTITY_DRIFT: StringName = &"entity_beta_syndicate"
+const PATH_ENTITY_FRINGE: StringName = &"entity_gamma_collective"
+const PATH_PERSON_WREN: StringName = &"person_fh_wren"
+const PATH_PERSON_DACE: StringName = &"person_fh_dace"
+const PATH_PERSON_JAX: StringName = &"person_bs_jax"
 
 # --- Debt grace standing hit (E3.2) ----------------------------------------
 # Magnitude lives here (standing law). Wallet only requests the write via
@@ -378,6 +439,14 @@ const CONSOLE_RECOVERY_LIST_OFFER: String = '  %s - "%s" available (id %s)'
 const CONSOLE_RECOVERY_LIST_GATED: String = "  %s - no offer yet (id %s)"
 const CONSOLE_RECOVERY_LIST_CLOSED: String = "  %s - CLOSED (id %s)"
 const CONSOLE_RECOVERY_LIST_DONE: String = "  %s - chain complete (id %s)"
+
+
+## Plain list of life-path axis names for validation messages.
+static func life_path_axes_named() -> String:
+	var names: PackedStringArray = []
+	for known: StringName in LIFE_PATH_AXES:
+		names.append(String(known))
+	return ", ".join(names)
 
 
 ## Plain-language attributed-kill line for HUD / tests. Pure formatter.

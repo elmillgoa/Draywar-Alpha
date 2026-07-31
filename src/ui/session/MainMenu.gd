@@ -66,6 +66,14 @@ func _build_ui() -> void:
 	title.text = BalanceSession.MAIN_TITLE
 	layout.add_child(title)
 
+	if not BalanceSession.MAIN_TAGLINE.strip_edges().is_empty():
+		var tagline: Label = Label.new()
+		tagline.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
+		tagline.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tagline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tagline.text = BalanceSession.MAIN_TAGLINE
+		layout.add_child(tagline)
+
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size = Vector2(0.0, BalanceSession.MENU_SPACER_HEIGHT)
 	layout.add_child(spacer)

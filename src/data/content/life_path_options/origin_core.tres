@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="LifePathOption" load_steps=5 format=3]
+
+; E4.1 — Origin: Core World. Reach likes you; Free Haulers less so.
+[ext_resource type="Script" path="res://src/data/shapes/LifePathOption.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/LifePathStandingDelta.gd" id="2"]
+
+[sub_resource type="Resource" id="delta_reach"]
+script = ExtResource("2")
+target_id = &"entity_reach_authority"
+delta = 15.0
+
+[sub_resource type="Resource" id="delta_haulers"]
+script = ExtResource("2")
+target_id = &"entity_free_haulers"
+delta = -5.0
+
+[resource]
+script = ExtResource("1")
+id = &"origin_core"
+display_name = "Core World"
+blurb = "Raised under Authority lights. Papers in order; independents eye you sideways."
+axis = &"origin"
+entity_deltas = Array[ExtResource("2")]([SubResource("delta_reach"), SubResource("delta_haulers")])
+person_deltas = Array[ExtResource("2")]([])
+starts_with_debt = false
