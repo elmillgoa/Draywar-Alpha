@@ -103,6 +103,12 @@ const MISSION_ABANDON_DELTA: float = -8.0
 ## ContractType.kind value for Alpha courier work.
 const MISSION_KIND_DELIVERY: StringName = &"delivery"
 
+## ContractType.kind value for E1.3 patrol/bounty (kill then turn in).
+const MISSION_KIND_BOUNTY: StringName = &"bounty"
+
+## Hostiles that must die in the target system before bounty turn-in.
+const BOUNTY_KILLS_REQUIRED: int = 1
+
 ## Content category directory for mission templates.
 const MISSION_CONTENT_CATEGORY: StringName = &"contract_types"
 
@@ -263,6 +269,12 @@ const STATION_ACCEPT_JOB_LABEL: String = "Accept courier job"
 ## Station menu: accept job with destination (display name).
 const STATION_ACCEPT_JOB_TO_FORMAT: String = "Accept job → %s"
 
+## Station menu: accept bounty (no system name fallback).
+const STATION_ACCEPT_BOUNTY_LABEL: String = "Accept bounty"
+
+## Station menu: accept bounty with target system display name.
+const STATION_ACCEPT_BOUNTY_FORMAT: String = "Accept bounty — clear %s"
+
 ## Station menu: talk to recovery contact when a step is available.
 const STATION_RECOVERY_TALK_FORMAT: String = "Talk to %s"
 
@@ -271,6 +283,12 @@ const HUD_MISSION_FORMAT: String = "JOB  %s → %s"
 
 ## HUD when a mission has no destination station set.
 const HUD_MISSION_NO_DEST_FORMAT: String = "JOB  %s"
+
+## HUD bounty objective (kill still outstanding); arg = system display name.
+const HUD_MISSION_BOUNTY_FORMAT: String = "BOUNTY  clear hostiles in %s"
+
+## HUD bounty ready for turn-in; arg = destination station display name.
+const HUD_MISSION_BOUNTY_READY_FORMAT: String = "BOUNTY  turn in at %s"
 
 ## `recovery accept` / `favor` arg counts (tokens after the verb).
 const CONSOLE_RECOVERY_ACCEPT_ARGS: int = 2

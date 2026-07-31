@@ -570,6 +570,12 @@ func _accept_job_label(template_id: StringName) -> String:
 	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
 		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
 	var item: ContentItem = ContentLibrary.item(template_id)
+	var kind: StringName = _variant_to_name(item.get("kind"))
+	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		var target_id: StringName = _variant_to_name(item.get("target_system_id"))
+		if String(target_id).is_empty():
+			return BalanceStanding.STATION_ACCEPT_BOUNTY_LABEL
+		return BalanceStanding.STATION_ACCEPT_BOUNTY_FORMAT % _content_name(target_id)
 	var dest_id: StringName = _variant_to_name(item.get("destination_station_id"))
 	if String(dest_id).is_empty():
 		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
@@ -872,7 +878,7 @@ func _offered_template_for_dock() -> StringName:
 	return offered[0]
 
 
-## All delivery templates offered by the dock controller (board stock).
+## All contract templates offered by the dock controller (board stock).
 func _offered_templates_for_dock() -> Array[StringName]:
 	var out: Array[StringName] = []
 	if String(_docked_station_id).is_empty():

@@ -1,13 +1,14 @@
 class_name MissionService
 extends Node
 
-## One active mission max; outcomes move Entity standing — Alpha A3.
+## One active mission max; outcomes move Entity standing — Alpha A3 / E1.3.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A3, docs/BETA_E1_LEGIBLE_SECTOR.md E1.3
 ## Law: docs/reputation_and_standing.md §7
 ##
 ## Not a standing writer. Completes/fails/abandons call StandingService.
 ## Child of Main (not an autoload). Optional save section `mission` (B2).
+## Delivery: turn in at destination. Bounty: kill in target system, then turn in.
 ## Console: `mission list|accept|complete|fail|abandon|status`.
 
 const MISSION: StringName = &"mission"
@@ -27,6 +28,8 @@ const OUTCOME_ABANDONED: StringName = &"abandoned"
 
 var _active_template_id: StringName = &""
 var _state: StringName = STATE_NONE
+## Bounty kill progress toward BalanceStanding.BOUNTY_KILLS_REQUIRED.
+var _bounty_kills: int = 0
 ## Last station from on_docked — backup if group docking lookup fails mid-frame.
 var _last_docked_station_id: StringName = &""
 
@@ -38,6 +41,7 @@ func _ready() -> void:
 	EventBus.on_mission_abandon_requested.connect(_on_abandon_requested)
 	EventBus.on_docked.connect(_on_docked)
 	EventBus.on_undocked.connect(_on_undocked)
+	EventBus.on_hostile_killed.connect(_on_hostile_killed)
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
 
@@ -53,6 +57,8 @@ func _exit_tree() -> void:
 		EventBus.on_docked.disconnect(_on_docked)
 	if EventBus.on_undocked.is_connected(_on_undocked):
 		EventBus.on_undocked.disconnect(_on_undocked)
+	if EventBus.on_hostile_killed.is_connected(_on_hostile_killed):
+		EventBus.on_hostile_killed.disconnect(_on_hostile_killed)
 	if EventBus.on_console_commands_requested.is_connected(_on_commands_requested):
 		EventBus.on_console_commands_requested.disconnect(_on_commands_requested)
 	if EventBus.on_console_command_invoked.is_connected(_on_command_invoked):
@@ -67,6 +73,24 @@ func _on_undocked(_station_id: StringName) -> void:
 	_last_docked_station_id = &""
 
 
+func _on_hostile_killed(system_id: StringName, _victim_entity_id: StringName) -> void:
+	if not has_active():
+		return
+	if is_objective_ready():
+		return
+	var template: ContractType = _template(_active_template_id)
+	if template == null or template.kind != BalanceStanding.MISSION_KIND_BOUNTY:
+		return
+	var target: StringName = _normalize_id(template.target_system_id)
+	var here: StringName = _normalize_id(system_id)
+	if String(target).is_empty() or target != here:
+		return
+	_bounty_kills += 1
+	# Cap at required; turn-in still needs the destination dock.
+	if _bounty_kills > BalanceStanding.BOUNTY_KILLS_REQUIRED:
+		_bounty_kills = BalanceStanding.BOUNTY_KILLS_REQUIRED
+
+
 ## Whether a mission is currently active.
 func has_active() -> bool:
 	return _state == STATE_ACTIVE and not String(_active_template_id).is_empty()
@@ -77,17 +101,54 @@ func active_template_id() -> StringName:
 	return _active_template_id
 
 
+## Active contract kind (delivery, bounty, …), or empty.
+func active_kind() -> StringName:
+	if not has_active():
+		return &""
+	var template: ContractType = _template(_active_template_id)
+	if template == null:
+		return &""
+	return template.kind
+
+
+## Bounty target system for the active mission, or empty.
+func active_target_system_id() -> StringName:
+	if not has_active():
+		return &""
+	var template: ContractType = _template(_active_template_id)
+	if template == null:
+		return &""
+	return _normalize_id(template.target_system_id)
+
+
+## True when the kill/objective gate is satisfied (delivery always true).
+func is_objective_ready() -> bool:
+	if not has_active():
+		return false
+	var template: ContractType = _template(_active_template_id)
+	if template == null:
+		return false
+	if template.kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		return _bounty_kills >= BalanceStanding.BOUNTY_KILLS_REQUIRED
+	return true
+
+
 ## Clear active mission without standing change (tests / reset).
 func reset() -> void:
 	_active_template_id = &""
 	_state = STATE_NONE
+	_bounty_kills = 0
 
 
 ## Optional save section (schema v1). Empty when no active mission.
+## Optional objective_met key when a bounty kill is done (no schema bump).
 func to_section() -> Dictionary:
 	if not has_active():
 		return {}
-	return {BalanceSession.MISSION_KEY_TEMPLATE_ID: String(_active_template_id)}
+	var section: Dictionary = {BalanceSession.MISSION_KEY_TEMPLATE_ID: String(_active_template_id)}
+	if is_objective_ready() and active_kind() == BalanceStanding.MISSION_KIND_BOUNTY:
+		section[BalanceSession.MISSION_KEY_OBJECTIVE_MET] = true
+	return section
 
 
 ## Restore mission from save. Emits on_mission_accepted so HUD refreshes.
@@ -105,7 +166,10 @@ func apply_section(raw: Variant) -> void:
 	if template == null:
 		return
 	# Prefer accept() so HUD/listeners refresh without double-standing writes.
-	accept(template_id)
+	if not accept(template_id):
+		return
+	if data.get(BalanceSession.MISSION_KEY_OBJECTIVE_MET, false) == true:
+		_bounty_kills = BalanceStanding.BOUNTY_KILLS_REQUIRED
 
 
 ## Every loaded contract template id (sorted by ContentLibrary).
@@ -122,6 +186,7 @@ func accept(template_id: StringName) -> bool:
 		return false
 	_active_template_id = template_id
 	_state = STATE_ACTIVE
+	_bounty_kills = 0
 	EventBus.on_mission_accepted.emit(template_id, template.offering_entity_id)
 	return true
 
@@ -129,6 +194,8 @@ func accept(template_id: StringName) -> bool:
 ## True when the active mission can be turned in at this station.
 func can_complete_at_station(station_id: StringName) -> bool:
 	if not has_active():
+		return false
+	if not is_objective_ready():
 		return false
 	var template: ContractType = _template(_active_template_id)
 	if template == null:
@@ -168,7 +235,16 @@ func try_complete_at(station_id: StringName) -> Dictionary:
 
 
 ## Complete the active mission → positive standing + credits with offering Entity.
+## Bounty requires the kill objective first; delivery has no kill gate.
 func complete() -> Dictionary:
+	if has_active() and not is_objective_ready():
+		return {
+			BalanceStanding.REPORT_KEY_ATTRIBUTED: false,
+			BalanceStanding.REPORT_KEY_ENTITY_ID: &"",
+			BalanceStanding.REPORT_KEY_DELTA: 0.0,
+			BalanceStanding.REPORT_KEY_REASON: &"",
+			&"pay_credits": 0,
+		}
 	return _finish(true, false)
 
 
@@ -373,6 +449,16 @@ func _run_list() -> void:
 func _run_status() -> void:
 	if not has_active():
 		_say("No active mission.")
+		return
+	var kind: StringName = active_kind()
+	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		var phase: String = "ready" if is_objective_ready() else "hunt"
+		_say(
+			(
+				"Active mission: %s (bounty %s, target %s)"
+				% [active_template_id(), phase, active_target_system_id()]
+			)
+		)
 		return
 	_say("Active mission: %s" % active_template_id())
 

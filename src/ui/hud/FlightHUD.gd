@@ -293,6 +293,16 @@ func _content_name(id: StringName) -> String:
 	return String(id)
 
 
+func _variant_to_name(value: Variant) -> StringName:
+	if typeof(value) == TYPE_STRING_NAME:
+		var as_name: StringName = value
+		return as_name
+	if typeof(value) == TYPE_STRING:
+		var as_text: String = value
+		return StringName(as_text)
+	return &""
+
+
 func _refresh_status_line() -> void:
 	if _docked_station_id != &"":
 		var station_status: Dictionary = StandingService.status_for_station(_docked_station_id)
@@ -409,15 +419,32 @@ func _refresh_mission_line() -> void:
 	elif typeof(template_raw) == TYPE_STRING:
 		var ttext: String = template_raw
 		template_id = StringName(ttext)
+	var kind: StringName = &""
+	if service.has_method(&"active_kind"):
+		kind = _variant_to_name(service.call(&"active_kind"))
+	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		var objective_ready: bool = false
+		if service.has_method(&"is_objective_ready"):
+			objective_ready = service.call(&"is_objective_ready") == true
+		if objective_ready:
+			var dest_id: StringName = &""
+			if service.has_method(&"active_destination_station_id"):
+				dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
+			_mission_label.text = (
+				BalanceStanding.HUD_MISSION_BOUNTY_READY_FORMAT % _content_name(dest_id)
+			)
+		else:
+			var target_id: StringName = &""
+			if service.has_method(&"active_target_system_id"):
+				target_id = _variant_to_name(service.call(&"active_target_system_id"))
+			_mission_label.text = (
+				BalanceStanding.HUD_MISSION_BOUNTY_FORMAT % _content_name(target_id)
+			)
+		return
 	var job_name: String = _content_name(template_id)
 	var dest_id: StringName = &""
 	if service.has_method(&"active_destination_station_id"):
-		var dest_raw: Variant = service.call(&"active_destination_station_id")
-		if typeof(dest_raw) == TYPE_STRING_NAME:
-			dest_id = dest_raw
-		elif typeof(dest_raw) == TYPE_STRING:
-			var dtext: String = dest_raw
-			dest_id = StringName(dtext)
+		dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
 	if String(dest_id).is_empty():
 		_mission_label.text = BalanceStanding.HUD_MISSION_NO_DEST_FORMAT % job_name
 	else:
@@ -566,6 +593,7 @@ func _on_player_repaired_from_cripple() -> void:
 func _on_hostile_killed(_system_id: StringName, _victim_entity_id: StringName) -> void:
 	_refresh_hostile_flag()
 	_refresh_prompt()
+	_refresh_mission_line()
 
 
 func _process(delta: float) -> void:

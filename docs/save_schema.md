@@ -92,6 +92,7 @@ Applied by `MissionService.apply_section()` (restores active template; emits
 | Key | Type | Meaning |
 |---|---|---|
 | `template_id` | `String` | Active contract template content id. |
+| `objective_met` | `bool` | Optional (E1.3). True when a bounty kill gate is done. Missing = false. |
 
 Missing section → no active mission. No envelope version bump.
 

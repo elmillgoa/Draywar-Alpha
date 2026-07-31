@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Drift Syndicate lane-clear — kill one hostile in Beta, turn in at Spit (E1.3).
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"contract_bounty_beta_spit"
+display_name = "Clear the lane — Beta Drift hostiles"
+offering_entity_id = &"entity_beta_syndicate"
+kind = &"bounty"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 180
+destination_station_id = &"station_beta_spit"
+target_system_id = &"system_beta"

@@ -25,6 +25,8 @@ const WORLD_KEY_DOCKED_STATION_ID: StringName = &"docked_station_id"
 
 ## Mission section keys.
 const MISSION_KEY_TEMPLATE_ID: StringName = &"template_id"
+## Optional: bounty kill objective met (bool). Missing = false. No schema bump.
+const MISSION_KEY_OBJECTIVE_MET: StringName = &"objective_met"
 
 # --- Canvas layers (above station 20 / HUD 10; below debug console 100) -----
 
@@ -76,6 +78,11 @@ const SHEET_FUEL_FORMAT: String = "Fuel  %d%%"
 const SHEET_HULL_FORMAT: String = "Hull  %d%%"
 const SHEET_JOB_FORMAT: String = "Job  %s → %s"
 const SHEET_JOB_NO_DEST_FORMAT: String = "Job  %s"
+## Captain sheet bounty lines (system / station display names).
+const SHEET_JOB_BOUNTY_FORMAT: String = "Bounty  clear hostiles in %s"
+const SHEET_JOB_BOUNTY_READY_FORMAT: String = "Bounty  turn in at %s"
+const SHEET_JOB_STATUS_BOUNTY_HUNT: String = "Status  Hunt active"
+const SHEET_JOB_STATUS_BOUNTY_READY: String = "Status  Ready to turn in"
 const SHEET_NO_JOB: String = "Job  — none —"
 const SHEET_STATUS_FORMAT: String = "Local  %s"
 const SHEET_STANDING_LINE_FORMAT: String = "%s  %s  (%s)"

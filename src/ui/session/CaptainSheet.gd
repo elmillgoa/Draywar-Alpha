@@ -205,6 +205,28 @@ func _refresh_job() -> void:
 		_job_status_label.text = ""
 		return
 	var template_id: StringName = _variant_to_name(mission.call(&"active_template_id"))
+	var kind: StringName = &""
+	if mission.has_method(&"active_kind"):
+		kind = _variant_to_name(mission.call(&"active_kind"))
+	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		var objective_ready: bool = false
+		if mission.has_method(&"is_objective_ready"):
+			objective_ready = mission.call(&"is_objective_ready") == true
+		if objective_ready:
+			var dest_id: StringName = &""
+			if mission.has_method(&"active_destination_station_id"):
+				dest_id = _variant_to_name(mission.call(&"active_destination_station_id"))
+			_job_label.text = (
+				BalanceSession.SHEET_JOB_BOUNTY_READY_FORMAT % _content_name(dest_id)
+			)
+			_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_BOUNTY_READY
+		else:
+			var target_id: StringName = &""
+			if mission.has_method(&"active_target_system_id"):
+				target_id = _variant_to_name(mission.call(&"active_target_system_id"))
+			_job_label.text = (BalanceSession.SHEET_JOB_BOUNTY_FORMAT % _content_name(target_id))
+			_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_BOUNTY_HUNT
+		return
 	var job_name: String = _content_name(template_id)
 	var dest_id: StringName = &""
 	if mission.has_method(&"active_destination_station_id"):

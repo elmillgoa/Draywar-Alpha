@@ -12,7 +12,7 @@ extends ContentItem
 ## Who pays standing for this contract.
 @export var offering_entity_id: StringName = &""
 
-## Mission family (e.g. delivery). Alpha uses BalanceStanding.MISSION_KIND_DELIVERY.
+## Mission family (e.g. delivery, bounty). See BalanceStanding.MISSION_KIND_*.
 @export var kind: StringName = BalanceStanding.MISSION_KIND_DELIVERY
 
 ## Standing on complete / fail / abandon. Defaults match BalanceStanding.
@@ -23,8 +23,11 @@ extends ContentItem
 ## Credits paid on complete. Defaults match BalanceEconomy.
 @export var pay_credits: int = BalanceEconomy.MISSION_PAY_DEFAULT
 
-## Delivery turn-in station. Empty = turn in at any docked station (A5).
+## Turn-in station. Empty = turn in at any docked station (A5 delivery).
 @export var destination_station_id: StringName = &""
+
+## Bounty: system where a hostile kill counts. Empty for non-bounty kinds.
+@export var target_system_id: StringName = &""
 
 
 ## Everything wrong with this contract template. Empty means valid.
@@ -44,6 +47,22 @@ func validation_errors() -> PackedStringArray:
 
 	if pay_credits < 0:
 		problems.append("`pay_credits` is negative. Mission pay cannot be below zero.")
+
+	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		if String(target_system_id).strip_edges().is_empty():
+			problems.append(
+				(
+					"`target_system_id` is empty. Bounty contracts name the system "
+					+ "where the kill counts."
+				)
+			)
+		if String(destination_station_id).strip_edges().is_empty():
+			problems.append(
+				(
+					"`destination_station_id` is empty. Bounty contracts name the "
+					+ "station where you turn the job in after the kill."
+				)
+			)
 
 	problems.append_array(_delta_problems(standing_complete, "standing_complete"))
 	problems.append_array(_delta_problems(standing_fail, "standing_fail"))

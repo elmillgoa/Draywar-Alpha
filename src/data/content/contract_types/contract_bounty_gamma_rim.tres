@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Fringe Collective rim patrol — kill one hostile in Gamma, turn in at Rim (E1.3).
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"contract_bounty_gamma_rim"
+display_name = "Rim patrol — clear Gamma hostiles"
+offering_entity_id = &"entity_gamma_collective"
+kind = &"bounty"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 160
+destination_station_id = &"station_gamma_rim"
+target_system_id = &"system_gamma"

@@ -93,7 +93,11 @@ func test_each_controller_offers_at_least_two_contracts() -> void:
 	for id: StringName in ids:
 		var contract: ContractType = ContentLibrary.item(id) as ContractType
 		assert_ne(contract, null)
-		assert_eq(contract.kind, BalanceStanding.MISSION_KIND_DELIVERY)
+		var kind_ok: bool = (
+			contract.kind == BalanceStanding.MISSION_KIND_DELIVERY
+			or contract.kind == BalanceStanding.MISSION_KIND_BOUNTY
+		)
+		assert_true(kind_ok, "%s kind is delivery or bounty" % id)
 		assert_true(ContentLibrary.has_item(contract.destination_station_id))
 		if contract.offering_entity_id == ENTITY_REACH:
 			reach_count += 1
