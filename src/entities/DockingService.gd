@@ -17,13 +17,27 @@ var _last_prompt_id: StringName = &""
 var _last_can_dock: bool = false
 
 
-## Wire the play session pieces. Call once after the world is built.
+## Wire the play session pieces. Call after the world is built (and after jumps).
 func setup(ship: PlayerShip, station_positions: Dictionary[StringName, Vector3]) -> void:
 	_ship = ship
 	_station_positions = station_positions.duplicate()
-	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
-	EventBus.on_dock_requested.connect(_on_dock_requested)
-	EventBus.on_undock_requested.connect(_on_undock_requested)
+	if not is_in_group(&"docking_service"):
+		add_to_group(&"docking_service")
+	if not EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
+		EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
+	if not EventBus.on_dock_requested.is_connected(_on_dock_requested):
+		EventBus.on_dock_requested.connect(_on_dock_requested)
+	if not EventBus.on_undock_requested.is_connected(_on_undock_requested):
+		EventBus.on_undock_requested.connect(_on_undock_requested)
+
+
+## True when the ship is inside any station's dock interact radius.
+func is_in_station_interact_range() -> bool:
+	if _ship == null:
+		return false
+	var station_id: StringName = _nearest_station_id(_ship.global_position)
+	var distance: float = _distance_to(station_id, _ship.global_position)
+	return station_id != &"" and distance <= BalanceFlight.DOCK_INTERACT_RADIUS
 
 
 func _exit_tree() -> void:
@@ -38,6 +52,11 @@ func _exit_tree() -> void:
 ## Current pure state machine (for tests).
 func controller() -> DockingController:
 	return _controller
+
+
+## Docked station id, or empty when free-flying.
+func docked_station_id() -> StringName:
+	return _controller.docked_station_id()
 
 
 func _physics_process(_delta: float) -> void:
@@ -122,7 +141,28 @@ func _on_dock_requested(station_id: StringName) -> void:
 	_ship.velocity = Vector3.ZERO
 	_ship.visible = false
 	_emit_prompt_if_changed(&"", false)
+	_charge_dock_fee()
 	EventBus.on_docked.emit(docked_id)
+
+
+func _charge_dock_fee() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	var wallet_node: Node = tree.get_first_node_in_group(&"wallet_service")
+	if wallet_node == null or not wallet_node.has_method(&"charge_dock_fee"):
+		return
+	var system_id: StringName = BalanceFlight.PLAYABLE_SYSTEM_ID
+	var world: Node = tree.get_first_node_in_group(&"system_world")
+	if world != null:
+		var system_raw: Variant = world.get("system_id")
+		if typeof(system_raw) == TYPE_STRING_NAME:
+			var as_name: StringName = system_raw
+			system_id = as_name
+		elif typeof(system_raw) == TYPE_STRING:
+			var as_text: String = system_raw
+			system_id = StringName(as_text)
+	wallet_node.call(&"charge_dock_fee", system_id)
 
 
 func _emit_dock_refused(station_id: StringName) -> void:

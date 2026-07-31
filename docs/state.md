@@ -2,35 +2,37 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **A4 — Personal Recovery Path complete** (feel gate signed 2026-07-31).
+**Current position:** **A5 — Minimal Playable Slice complete** (mechanical). **Final Alpha Gate open.**
 
 - A0 Foundation ✓
 - A1 Flight & One System ✓ (feel gate signed)
 - A2 Standing Core ✓
 - A3 Attribution & Everyday Change ✓
-- **A4 Personal Recovery** ✓ — Mendi chain (deniable + follow-ons), betrayal closes route, favor/console bootstrap, plain-English recovery status; **feel gate signed**
+- A4 Personal Recovery ✓ (feel gate signed)
+- **A5 Minimal Playable Slice** ✓ — 3 systems, jump gates, NPC traffic by policing, money loop, normal-play mission/recovery (no console required for fantasy)
 
-**Next contract:** **A5 — Minimal Playable Slice** (per `Alpha/ALPHA_PHASE_PLAN.md`)
+**Next:** **Final Alpha Gate** — Elliot signs core fantasy legible and worth expanding.
 
-## Proof (A4)
+## Proof (A5)
 
 | Criterion | Evidence |
 |-----------|----------|
-| Deep negative Entity + personal trust → deniable job → small Entity climb | `test_deniable_complete_from_deep_negative_improves_entity` + gate play |
-| Betray closes recovery | `test_betray_closes_recovery_route` |
-| Recovery feel earned | **[GATE: ELLIOT] signed** — `docs/gates.md` |
+| Coherent short session without debug console | Station menu accept/turn-in/abandon, favor/talk/complete recovery, refuel/repair, gate F-jump; destinations on accept button + HUD JOB line; `test_a5_play_slice.gd` |
+| Status moment + recovery lever in normal play | FlightHUD status line; StationMenu Talk/Ask favor/Complete recovery; deep-negative dock still open while Mendi recovery open (`test_deep_negative_still_allows_dock_for_open_recovery_contact`) |
+| 3 systems distinct controllers/security | alpha patrolled / beta contested / gamma lawless + stations |
+| NPC traffic reflects security | `NpcTraffic` counts by policing |
+| Money loop | WalletService: pay, fuel, dock fees, refuel, repair; optional save `wallet` |
 
 ## Gates
 
-- lint exit 0 · GUT **176/176** (as of A4 close)
+- lint exit 0 · GUT **188/188**
 - A1 flight feel **signed**
-- A4 recovery feel **signed** (2026-07-31)
-- Next human gate: **Final Alpha** (after A5)
+- A4 recovery feel **signed**
+- **Final Alpha Gate OPEN** — play and sign in `docs/gates.md`
 
 ## Open decisions
 
-- None blocking A5.
-- A4 history bootstrap: first deniable needs Friendly personal only; follow-ons need prior success.
+- None blocking Final Alpha play.
 
 ## Standing decisions that bind upcoming work
 
@@ -40,15 +42,16 @@
 - **Godot 4.6.1** at `C:\Godot\`.
 - **Talk plain / short / blunt.** Subagents build; main verifies.
 - **Full phase per go.** Phase end = commit + wrap when closed.
-- **Save schema v1** with optional sections.
+- **Save schema v1** with optional sections (`standing`, `wallet`).
 
 ## Next session starts here
 
-1. `/start` — orient; position is **A4 complete**, next is **A5**.
-2. If he says go on A5: 3–4 systems with distinct controllers/security, basic NPC traffic, simple money loop, 30–60 min coherent session without requiring debug console for the fantasy (console still available).
-3. Final Alpha Gate after A5 — Elliot signs core fantasy legible and worth expanding.
+1. `/start` — orient; A5 mechanical done, Final Alpha open.
+2. Play Final Alpha gate (see `docs/gates.md` play script).
+3. If signed: wrap Alpha, full plan may start per expansion path.
+4. If not signed: iterate on notes, re-gate.
 
 ## Session history
 
 - **2026-07-30** — Setup; A0; A1 mechanical.
-- **2026-07-31** — A1 gate signed. A2 Standing. A3 Attribution/missions. A4 recovery mechanics + console UX fix; recovery feel gate signed. A4 closed.
+- **2026-07-31** — A1 gate signed. A2 Standing. A3 Attribution/missions. A4 recovery + gate signed. **A5 minimal playable slice** (multi-system, money, NPC, normal play). Final Alpha gate open.

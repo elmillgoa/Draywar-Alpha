@@ -1,21 +1,30 @@
 class_name FlightHUD
 extends CanvasLayer
 
-## Readable flight HUD — Alpha A2.
+## Readable flight HUD — Alpha A5.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1 + A2 status moment
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A2, A5
 ##
 ## Display only. Listens to EventBus; resolves display names via ContentLibrary.
 ## Status line shows the protected standing moment (local controller only).
+## Credits, fuel, hull, and gate jump prompts are session readouts.
 
 var _system_label: Label = null
 var _speed_label: Label = null
 var _throttle_label: Label = null
 var _prompt_label: Label = null
 var _status_label: Label = null
+var _credits_label: Label = null
+var _fuel_label: Label = null
+var _condition_label: Label = null
+var _mission_label: Label = null
 
 var _current_system_id: StringName = &""
 var _docked_station_id: StringName = &""
+var _gate_dest_id: StringName = &""
+var _gate_can_jump: bool = false
+var _dock_prompt_id: StringName = &""
+var _dock_can_dock: bool = false
 
 
 func _ready() -> void:
@@ -25,32 +34,45 @@ func _ready() -> void:
 	EventBus.on_player_speed_changed.connect(_on_speed_changed)
 	EventBus.on_player_throttle_changed.connect(_on_throttle_changed)
 	EventBus.on_dock_prompt_changed.connect(_on_dock_prompt_changed)
+	EventBus.on_gate_prompt_changed.connect(_on_gate_prompt_changed)
 	EventBus.on_docked.connect(_on_docked)
 	EventBus.on_undocked.connect(_on_undocked)
 	EventBus.on_status_moment.connect(_on_status_moment)
 	EventBus.on_entity_standing_changed.connect(_on_entity_standing_changed)
 	EventBus.on_dock_refused.connect(_on_dock_refused)
+	EventBus.on_credits_changed.connect(_on_credits_changed)
+	EventBus.on_fuel_changed.connect(_on_fuel_changed)
+	EventBus.on_condition_changed.connect(_on_condition_changed)
+	EventBus.on_mission_accepted.connect(_on_mission_changed)
+	EventBus.on_mission_completed.connect(_on_mission_closed)
+	EventBus.on_mission_failed.connect(_on_mission_closed)
+	EventBus.on_mission_abandoned.connect(_on_mission_closed)
+	_refresh_mission_line()
 
 
 func _exit_tree() -> void:
-	if EventBus.on_system_entered.is_connected(_on_system_entered):
-		EventBus.on_system_entered.disconnect(_on_system_entered)
-	if EventBus.on_player_speed_changed.is_connected(_on_speed_changed):
-		EventBus.on_player_speed_changed.disconnect(_on_speed_changed)
-	if EventBus.on_player_throttle_changed.is_connected(_on_throttle_changed):
-		EventBus.on_player_throttle_changed.disconnect(_on_throttle_changed)
-	if EventBus.on_dock_prompt_changed.is_connected(_on_dock_prompt_changed):
-		EventBus.on_dock_prompt_changed.disconnect(_on_dock_prompt_changed)
-	if EventBus.on_docked.is_connected(_on_docked):
-		EventBus.on_docked.disconnect(_on_docked)
-	if EventBus.on_undocked.is_connected(_on_undocked):
-		EventBus.on_undocked.disconnect(_on_undocked)
-	if EventBus.on_status_moment.is_connected(_on_status_moment):
-		EventBus.on_status_moment.disconnect(_on_status_moment)
-	if EventBus.on_entity_standing_changed.is_connected(_on_entity_standing_changed):
-		EventBus.on_entity_standing_changed.disconnect(_on_entity_standing_changed)
-	if EventBus.on_dock_refused.is_connected(_on_dock_refused):
-		EventBus.on_dock_refused.disconnect(_on_dock_refused)
+	_disconnect(EventBus.on_system_entered, _on_system_entered)
+	_disconnect(EventBus.on_player_speed_changed, _on_speed_changed)
+	_disconnect(EventBus.on_player_throttle_changed, _on_throttle_changed)
+	_disconnect(EventBus.on_dock_prompt_changed, _on_dock_prompt_changed)
+	_disconnect(EventBus.on_gate_prompt_changed, _on_gate_prompt_changed)
+	_disconnect(EventBus.on_docked, _on_docked)
+	_disconnect(EventBus.on_undocked, _on_undocked)
+	_disconnect(EventBus.on_status_moment, _on_status_moment)
+	_disconnect(EventBus.on_entity_standing_changed, _on_entity_standing_changed)
+	_disconnect(EventBus.on_dock_refused, _on_dock_refused)
+	_disconnect(EventBus.on_credits_changed, _on_credits_changed)
+	_disconnect(EventBus.on_fuel_changed, _on_fuel_changed)
+	_disconnect(EventBus.on_condition_changed, _on_condition_changed)
+	_disconnect(EventBus.on_mission_accepted, _on_mission_changed)
+	_disconnect(EventBus.on_mission_completed, _on_mission_closed)
+	_disconnect(EventBus.on_mission_failed, _on_mission_closed)
+	_disconnect(EventBus.on_mission_abandoned, _on_mission_closed)
+
+
+func _disconnect(sig: Signal, callable: Callable) -> void:
+	if sig.is_connected(callable):
+		sig.disconnect(callable)
 
 
 func _build_labels() -> void:
@@ -94,6 +116,52 @@ func _build_labels() -> void:
 		)
 	)
 	_status_label.text = ""
+
+	_credits_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_credits_label.position = Vector2(
+		BalanceFlight.HUD_MARGIN,
+		(
+			BalanceFlight.HUD_MARGIN
+			+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+			+ float(BalanceFlight.HUD_FONT_SIZE) * BalanceFlight.HUD_LINE_STATUS
+		)
+	)
+	_credits_label.text = BalanceEconomy.HUD_CREDITS_FORMAT % 0
+
+	_fuel_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_fuel_label.position = Vector2(
+		BalanceFlight.HUD_MARGIN,
+		(
+			BalanceFlight.HUD_MARGIN
+			+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+			+ float(BalanceFlight.HUD_FONT_SIZE) * BalanceEconomy.HUD_LINE_CREDITS
+		)
+	)
+	_fuel_label.text = (BalanceEconomy.HUD_FUEL_FORMAT % int(BalanceEconomy.PERCENT_SCALE))
+
+	_condition_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_condition_label.position = Vector2(
+		BalanceFlight.HUD_MARGIN,
+		(
+			BalanceFlight.HUD_MARGIN
+			+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+			+ float(BalanceFlight.HUD_FONT_SIZE) * BalanceEconomy.HUD_LINE_FUEL
+		)
+	)
+	_condition_label.text = (
+		BalanceEconomy.HUD_CONDITION_FORMAT % int(BalanceEconomy.PERCENT_SCALE)
+	)
+
+	_mission_label = _make_label(root, BalanceFlight.HUD_FONT_SIZE)
+	_mission_label.position = Vector2(
+		BalanceFlight.HUD_MARGIN,
+		(
+			BalanceFlight.HUD_MARGIN
+			+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+			+ float(BalanceFlight.HUD_FONT_SIZE) * BalanceEconomy.HUD_LINE_MISSION
+		)
+	)
+	_mission_label.text = ""
 
 	_prompt_label = _make_label(root, BalanceFlight.HUD_PROMPT_FONT_SIZE)
 	_prompt_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -144,6 +212,38 @@ func _refresh_status_line() -> void:
 	_status_label.text = ""
 
 
+func _refresh_prompt() -> void:
+	# Station dock prompt wins over gate jump.
+	if _dock_prompt_id != &"":
+		var station_label: String = _content_name(_dock_prompt_id)
+		if _dock_can_dock:
+			_prompt_label.text = "PRESS F TO DOCK — %s" % station_label
+			return
+		if not StandingService.can_dock_at_station(_dock_prompt_id):
+			var status: Dictionary = StandingService.status_for_station(_dock_prompt_id)
+			_prompt_label.text = (
+				BalanceStanding.DOCK_REFUSED_PROMPT_FORMAT
+				% [
+					status[StandingService.STATUS_KEY_TIER_DISPLAY],
+					status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
+				]
+			)
+			return
+		_prompt_label.text = "APPROACHING %s" % station_label.to_upper()
+		return
+	if _gate_dest_id != &"":
+		var dest_label: String = _content_name(_gate_dest_id)
+		if _gate_can_jump:
+			_prompt_label.text = BalanceEconomy.JUMP_PROMPT_FORMAT % dest_label
+		else:
+			_prompt_label.text = (
+				BalanceEconomy.JUMP_PROMPT_NO_FUEL_FORMAT
+				% [str(int(BalanceEconomy.JUMP_FUEL_COST)), dest_label]
+			)
+		return
+	_prompt_label.text = ""
+
+
 func _on_speed_changed(speed: float) -> void:
 	var scaled: float = speed * BalanceFlight.HUD_SPEED_DISPLAY_SCALE
 	var shown: int = int(roundf(scaled))
@@ -156,10 +256,73 @@ func _on_throttle_changed(throttle: float) -> void:
 	_throttle_label.text = "THROTTLE  %d%%" % percent
 
 
+func _on_credits_changed(credits: int) -> void:
+	_credits_label.text = BalanceEconomy.HUD_CREDITS_FORMAT % credits
+
+
+func _on_fuel_changed(fuel: float, fuel_max: float) -> void:
+	var pct: int = 0
+	if fuel_max > 0.0:
+		pct = int(roundf((fuel / fuel_max) * BalanceEconomy.PERCENT_SCALE))
+	_fuel_label.text = BalanceEconomy.HUD_FUEL_FORMAT % pct
+
+
+func _on_condition_changed(condition: float, condition_max: float) -> void:
+	var pct: int = 0
+	if condition_max > 0.0:
+		pct = int(roundf((condition / condition_max) * BalanceEconomy.PERCENT_SCALE))
+	_condition_label.text = BalanceEconomy.HUD_CONDITION_FORMAT % pct
+
+
+func _on_mission_changed(_template_id: StringName, _entity_id: StringName) -> void:
+	_refresh_mission_line()
+
+
+func _on_mission_closed(_template_id: StringName, _entity_id: StringName, _delta: float) -> void:
+	_refresh_mission_line()
+
+
+func _refresh_mission_line() -> void:
+	if _mission_label == null:
+		return
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		_mission_label.text = ""
+		return
+	var service: Node = tree.get_first_node_in_group(&"mission_service")
+	if service == null or not service.has_method(&"has_active"):
+		_mission_label.text = ""
+		return
+	if service.call(&"has_active") != true:
+		_mission_label.text = ""
+		return
+	var template_raw: Variant = service.call(&"active_template_id")
+	var template_id: StringName = &""
+	if typeof(template_raw) == TYPE_STRING_NAME:
+		template_id = template_raw
+	elif typeof(template_raw) == TYPE_STRING:
+		var ttext: String = template_raw
+		template_id = StringName(ttext)
+	var job_name: String = _content_name(template_id)
+	var dest_id: StringName = &""
+	if service.has_method(&"active_destination_station_id"):
+		var dest_raw: Variant = service.call(&"active_destination_station_id")
+		if typeof(dest_raw) == TYPE_STRING_NAME:
+			dest_id = dest_raw
+		elif typeof(dest_raw) == TYPE_STRING:
+			var dtext: String = dest_raw
+			dest_id = StringName(dtext)
+	if String(dest_id).is_empty():
+		_mission_label.text = BalanceStanding.HUD_MISSION_NO_DEST_FORMAT % job_name
+	else:
+		_mission_label.text = (
+			BalanceStanding.HUD_MISSION_FORMAT % [job_name, _content_name(dest_id)]
+		)
+
+
 func _on_system_entered(system_id: StringName) -> void:
 	_current_system_id = system_id
 	_system_label.text = "SYSTEM  %s" % _content_name(system_id).to_upper()
-	# StandingService emits on_status_moment; refresh covers load races.
 	_refresh_status_line()
 
 
@@ -180,24 +343,15 @@ func _on_entity_standing_changed(
 
 
 func _on_dock_prompt_changed(station_id: StringName, can_dock: bool) -> void:
-	if station_id == &"":
-		_prompt_label.text = ""
-		return
-	var station_label: String = _content_name(station_id)
-	if can_dock:
-		_prompt_label.text = "PRESS F TO DOCK — %s" % station_label
-		return
-	if not StandingService.can_dock_at_station(station_id):
-		var status: Dictionary = StandingService.status_for_station(station_id)
-		_prompt_label.text = (
-			BalanceStanding.DOCK_REFUSED_PROMPT_FORMAT
-			% [
-				status[StandingService.STATUS_KEY_TIER_DISPLAY],
-				status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
-			]
-		)
-		return
-	_prompt_label.text = "APPROACHING %s" % station_label.to_upper()
+	_dock_prompt_id = station_id
+	_dock_can_dock = can_dock
+	_refresh_prompt()
+
+
+func _on_gate_prompt_changed(destination_system_id: StringName, can_jump: bool) -> void:
+	_gate_dest_id = destination_system_id
+	_gate_can_jump = can_jump
+	_refresh_prompt()
 
 
 func _on_dock_refused(
@@ -215,6 +369,8 @@ func _on_dock_refused(
 
 func _on_docked(station_id: StringName) -> void:
 	_docked_station_id = station_id
+	_dock_prompt_id = &""
+	_gate_dest_id = &""
 	_prompt_label.text = ""
 	_refresh_status_line()
 

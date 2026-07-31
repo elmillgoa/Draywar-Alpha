@@ -141,12 +141,15 @@ func test_can_dock_respects_threshold_and_nobody() -> void:
 	# Default neutral (0) is above -50 → may dock.
 	assert_true(StandingService.can_dock_at_station(STATION_PORT))
 
+	# Close recovery so Entity threshold is the only rule for this test.
+	StandingService.close_person(&"person_ra_mendi", BalanceStanding.RECOVERY_CLOSE_REASON_BETRAYAL)
+
 	StandingService.set_entity_standing(
 		ENTITY_REACH, BalanceStanding.DEFAULT_DOCK_REFUSAL_THRESHOLD
 	)
 	assert_false(
 		StandingService.can_dock_at_station(STATION_PORT),
-		"standing at threshold must refuse (at or below)"
+		"standing at threshold must refuse when recovery is closed"
 	)
 
 	StandingService.set_entity_standing(
@@ -250,6 +253,8 @@ func test_save_service_round_trip_standing_section() -> void:
 
 func test_docking_service_refuses_when_hostile() -> void:
 	FlightInput.ensure_actions()
+	# Close recovery foothold so Hostile standing alone refuses (no Example B dock).
+	StandingService.close_person(&"person_ra_mendi", BalanceStanding.RECOVERY_CLOSE_REASON_BETRAYAL)
 	StandingService.set_entity_standing(ENTITY_REACH, -60.0)
 	assert_false(StandingService.can_dock_at_station(STATION_PORT))
 
@@ -261,10 +266,9 @@ func test_docking_service_refuses_when_hostile() -> void:
 	add_child_autofree(docking)
 	docking.setup(ship, {STATION_PORT: Vector3.ZERO})
 
+	# Seed range so the service accepts this station as the prompt target.
 	docking._physics_process(0.0)
-	Input.action_press(FlightInput.ACTION_DOCK)
-	docking._physics_process(0.0)
-	Input.action_release(FlightInput.ACTION_DOCK)
+	EventBus.on_dock_requested.emit(STATION_PORT)
 
 	assert_false(docking.controller().is_docked(), "hostile standing must block dock")
 	assert_eq(_refused_stations.size(), 1, "must emit on_dock_refused")

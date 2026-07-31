@@ -278,6 +278,10 @@ func status_for_station(station_id: StringName) -> Dictionary:
 ## Whether the player may dock at this station under standing rules.
 ## Nobody controller always allows. Otherwise standing must be strictly above
 ## the controlling Entity's dock_refusal_threshold.
+##
+## Exception (reputation law Example B / §5): an open personal recovery contact
+## for this station's controller still lets the player dock so they can seek
+## that Person out while Entity standing is Hostile/Hated.
 func can_dock_at_station(station_id: StringName) -> bool:
 	if not ContentLibrary.has_item(station_id):
 		return true
@@ -295,7 +299,44 @@ func can_dock_at_station(station_id: StringName) -> bool:
 			var entity: Entity = controller_item as Entity
 			threshold = entity.dock_refusal_threshold
 	var standing: float = get_entity_standing(controller_id)
-	return standing > threshold
+	if standing > threshold:
+		return true
+	return has_open_recovery_contact_for_controller(controller_id)
+
+
+## True when a recovery-chain Person for this Entity is still open (not closed).
+## Used so Hostile/Hated players can still dock to seek that foothold.
+func has_open_recovery_contact_for_controller(controller_id: StringName) -> bool:
+	if String(controller_id).is_empty() or controller_id == Station.CONTROLLER_NOBODY:
+		return false
+	for chain_id: StringName in ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY):
+		if not ContentLibrary.has_item(chain_id):
+			continue
+		var item: ContentItem = ContentLibrary.item(chain_id)
+		if item == null:
+			continue
+		var entity_raw: Variant = item.get("entity_id")
+		var person_raw: Variant = item.get("person_id")
+		if entity_raw == null or person_raw == null:
+			continue
+		var entity_id: StringName = &""
+		var person_id: StringName = &""
+		if typeof(entity_raw) == TYPE_STRING_NAME:
+			entity_id = entity_raw
+		elif typeof(entity_raw) == TYPE_STRING:
+			var entity_text: String = entity_raw
+			entity_id = StringName(entity_text)
+		if typeof(person_raw) == TYPE_STRING_NAME:
+			person_id = person_raw
+		elif typeof(person_raw) == TYPE_STRING:
+			var person_text: String = person_raw
+			person_id = StringName(person_text)
+		if entity_id != controller_id:
+			continue
+		if is_person_closed(person_id):
+			continue
+		return true
+	return false
 
 
 ## Career section for save (only explicit overrides; missing = defaults).

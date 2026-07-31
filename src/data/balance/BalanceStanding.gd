@@ -260,8 +260,17 @@ const CONSOLE_EVIDENCE_TRUE_WORD: String = "true"
 ## Station menu: accept job button label.
 const STATION_ACCEPT_JOB_LABEL: String = "Accept courier job"
 
+## Station menu: accept job with destination (display name).
+const STATION_ACCEPT_JOB_TO_FORMAT: String = "Accept job → %s"
+
 ## Station menu: talk to recovery contact when a step is available.
 const STATION_RECOVERY_TALK_FORMAT: String = "Talk to %s"
+
+## HUD active mission line: template name, destination display name.
+const HUD_MISSION_FORMAT: String = "JOB  %s → %s"
+
+## HUD when a mission has no destination station set.
+const HUD_MISSION_NO_DEST_FORMAT: String = "JOB  %s"
 
 ## `recovery accept` / `favor` arg counts (tokens after the verb).
 const CONSOLE_RECOVERY_ACCEPT_ARGS: int = 2

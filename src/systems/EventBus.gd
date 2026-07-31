@@ -132,3 +132,45 @@ signal on_recovery_betrayed(person_id: StringName, person_delta: float, entity_d
 
 ## StandingService: a Person's recovery route is closed (betrayal, etc.).
 signal on_person_closed(person_id: StringName, reason: StringName)
+
+## GateTravelService: jump prompt for the HUD (empty dest clears).
+signal on_gate_prompt_changed(destination_system_id: StringName, can_jump: bool)
+
+## Ship / GateTravelService: request to jump to this system.
+signal on_jump_requested(destination_system_id: StringName)
+
+## Main: player left a system (before the destination is built).
+signal on_system_exited(system_id: StringName)
+
+## WalletService: credits changed.
+signal on_credits_changed(credits: int)
+
+## WalletService: fuel changed (current and max).
+signal on_fuel_changed(fuel: float, fuel_max: float)
+
+## WalletService: hull condition changed (current and max).
+signal on_condition_changed(condition: float, condition_max: float)
+
+## UI: request to complete the active mission.
+signal on_mission_complete_requested
+
+## UI: request to abandon the active mission.
+signal on_mission_abandon_requested
+
+## UI: request to complete the active recovery step.
+signal on_recovery_complete_requested
+
+## UI: request to abandon the active recovery step.
+signal on_recovery_abandon_requested
+
+## UI: request a favor bootstrap with this Person.
+signal on_recovery_favor_requested(person_id: StringName)
+
+## UI: request betrayal of this Person (or active recovery contact).
+signal on_recovery_betray_requested(person_id: StringName)
+
+## UI: request refuel at the docked station.
+signal on_refuel_requested
+
+## UI: request full repair at the docked station.
+signal on_repair_requested

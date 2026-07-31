@@ -43,3 +43,37 @@ Elliot’s words only. Agents never sign these.
 > That worked. We are good to go.
 
 **Notes:** Console offer text was opaque at first (`recovery status`/`list`); fixed to plain-English JOB AVAILABLE before sign-off. Phase A4 closed.
+
+---
+
+## Final Alpha — Core fantasy
+
+**Criteria:** the core fantasy is legible and worth expanding.
+
+**What that means in play (plain):**
+
+- Different places treat you differently (status line, fees, NPC traffic, controllers).
+- Sticky negative standing is real, and there is one personal recovery foothold without the debug console.
+- You can fly a short session: dock, take a job, jump, turn in, refuel, talk to Mendi — without needing console for the fantasy.
+
+### Play script (cold launch)
+
+1. Run main scene. Note **SYSTEM**, **STANDING**, **CREDITS**, **FUEL**.
+2. Dock Alpha Port (F). Accept job → destination name on the button. Undock.
+3. Fly to the **blue gate**, F to jump (needs fuel). Status line should change with the new system.
+4. Dock Beta Hub. **Turn in job**. Credits and standing should move.
+5. Jump around; notice NPC traffic density (busy Alpha vs thinner Gamma).
+6. At Alpha Port: **Ask favor of Mendi** a few times until **Talk to Mendi** appears. Accept, **Complete recovery work**.
+7. Optional: grind Reach down hard (abandon jobs). You should still be able to dock Alpha to reach Mendi while that recovery route is open.
+
+**Console is optional** (save/load, debug). Do not need it for the loop above.
+
+### Attempt 1 — 2026-07-31
+
+**Status: OPEN — waiting for Elliot.**
+
+**Verdict:** _(not signed)_
+
+**Elliot (verbatim):**
+
+_(play and reply)_

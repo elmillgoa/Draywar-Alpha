@@ -15,6 +15,6 @@ id = &"entity_gamma_collective"
 display_name = "Fringe Collective"
 relationship_links = Array[ExtResource("2")]([SubResource("Link_allied_haulers")])
 reach_system_ids = Array[StringName]([&"system_gamma"])
-reach_station_ids = Array[StringName]([])
+reach_station_ids = Array[StringName]([&"station_gamma_outpost"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0

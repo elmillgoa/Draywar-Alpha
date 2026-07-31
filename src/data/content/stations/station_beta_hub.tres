@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; Contested gray-market hub — Alpha A5. Controlled by Drift Syndicate.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_beta_hub"
+display_name = "Beta Hub"
+system_id = &"system_beta"
+controller_entity_id = &"entity_beta_syndicate"
+position_offset = Vector3(0, 0, 0)

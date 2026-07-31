@@ -54,6 +54,10 @@ var _completed_steps: Dictionary[StringName, Array] = {}
 func _ready() -> void:
 	add_to_group(&"recovery_service")
 	EventBus.on_recovery_accept_requested.connect(_on_accept_requested)
+	EventBus.on_recovery_complete_requested.connect(_on_complete_requested)
+	EventBus.on_recovery_abandon_requested.connect(_on_abandon_requested)
+	EventBus.on_recovery_favor_requested.connect(_on_favor_requested)
+	EventBus.on_recovery_betray_requested.connect(_on_betray_requested)
 	EventBus.on_docked.connect(_on_docked)
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
@@ -62,6 +66,14 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if EventBus.on_recovery_accept_requested.is_connected(_on_accept_requested):
 		EventBus.on_recovery_accept_requested.disconnect(_on_accept_requested)
+	if EventBus.on_recovery_complete_requested.is_connected(_on_complete_requested):
+		EventBus.on_recovery_complete_requested.disconnect(_on_complete_requested)
+	if EventBus.on_recovery_abandon_requested.is_connected(_on_abandon_requested):
+		EventBus.on_recovery_abandon_requested.disconnect(_on_abandon_requested)
+	if EventBus.on_recovery_favor_requested.is_connected(_on_favor_requested):
+		EventBus.on_recovery_favor_requested.disconnect(_on_favor_requested)
+	if EventBus.on_recovery_betray_requested.is_connected(_on_betray_requested):
+		EventBus.on_recovery_betray_requested.disconnect(_on_betray_requested)
 	if EventBus.on_docked.is_connected(_on_docked):
 		EventBus.on_docked.disconnect(_on_docked)
 	if EventBus.on_console_commands_requested.is_connected(_on_commands_requested):
@@ -283,6 +295,24 @@ func _on_accept_requested(person_id: StringName) -> void:
 	accept(person_id)
 
 
+func _on_complete_requested() -> void:
+	if has_active():
+		complete()
+
+
+func _on_abandon_requested() -> void:
+	if has_active():
+		abandon()
+
+
+func _on_favor_requested(person_id: StringName) -> void:
+	favor(person_id)
+
+
+func _on_betray_requested(person_id: StringName) -> void:
+	betray(person_id)
+
+
 ## On dock: announce offerable recovery steps for the station controller's people.
 func _on_docked(station_id: StringName) -> void:
 	if has_active():
@@ -327,6 +357,7 @@ func _finish_success() -> Dictionary:
 	)
 	StandingService.record_personal_success(chain.person_id)
 	_mark_step_complete(chain.id, step.id)
+	_pay_recovery_stipend()
 
 	var chain_id: StringName = chain.id
 	var step_id: StringName = step.id
@@ -348,6 +379,18 @@ func _finish_success() -> Dictionary:
 		REPORT_KEY_ENTITY_DELTA: entity_delta,
 		REPORT_KEY_OUTCOME: OUTCOME_COMPLETED,
 	}
+
+
+func _pay_recovery_stipend() -> void:
+	var amount: int = BalanceEconomy.RECOVERY_STEP_PAY
+	if amount <= 0:
+		return
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
+	if wallet != null and wallet.has_method(&"add_credits"):
+		wallet.call(&"add_credits", amount)
 
 
 func _finish_soft(abandoned: bool) -> Dictionary:

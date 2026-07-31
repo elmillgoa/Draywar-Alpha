@@ -14,10 +14,11 @@ one per game system. The envelope is defined exactly and has no opinion about
 what is inside a section.
 
 **Version 1 stores the envelope only** (no schema bump for optional sections).
-Debug `save`/`load` write `sections` that may include an optional **`standing`**
-map (A2). Missing `standing` means all-neutral content defaults. Tests may still
-use a hostile probe fixture. New required career fields later bump the version
-with a migration step in `SaveMigrations.gd`.
+Debug `save`/`load` write `sections` that may include optional **`standing`**
+(A2) and **`wallet`** (A5) maps. Missing `standing` means all-neutral content
+defaults. Missing `wallet` means starting credits/fuel/condition. Tests may
+still use a hostile probe fixture. New required career fields later bump the
+version with a migration step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -35,6 +36,20 @@ Console save also merges recovery chain progress into this section (A4).
 Ids not listed use content `default_player_standing` (else 0).
 Missing A4 maps mean no history, nobody closed, no chain progress.
 No envelope version bump — these keys are optional inside schema v1.
+
+### Optional section: `wallet` (schema v1)
+
+Written by `WalletService.to_section()` / applied by `apply_section()`.
+Console save merges this section when a wallet service is present (A5).
+
+| Key | Type | Meaning |
+|---|---|---|
+| `credits` | `int` | Player credits (>= 0). |
+| `fuel` | `float` | Current fuel units. |
+| `condition` | `float` | Hull condition. |
+
+Missing section → boot defaults from `BalanceEconomy`.
+No envelope version bump — optional inside schema v1.
 
 Saving is deterministic to the byte: the same state always produces the same
 file, and loading a file and saving it again reproduces it exactly.

@@ -1,13 +1,13 @@
 class_name SystemWorld
 extends Node3D
 
-## Gray-box star system scene — Alpha A1.
+## Gray-box star system scene — Alpha A5.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1, A5
 ##
 ## Loads a system id from ContentLibrary and places station + gate meshes.
 ## Does not spawn the player (entities layer). Main composes the two.
-## Gate is visual only (no jump for A1).
+## Gates are jump destinations (GateTravelService + Main rebuild).
 
 signal built(system_id: StringName)
 
@@ -15,10 +15,14 @@ var system_id: StringName = BalanceFlight.PLAYABLE_SYSTEM_ID
 
 var station_world_positions: Dictionary[StringName, Vector3] = {}
 var station_display_names: Dictionary[StringName, String] = {}
+## destination_system_id → world position of the gate mesh.
+var gate_world_positions: Dictionary[StringName, Vector3] = {}
 var _system_display_name: String = ""
+var _npc_traffic: NpcTraffic = null
 
 
-## Builds the gray box for `system_id`. Safe to call once from Main.
+## Builds the gray box for `system_id`. Safe to call once; call `clear_world`
+## first when reusing the node for a jump.
 func build() -> void:
 	var system: StarSystem = _load_system(system_id)
 	if system == null:
@@ -27,8 +31,23 @@ func build() -> void:
 	_add_environment()
 	_place_stations(system)
 	_place_gates(system)
+	_spawn_npc_traffic()
 	built.emit(system_id)
 	EventBus.on_system_entered.emit(system_id)
+
+
+## Remove placed meshes and traffic so `build()` can run for another system.
+func clear_world() -> void:
+	for child: Node in get_children():
+		# Keep play entities parented under the world (named by Main).
+		if child.name == "PlayerShip" or child.name == "ChaseCamera":
+			continue
+		child.queue_free()
+	station_world_positions.clear()
+	station_display_names.clear()
+	gate_world_positions.clear()
+	_system_display_name = ""
+	_npc_traffic = null
 
 
 ## Display name for HUD / menus (via ContentLibrary if callers prefer).
@@ -55,9 +74,24 @@ func station_positions() -> Dictionary[StringName, Vector3]:
 	return station_world_positions.duplicate()
 
 
+## Copy of destination system id → gate world position.
+func gate_positions() -> Dictionary[StringName, Vector3]:
+	return gate_world_positions.duplicate()
+
+
 ## Where the player should spawn relative to the station anchor.
 func player_spawn_position() -> Vector3:
 	return BalanceFlight.STATION_POSITION + BalanceFlight.PLAYER_SPAWN_OFFSET
+
+
+## Arrival pose after a jump into this system (near the return gate if any).
+func jump_arrival_position(from_system_id: StringName) -> Vector3:
+	if gate_world_positions.has(from_system_id):
+		return gate_world_positions[from_system_id] + BalanceEconomy.JUMP_ARRIVAL_OFFSET
+	if not gate_world_positions.is_empty():
+		var first_dest: StringName = gate_world_positions.keys()[0]
+		return gate_world_positions[first_dest] + BalanceEconomy.JUMP_ARRIVAL_OFFSET
+	return player_spawn_position()
 
 
 ## Nearest station id from a world point (empty if none).
@@ -125,8 +159,34 @@ func _place_stations(system: StarSystem) -> void:
 func _place_gates(system: StarSystem) -> void:
 	if system.gate_destination_ids.is_empty():
 		return
-	var gate_pos: Vector3 = BalanceFlight.GATE_POSITION
-	add_child(_make_box(gate_pos, BalanceFlight.GATE_MESH_SIZE, BalanceFlight.COLOR_GATE))
+	var count: int = system.gate_destination_ids.size()
+	for index: int in count:
+		var dest_id: StringName = system.gate_destination_ids[index]
+		var pos: Vector3 = _gate_position_for_index(index, count)
+		gate_world_positions[dest_id] = pos
+		add_child(_make_box(pos, BalanceFlight.GATE_MESH_SIZE, BalanceFlight.COLOR_GATE))
+
+
+func _gate_position_for_index(index: int, count: int) -> Vector3:
+	if count <= 1:
+		return BalanceFlight.GATE_POSITION
+	var mid: float = float(count - 1) * BalanceEconomy.GATE_ARC_MID_HALF
+	var step: float = BalanceEconomy.GATE_ARC_STEP_DEGREES
+	var angle_deg: float = (float(index) - mid) * step
+	var angle_rad: float = deg_to_rad(angle_deg)
+	var offset: Vector3 = Vector3(
+		sin(angle_rad) * BalanceEconomy.GATE_ARC_RADIUS,
+		0.0,
+		cos(angle_rad) * BalanceEconomy.GATE_ARC_RADIUS
+	)
+	return BalanceFlight.GATE_POSITION + offset
+
+
+func _spawn_npc_traffic() -> void:
+	_npc_traffic = NpcTraffic.new()
+	_npc_traffic.name = "NpcTraffic"
+	add_child(_npc_traffic)
+	_npc_traffic.rebuild_for_system(system_id)
 
 
 func _make_box(pos: Vector3, size: Vector3, color: Color) -> MeshInstance3D:

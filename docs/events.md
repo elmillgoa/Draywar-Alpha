@@ -485,3 +485,149 @@ A Person's recovery route is closed (betrayal or other tagged close).
 | `reason` | `StringName` | Close tag (e.g. `&"betrayal"`). |
 
 **Emitted by** `src/systems/standing/StandingService.gd` from `close_person()`.
+
+## Minimal playable slice (A5)
+
+### `on_gate_prompt_changed(destination_system_id: StringName, can_jump: bool)`
+
+Gate proximity prompt for the HUD. Empty destination clears the prompt.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `destination_system_id` | `StringName` | Target system of the nearest gate, or empty. |
+| `can_jump` | `bool` | True when fuel is enough and the ship is in interact range. |
+
+**Emitted by** `src/entities/GateTravelService.gd`.
+**Listened to by** `FlightHUD`.
+
+### `on_jump_requested(destination_system_id: StringName)`
+
+Intent to jump to this system. Main spends fuel and rebuilds the world.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `destination_system_id` | `StringName` | Star system content id. |
+
+**Emitted by** `src/entities/GateTravelService.gd` when the dock/jump action fires at a gate.
+**Listened to by** `src/Main.gd`.
+
+### `on_system_exited(system_id: StringName)`
+
+Player left this system (emitted before the destination is built).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `system_id` | `StringName` | System content id being left. |
+
+**Emitted by** `src/Main.gd` on a successful jump.
+
+### `on_credits_changed(credits: int)`
+
+Player credits changed.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `credits` | `int` | New credit balance (>= 0). |
+
+**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Listened to by** `FlightHUD`, `StationMenu`.
+
+### `on_fuel_changed(fuel: float, fuel_max: float)`
+
+Player fuel changed.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `fuel` | `float` | Current fuel units. |
+| `fuel_max` | `float` | Tank capacity. |
+
+**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Listened to by** `FlightHUD`, `StationMenu`.
+
+### `on_condition_changed(condition: float, condition_max: float)`
+
+Ship hull condition changed.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `condition` | `float` | Current condition. |
+| `condition_max` | `float` | Max condition. |
+
+**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Listened to by** `FlightHUD`, `StationMenu`.
+
+### `on_mission_complete_requested()`
+
+UI asked to complete the active mission (destination check in MissionService).
+
+No parameters.
+
+**Emitted by** `StationMenu` (Turn in job).
+**Listened to by** `MissionService`.
+
+### `on_mission_abandon_requested()`
+
+UI asked to abandon the active mission.
+
+No parameters.
+
+**Emitted by** `StationMenu` (Abandon job).
+**Listened to by** `MissionService`.
+
+### `on_recovery_complete_requested()`
+
+UI asked to complete the active recovery step.
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `RecoveryService`.
+
+### `on_recovery_abandon_requested()`
+
+UI asked to abandon the active recovery step.
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `RecoveryService`.
+
+### `on_recovery_favor_requested(person_id: StringName)`
+
+UI asked for a small personal favor (bootstrap trust).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `person_id` | `StringName` | Person content id. |
+
+**Emitted by** `StationMenu` (Ask favor).
+**Listened to by** `RecoveryService`.
+
+### `on_recovery_betray_requested(person_id: StringName)`
+
+UI asked to betray this Person (or empty for active contact).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `person_id` | `StringName` | Person content id (may be empty). |
+
+**Emitted by** `StationMenu`.
+**Listened to by** `RecoveryService`.
+
+### `on_refuel_requested()`
+
+UI asked to buy a fuel chunk at the docked station.
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `WalletService`.
+
+### `on_repair_requested()`
+
+UI asked to fully repair the ship at the docked station.
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `WalletService`.

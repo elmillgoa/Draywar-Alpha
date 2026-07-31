@@ -61,24 +61,39 @@ func test_playable_system_alpha_has_station_and_gate() -> void:
 	)
 
 
-func test_non_playable_systems_remain_empty_gray_boxes() -> void:
-	# Beta/gamma stay empty attachment points until later phases fill them.
-	var empty_ids: Array[StringName] = [&"system_beta", &"system_gamma"]
-	for system_id: StringName in empty_ids:
-		assert_true(ContentLibrary.has_item(system_id), "missing shipped system '%s'" % system_id)
+func test_a5_systems_have_stations_gates_and_distinct_policing() -> void:
+	# A5: three systems, each dockable, linked by gates, distinct security.
+	var expected: Dictionary = {
+		&"system_alpha":
+		{
+			&"station": &"station_alpha_port",
+			&"policing": StarSystem.POLICED_BY_PATROLS,
+		},
+		&"system_beta":
+		{
+			&"station": &"station_beta_hub",
+			&"policing": StarSystem.POLICED_BY_CONTESTED,
+		},
+		&"system_gamma":
+		{
+			&"station": &"station_gamma_outpost",
+			&"policing": StarSystem.POLICED_BY_NOBODY,
+		},
+	}
+	for system_id: StringName in expected:
+		assert_true(ContentLibrary.has_item(system_id), "missing system '%s'" % system_id)
 		var item: ContentItem = ContentLibrary.item(system_id)
 		assert_true(item is StarSystem, "'%s' must load as a StarSystem" % system_id)
 		var system: StarSystem = item as StarSystem
-		assert_eq(
-			system.station_ids.size(),
-			0,
-			"'%s' must ship with no stations (empty gray box)" % system_id
+		var expect: Dictionary = expected[system_id]
+		var expect_station: StringName = expect[&"station"]
+		var expect_policing: StringName = expect[&"policing"]
+		assert_true(
+			system.station_ids.has(expect_station),
+			"'%s' must include station %s" % [system_id, expect_station]
 		)
-		assert_eq(
-			system.gate_destination_ids.size(),
-			0,
-			"'%s' must ship with no gates (empty gray box)" % system_id
-		)
+		assert_gt(system.gate_destination_ids.size(), 0, "'%s' needs a gate" % system_id)
+		assert_eq(system.policing, expect_policing, "'%s' policing" % system_id)
 
 
 func test_shipped_station_and_hull_exist_and_are_valid() -> void:

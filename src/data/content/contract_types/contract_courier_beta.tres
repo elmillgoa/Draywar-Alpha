@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
 
-; Drift Syndicate gray-lane drop — second mission template, same kind.
+; Drift Syndicate drop back to Alpha Port — Alpha A5 delivery loop.
 [ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
 
 [resource]
@@ -12,3 +12,5 @@ kind = &"delivery"
 standing_complete = 8.0
 standing_fail = -3.0
 standing_abandon = -8.0
+pay_credits = 140
+destination_station_id = &"station_alpha_port"

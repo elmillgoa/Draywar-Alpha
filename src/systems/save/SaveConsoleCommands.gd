@@ -56,6 +56,9 @@ func _run_save(args: PackedStringArray) -> void:
 	var sections: Dictionary = {
 		BalanceStanding.SAVE_SECTION_KEY: standing_section,
 	}
+	var wallet_section: Dictionary = _wallet_section()
+	if not wallet_section.is_empty():
+		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
 	var written: SaveResult = _service.save_to(path, SaveService.envelope(sections, file_name))
 	if not written.ok():
 		_say("Save failed: %s" % written.summary())
@@ -74,6 +77,7 @@ func _run_load(args: PackedStringArray) -> void:
 		_say("Load failed: %s" % loaded.summary())
 		return
 	_apply_standing_section(loaded.envelope)
+	_apply_wallet_section(loaded.envelope)
 	_say("Loaded '%s'." % path)
 
 
@@ -95,6 +99,43 @@ func _apply_standing_section(envelope: Dictionary) -> void:
 	else:
 		StandingService.reset_to_defaults()
 		_reset_recovery_progress()
+
+
+func _wallet_section() -> Dictionary:
+	var wallet: Node = _wallet_service()
+	if wallet == null or not wallet.has_method(&"to_section"):
+		return {}
+	var section: Variant = wallet.call(&"to_section")
+	if typeof(section) != TYPE_DICTIONARY:
+		return {}
+	return section
+
+
+func _apply_wallet_section(envelope: Dictionary) -> void:
+	var wallet: Node = _wallet_service()
+	if wallet == null:
+		return
+	if not envelope.has(SaveService.KEY_SECTIONS):
+		if wallet.has_method(&"reset"):
+			wallet.call(&"reset")
+		return
+	var sections_raw: Variant = envelope[SaveService.KEY_SECTIONS]
+	if typeof(sections_raw) != TYPE_DICTIONARY:
+		if wallet.has_method(&"reset"):
+			wallet.call(&"reset")
+		return
+	var sections: Dictionary = sections_raw
+	if sections.has(BalanceEconomy.SAVE_SECTION_KEY) and wallet.has_method(&"apply_section"):
+		wallet.call(&"apply_section", sections[BalanceEconomy.SAVE_SECTION_KEY])
+	elif wallet.has_method(&"reset"):
+		wallet.call(&"reset")
+
+
+func _wallet_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"wallet_service")
 
 
 func _merge_recovery_progress(standing_section: Dictionary) -> void:

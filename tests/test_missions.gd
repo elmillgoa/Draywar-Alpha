@@ -94,6 +94,10 @@ func test_contract_type_requires_offering_entity() -> void:
 
 
 func test_mission_complete_positive_delta() -> void:
+	# Pay path needs a wallet in-tree (A5); standing still applies without one.
+	var wallet: WalletService = WalletService.new()
+	add_child_autofree(wallet)
+	wallet.reset()
 	StandingService.set_entity_standing(ENTITY_REACH, 5.0)
 	var before: float = StandingService.get_entity_standing(ENTITY_REACH)
 	assert_true(_mission.accept(CONTRACT_ALPHA))

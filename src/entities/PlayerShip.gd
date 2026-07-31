@@ -94,18 +94,27 @@ func _physics_process(delta: float) -> void:
 		strafe_axis -= 1.0
 
 	var afterburning: bool = Input.is_action_pressed(FlightInput.ACTION_AFTERBURNER)
+	var fuel_ok: bool = _wallet_has_fuel()
+	var effective_throttle: float = _throttle if fuel_ok else 0.0
+	var effective_afterburn: bool = afterburning and fuel_ok
+	if fuel_ok:
+		_wallet_burn(dt, _throttle, afterburning)
+		if afterburning:
+			_wallet_wear(dt, true)
+
+	var speed_factor: float = _wallet_speed_factor()
 	# Godot forward is -Z.
 	var forward: Vector3 = -global_transform.basis.z
 	var right: Vector3 = global_transform.basis.x
 	var desired: Vector3 = FlightMath.desired_velocity(
 		forward,
 		right,
-		_throttle,
+		effective_throttle,
 		strafe_axis,
-		_max_speed,
-		_strafe_speed,
+		_max_speed * speed_factor,
+		_strafe_speed * speed_factor,
 		_afterburner_multiplier,
-		afterburning
+		effective_afterburn
 	)
 	velocity = FlightMath.integrate_velocity(velocity, desired, _acceleration, _drag, dt)
 	move_and_slide()
@@ -185,3 +194,43 @@ func _build_mesh() -> void:
 
 func _on_console_visibility_changed(open: bool) -> void:
 	_console_open = open
+
+
+func _wallet_node() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"wallet_service")
+
+
+func _wallet_has_fuel() -> bool:
+	var wallet: Node = _wallet_node()
+	if wallet == null or not wallet.has_method(&"has_fuel"):
+		return true
+	return wallet.call(&"has_fuel") == true
+
+
+func _wallet_burn(dt: float, throttle_value: float, afterburning: bool) -> void:
+	var wallet: Node = _wallet_node()
+	if wallet != null and wallet.has_method(&"burn_fuel"):
+		wallet.call(&"burn_fuel", dt, throttle_value, afterburning)
+
+
+func _wallet_wear(dt: float, afterburning: bool) -> void:
+	var wallet: Node = _wallet_node()
+	if wallet != null and wallet.has_method(&"wear_condition"):
+		wallet.call(&"wear_condition", dt, afterburning)
+
+
+func _wallet_speed_factor() -> float:
+	var wallet: Node = _wallet_node()
+	if wallet == null or not wallet.has_method(&"speed_factor"):
+		return 1.0
+	var factor: Variant = wallet.call(&"speed_factor")
+	if typeof(factor) == TYPE_FLOAT:
+		var as_float: float = factor
+		return as_float
+	if typeof(factor) == TYPE_INT:
+		var as_int: int = factor
+		return float(as_int)
+	return 1.0

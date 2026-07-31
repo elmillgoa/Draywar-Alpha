@@ -20,6 +20,12 @@ extends ContentItem
 @export var standing_fail: float = BalanceStanding.MISSION_FAIL_DELTA
 @export var standing_abandon: float = BalanceStanding.MISSION_ABANDON_DELTA
 
+## Credits paid on complete. Defaults match BalanceEconomy.
+@export var pay_credits: int = BalanceEconomy.MISSION_PAY_DEFAULT
+
+## Delivery turn-in station. Empty = turn in at any docked station (A5).
+@export var destination_station_id: StringName = &""
+
 
 ## Everything wrong with this contract template. Empty means valid.
 func validation_errors() -> PackedStringArray:
@@ -35,6 +41,9 @@ func validation_errors() -> PackedStringArray:
 
 	if String(kind).strip_edges().is_empty():
 		problems.append("`kind` is empty. Name the contract family (e.g. delivery).")
+
+	if pay_credits < 0:
+		problems.append("`pay_credits` is negative. Mission pay cannot be below zero.")
 
 	problems.append_array(_delta_problems(standing_complete, "standing_complete"))
 	problems.append_array(_delta_problems(standing_fail, "standing_fail"))

@@ -32,6 +32,8 @@ var _state: StringName = STATE_NONE
 func _ready() -> void:
 	add_to_group(&"mission_service")
 	EventBus.on_mission_accept_requested.connect(_on_accept_requested)
+	EventBus.on_mission_complete_requested.connect(_on_complete_requested)
+	EventBus.on_mission_abandon_requested.connect(_on_abandon_requested)
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
 
@@ -39,6 +41,10 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if EventBus.on_mission_accept_requested.is_connected(_on_accept_requested):
 		EventBus.on_mission_accept_requested.disconnect(_on_accept_requested)
+	if EventBus.on_mission_complete_requested.is_connected(_on_complete_requested):
+		EventBus.on_mission_complete_requested.disconnect(_on_complete_requested)
+	if EventBus.on_mission_abandon_requested.is_connected(_on_abandon_requested):
+		EventBus.on_mission_abandon_requested.disconnect(_on_abandon_requested)
 	if EventBus.on_console_commands_requested.is_connected(_on_commands_requested):
 		EventBus.on_console_commands_requested.disconnect(_on_commands_requested)
 	if EventBus.on_console_command_invoked.is_connected(_on_command_invoked):
@@ -79,7 +85,29 @@ func accept(template_id: StringName) -> bool:
 	return true
 
 
-## Complete the active mission → positive standing with offering Entity.
+## True when the active mission can be turned in at this station.
+func can_complete_at_station(station_id: StringName) -> bool:
+	if not has_active():
+		return false
+	var template: ContractType = _template(_active_template_id)
+	if template == null:
+		return false
+	if String(template.destination_station_id).is_empty():
+		return not String(station_id).is_empty()
+	return template.destination_station_id == station_id
+
+
+## Destination station for the active mission, or empty.
+func active_destination_station_id() -> StringName:
+	if not has_active():
+		return &""
+	var template: ContractType = _template(_active_template_id)
+	if template == null:
+		return &""
+	return template.destination_station_id
+
+
+## Complete the active mission → positive standing + credits with offering Entity.
 func complete() -> Dictionary:
 	return _finish(true, false)
 
@@ -96,6 +124,38 @@ func abandon() -> Dictionary:
 
 func _on_accept_requested(template_id: StringName) -> void:
 	accept(template_id)
+
+
+func _on_complete_requested() -> void:
+	if not has_active():
+		return
+	var docked: StringName = _docked_station_id()
+	if not can_complete_at_station(docked):
+		return
+	complete()
+
+
+func _docked_station_id() -> StringName:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return &""
+	var dock_node: Node = tree.get_first_node_in_group(&"docking_service")
+	if dock_node == null or not dock_node.has_method(&"docked_station_id"):
+		return &""
+	var station_raw: Variant = dock_node.call(&"docked_station_id")
+	if typeof(station_raw) == TYPE_STRING_NAME:
+		var as_name: StringName = station_raw
+		return as_name
+	if typeof(station_raw) == TYPE_STRING:
+		var as_text: String = station_raw
+		return StringName(as_text)
+	return &""
+
+
+func _on_abandon_requested() -> void:
+	if not has_active():
+		return
+	abandon()
 
 
 func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
@@ -129,6 +189,10 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 		outcome = OUTCOME_FAILED
 
 	var applied: float = StandingService.apply_entity_delta(entity_id, raw_delta, reason, true)
+	var pay: int = 0
+	if succeeded and not abandoned:
+		pay = maxi(0, template.pay_credits)
+		_pay_credits(pay)
 
 	if abandoned:
 		EventBus.on_mission_abandoned.emit(template_id, entity_id, applied)
@@ -145,7 +209,19 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 		BalanceStanding.REPORT_KEY_REASON: reason,
 		&"template_id": template_id,
 		&"outcome": outcome,
+		&"pay_credits": pay,
 	}
+
+
+func _pay_credits(amount: int) -> void:
+	if amount <= 0:
+		return
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
+	if wallet != null and wallet.has_method(&"add_credits"):
+		wallet.call(&"add_credits", amount)
 
 
 func _template(template_id: StringName) -> ContractType:

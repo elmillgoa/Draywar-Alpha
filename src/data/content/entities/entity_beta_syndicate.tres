@@ -15,6 +15,6 @@ id = &"entity_beta_syndicate"
 display_name = "Drift Syndicate"
 relationship_links = Array[ExtResource("2")]([SubResource("Link_rival_reach")])
 reach_system_ids = Array[StringName]([&"system_beta"])
-reach_station_ids = Array[StringName]([])
+reach_station_ids = Array[StringName]([&"station_beta_hub"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0
