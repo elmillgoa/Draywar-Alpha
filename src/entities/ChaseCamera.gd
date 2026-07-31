@@ -5,8 +5,9 @@ extends Camera3D
 ##
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A1
 ##
-## Follows with lag so motion stays readable and not nauseating. Uses
-## TimeScale.scaled_delta so camera ease matches game time.
+## Follows with lag so motion stays readable and not nauseating.
+## Uses **real** frame delta (not TimeScale) so the view stays human-smooth
+## even if game time is sped up — also avoids editor/autoload parse traps.
 
 var _target: Node3D = null
 var _look_smoothed: Vector3 = Vector3.ZERO
@@ -32,9 +33,8 @@ func set_target(target: Node3D) -> void:
 func _process(delta: float) -> void:
 	if _target == null:
 		return
-	var dt: float = TimeScale.scaled_delta(delta)
 	var ideal: Vector3 = _ideal_position()
-	var pos_weight: float = clampf(BalanceFlight.CAMERA_FOLLOW_SPEED * dt, 0.0, 1.0)
+	var pos_weight: float = clampf(BalanceFlight.CAMERA_FOLLOW_SPEED * delta, 0.0, 1.0)
 	global_position = global_position.lerp(ideal, pos_weight)
 
 	var ideal_look: Vector3 = _look_point()
@@ -42,7 +42,7 @@ func _process(delta: float) -> void:
 		_look_smoothed = ideal_look
 		_has_look = true
 	else:
-		var look_weight: float = clampf(BalanceFlight.CAMERA_LOOK_SPEED * dt, 0.0, 1.0)
+		var look_weight: float = clampf(BalanceFlight.CAMERA_LOOK_SPEED * delta, 0.0, 1.0)
 		_look_smoothed = _look_smoothed.lerp(ideal_look, look_weight)
 	look_at(_look_smoothed, Vector3.UP)
 
