@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 4
+
+# GDScript: tabs, per Godot and gdformat convention.
+[*.gd]
+indent_style = tab
+indent_size = 4
+max_line_length = 100
+
+# Godot resource/scene text formats are engine-written; leave them alone.
+[*.{tscn,tres,godot,import}]
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+[*.{md,yml,yaml,json}]
+indent_style = space
+indent_size = 2
+
+# Markdown uses trailing double-space for hard line breaks.
+[*.md]
+trim_trailing_whitespace = false

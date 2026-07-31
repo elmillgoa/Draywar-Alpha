@@ -1,0 +1,33 @@
+# Godot 4 engine artifacts
+.godot/
+/android/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Build output
+/build/
+/exports/
+
+# Local tooling
+.venv/
+__pycache__/
+*.pyc
+
+# Godot MCP Pro — PROPRIETARY, PURCHASED. Licence forbids redistribution.
+# Reinstall from C:\Godot\godot-mcp-pro or the local zip; see docs/tooling.md.
+addons/godot_mcp/
+
+# OS / editor cruft
+Thumbs.db
+desktop.ini
+.DS_Store
+*.tmp
+
+# Per-checkout engine user:// (isolates saves across worktrees)
+.godot-user/
+
+# Session / agent worktrees
+.claude/worktrees/
+.grok/worktrees/

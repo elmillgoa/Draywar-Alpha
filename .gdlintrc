@@ -1,0 +1,72 @@
+# gdlint configuration (gdtoolkit 4.5.0).
+#
+# Generated from `gdlint --dump-default-config` and then modified. Only the
+# excluded_directories block differs from the tool defaults — if a rule here
+# starts fighting real code, change it deliberately and note why, rather than
+# adding it to `disable`.
+#
+# max-line-length matches the 100-column limit in .editorconfig. Keep them equal.
+
+class-definitions-order:
+- tools
+- classnames
+- extends
+- docstrings
+- signals
+- enums
+- consts
+- staticvars
+- exports
+- pubvars
+- prvvars
+- onreadypubvars
+- onreadyprvvars
+- others
+class-load-variable-name: (([A-Z][a-z0-9]*)+|_?[a-z][a-z0-9]*(_[a-z0-9]+)*)
+class-name: ([A-Z][a-z0-9]*)+
+class-variable-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+comparison-with-itself: null
+constant-name: _?[A-Z][A-Z0-9]*(_[A-Z0-9]+)*
+disable: []
+duplicated-load: null
+enum-element-name: '[A-Z][A-Z0-9]*(_[A-Z0-9]+)*'
+enum-name: ([A-Z][a-z0-9]*)+
+
+# Third-party, generated and duplicated trees are not ours to lint:
+#   .venv    — the Python environment gdlint itself lives in
+#   .godot   — Godot's import cache, regenerated on demand
+#   addons   — third-party plugins (Godot MCP Pro, GUT); their style is theirs
+#   .claude  — agent worktrees. A worktree inside the project turns "lint the
+#              whole tree" into "lint five copies of it", and every copy is
+#              someone else's half-finished work: this run then goes red for a
+#              file that is not in this checkout, which is worse than a false
+#              green because a real failure is lost in it. Same fault, same fix
+#              as scripts/checkin.py's (journal 006, TRAP, 2026-07-29).
+excluded_directories: !!set
+  .git: null
+  .venv: null
+  .godot: null
+  .claude: null
+  addons: null
+
+expression-not-assigned: null
+function-argument-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+function-arguments-number: 10
+function-name: (_on_([A-Z][a-z0-9]*)+(_[a-z0-9]+)*|_?[a-z][a-z0-9]*(_[a-z0-9]+)*)
+function-preload-variable-name: ([A-Z][a-z0-9]*)+
+function-variable-name: '[a-z][a-z0-9]*(_[a-z0-9]+)*'
+load-constant-name: (([A-Z][a-z0-9]*)+|_?[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)
+loop-variable-name: _?[a-z][a-z0-9]*(_[a-z0-9]+)*
+max-file-lines: 1000
+max-line-length: 100
+max-public-methods: 20
+max-returns: 6
+mixed-tabs-and-spaces: null
+no-elif-return: null
+no-else-return: null
+signal-name: '[a-z][a-z0-9]*(_[a-z0-9]+)*'
+sub-class-name: _?([A-Z][a-z0-9]*)+
+tab-characters: 1
+trailing-whitespace: null
+unnecessary-pass: null
+unused-argument: null

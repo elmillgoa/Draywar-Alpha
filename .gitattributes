@@ -1,0 +1,14 @@
+# Normalise line endings so the repo stays LF regardless of who commits from
+# where. Without this, Windows checkouts churn every text file on first touch.
+* text=auto eol=lf
+
+# Binary — never touch these.
+*.png binary
+*.jpg binary
+*.ogg binary
+*.wav binary
+*.glb binary
+*.exe binary
+# GUT ships fonts for its editor panel. text=auto would almost certainly detect
+# these as binary anyway; saying so removes the "almost".
+*.ttf binary
