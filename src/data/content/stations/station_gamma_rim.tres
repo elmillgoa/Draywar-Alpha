@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; Secondary Fringe Collective rim dock in Gamma Fringe — E1.2 density.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_gamma_rim"
+display_name = "Gamma Rim"
+system_id = &"system_gamma"
+controller_entity_id = &"entity_gamma_collective"
+position_offset = Vector3(120, 0, -150)
+flavor_line = "Rim freeport on the edge of the fringe. Scrap piles, grain hunger."

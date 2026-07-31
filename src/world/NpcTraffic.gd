@@ -8,7 +8,7 @@ extends Node3D
 ## Spawns simple orbiting ships; count and colour come from system.policing.
 ## Display only — no combat AI. Parent under SystemWorld after build.
 
-var _ships: Array[MeshInstance3D] = []
+var _ships: Array[Node3D] = []
 var _angles: Array[float] = []
 var _radii: Array[float] = []
 var _heights: Array[float] = []
@@ -24,7 +24,7 @@ func rebuild_for_system(system_id: StringName) -> void:
 	var count: int = _count_for_policing(system.policing)
 	var color: Color = _color_for_policing(system.policing)
 	for i: int in count:
-		var mesh: MeshInstance3D = _make_npc(color)
+		var ship: Node3D = _make_npc(color)
 		var t: float = float(i) / float(maxi(count, 1))
 		var angle: float = t * TAU
 		var radius: float = lerpf(BalanceEconomy.NPC_ORBIT_MIN, BalanceEconomy.NPC_ORBIT_MAX, t)
@@ -36,9 +36,9 @@ func rebuild_for_system(system_id: StringName) -> void:
 		)
 		if i % BalanceEconomy.NPC_ORBIT_REVERSE_EVERY == 1:
 			omega = -omega
-		mesh.position = Vector3(cos(angle) * radius, height, sin(angle) * radius)
-		add_child(mesh)
-		_ships.append(mesh)
+		ship.position = Vector3(cos(angle) * radius, height, sin(angle) * radius)
+		add_child(ship)
+		_ships.append(ship)
 		_angles.append(angle)
 		_radii.append(radius)
 		_heights.append(height)
@@ -52,7 +52,7 @@ func _process(delta: float) -> void:
 		var angle: float = _angles[i]
 		var radius: float = _radii[i]
 		var height: float = _heights[i]
-		var ship: MeshInstance3D = _ships[i]
+		var ship: Node3D = _ships[i]
 		if ship == null or not is_instance_valid(ship):
 			continue
 		ship.position = Vector3(cos(angle) * radius, height, sin(angle) * radius)
@@ -65,7 +65,7 @@ func _process(delta: float) -> void:
 
 
 func _clear() -> void:
-	for ship: MeshInstance3D in _ships:
+	for ship: Node3D in _ships:
 		if ship != null and is_instance_valid(ship):
 			remove_child(ship)
 			ship.free()
@@ -107,18 +107,32 @@ func _color_for_policing(policing: StringName) -> Color:
 			return BalanceEconomy.NPC_COLOR_DEFAULT
 
 
-func _make_npc(color: Color) -> MeshInstance3D:
-	# Capsule hull — distinct from station cylinders, gate rings, player prism.
-	var mesh_instance: MeshInstance3D = MeshInstance3D.new()
+func _make_npc(color: Color) -> Node3D:
+	# Capsule hull + small dorsal fin — traffic, not combat fighter.
+	var root: Node3D = Node3D.new()
+
+	var hull: MeshInstance3D = MeshInstance3D.new()
 	var capsule: CapsuleMesh = CapsuleMesh.new()
 	capsule.radius = BalanceEconomy.NPC_MESH_SIZE.x * BalanceEconomy.NPC_CAPSULE_RADIUS_FACTOR
 	capsule.height = BalanceEconomy.NPC_MESH_SIZE.z
 	capsule.radial_segments = BalanceEconomy.NPC_CAPSULE_RADIAL_SEGMENTS
-	mesh_instance.mesh = capsule
+	hull.mesh = capsule
 	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = color
-	mesh_instance.material_override = material
+	hull.material_override = material
 	# Capsule long axis is Y; lay along flight forward.
-	mesh_instance.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
-	return mesh_instance
+	hull.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
+	root.add_child(hull)
+
+	var fin: MeshInstance3D = MeshInstance3D.new()
+	var fin_box: BoxMesh = BoxMesh.new()
+	fin_box.size = BalanceEconomy.NPC_FIN_SIZE
+	fin.mesh = fin_box
+	var fin_mat: StandardMaterial3D = StandardMaterial3D.new()
+	fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fin_mat.albedo_color = color.lightened(BalanceEconomy.NPC_FIN_LIGHTEN)
+	fin.material_override = fin_mat
+	fin.position = BalanceEconomy.NPC_FIN_OFFSET
+	root.add_child(fin)
+	return root

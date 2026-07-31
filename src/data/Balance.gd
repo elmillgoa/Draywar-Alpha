@@ -14,11 +14,14 @@ extends RefCounted
 ## with no directory yet cost nothing and document where the pipeline is going.
 const CONTENT_BUDGET: Dictionary[StringName, int] = {
 	&"star_systems": 4,
-	&"stations": 5,
+	## E1 cap: stations ≤7 (second docks in existing systems).
+	&"stations": 7,
 	&"entities": 6,
-	&"people": 18,
+	## E1 cap: people ≤20 (density pack contacts).
+	&"people": 20,
 	&"commodities": 8,
-	&"contract_types": 3,
+	## E1.2 room for multi-job boards; E1.3 bounty kind needs headroom.
+	&"contract_types": 8,
 	&"hulls": 2,
 	&"weapons": 12,
 	&"equipment": 10,

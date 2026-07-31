@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Reach Authority second courier — yard crate to Beta Spit (E1.2 multi-job board).
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"contract_courier_alpha_yard"
+display_name = "Yard run — sealed crate to Beta Spit"
+offering_entity_id = &"entity_reach_authority"
+kind = &"delivery"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 130
+destination_station_id = &"station_beta_spit"

@@ -134,6 +134,7 @@ func _add_environment() -> void:
 	environment.background_color = BalanceFlight.space_color_for(system_id)
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = BalanceFlight.ambient_color_for(system_id)
+	environment.ambient_light_energy = BalanceFlight.ambient_energy_for(system_id)
 	world_env.environment = environment
 	world_env.name = "WorldEnvironment"
 	add_child(world_env)
@@ -153,7 +154,10 @@ func _add_starfield() -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	# Stable field per system so jumps don't reshuffle stars every visit.
 	rng.seed = hash(system_id)
-	for i: int in BalanceFlight.STARFIELD_COUNT:
+	var cool: Color = BalanceFlight.star_color_cool_for(system_id)
+	var warm: Color = BalanceFlight.star_color_warm_for(system_id)
+	var count: int = BalanceFlight.starfield_count_for(system_id)
+	for i: int in count:
 		var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 		var sphere: SphereMesh = SphereMesh.new()
 		sphere.radius = (
@@ -165,11 +169,7 @@ func _add_starfield() -> void:
 		mesh_instance.mesh = sphere
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.albedo_color = (
-			BalanceFlight.COLOR_STAR
-			if i % BalanceFlight.STARFIELD_WARM_EVERY != 0
-			else BalanceFlight.COLOR_STAR_WARM
-		)
+		material.albedo_color = cool if i % BalanceFlight.STARFIELD_WARM_EVERY != 0 else warm
 		mesh_instance.material_override = material
 		var dir: Vector3 = Vector3(
 			rng.randf_range(-1.0, 1.0),
@@ -309,6 +309,28 @@ func _make_station_body(pos: Vector3, color: Color) -> Node3D:
 	disc.material_override = _unshaded(color.lightened(BalanceFlight.STATION_DISC_LIGHTEN))
 	disc.position = Vector3(0.0, 0.0, 0.0)
 	root.add_child(disc)
+
+	# Horizontal spoke — station reads as a structure, not a plain barrel.
+	var spoke: MeshInstance3D = MeshInstance3D.new()
+	var spoke_mesh: BoxMesh = BoxMesh.new()
+	spoke_mesh.size = BalanceFlight.STATION_SPOKE_SIZE
+	spoke.mesh = spoke_mesh
+	spoke.material_override = _unshaded(color.lightened(BalanceFlight.STATION_SPOKE_LIGHTEN))
+	root.add_child(spoke)
+
+	# Antenna tower on top of the core cylinder.
+	var tower: MeshInstance3D = MeshInstance3D.new()
+	var tower_mesh: CylinderMesh = CylinderMesh.new()
+	tower_mesh.top_radius = (
+		BalanceFlight.STATION_TOWER_RADIUS * BalanceFlight.STATION_TOWER_TOP_RADIUS_FACTOR
+	)
+	tower_mesh.bottom_radius = BalanceFlight.STATION_TOWER_RADIUS
+	tower_mesh.height = BalanceFlight.STATION_TOWER_HEIGHT
+	tower_mesh.radial_segments = BalanceFlight.STATION_CYLINDER_SEGMENTS
+	tower.mesh = tower_mesh
+	tower.material_override = _unshaded(color.lightened(BalanceFlight.STATION_TOWER_LIGHTEN))
+	tower.position = Vector3(0.0, BalanceFlight.STATION_TOWER_Y, 0.0)
+	root.add_child(tower)
 	return root
 
 

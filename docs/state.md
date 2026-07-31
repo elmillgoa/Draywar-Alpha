@@ -1,63 +1,53 @@
-# Draywar Alpha — State
+# Draywar — State
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **Final Alpha SIGNED** (Attempt 2, 2026-07-31). Path C Alpha closed. Authorized to expand toward full/beta. Next work is **not** more Alpha contracts — it is a **Beta / expansion plan** that sequences Elliot’s four priorities against Destination + expansion path.
+**Current position:** **Final Alpha SIGNED.** Building **Beta E1 — Legible Sector** (`docs/BETA_E1_LEGIBLE_SECTOR.md`, Elliot signed 2026-07-31).
 
 | Doc | Role |
 |-----|------|
-| `docs/gates.md` | Final Alpha Attempt 2 signed + priorities |
-| `Alpha/ALPHA_EXPANSION_PATH.md` | How Alpha systems grow without redesign |
-| `DRAYWAR_DESTINATION_v2.md` | North star (now in force for expansion) |
-| `DRAYWAR_PHASE_PLAN_v2.md` | Full-game phase contracts (do not run blind from P0) |
-| `docs/reputation_and_standing.md` | Standing law (unchanged) |
+| `docs/BETA_E1_LEGIBLE_SECTOR.md` | **Active phase plan** |
+| `docs/gates.md` | Final Alpha signed + E1 feel gate later |
+| `Alpha/ALPHA_EXPANSION_PATH.md` | Grow without redesign |
+| `DRAYWAR_DESTINATION_v2.md` | North star |
+| `docs/reputation_and_standing.md` | Standing law |
 
-**Last closed:** Final Alpha Gate (human). Last code closed: Combat Fairness Pass (`d76fa39`).
+**Last closed:** E1.2 Content density. Last code before that: E1.1 presentation floor 2.
 
-## Honest now — decision bar (all Present; gate signed)
+## E1 progress
 
-All 15 checklist rows were Present at sign. Residual (honest, post-gate): settings stub; art/audio placeholders; thin trade by design; one recovery chain; one pirate type; flying fine-tune deferred; still “demo-like” presentation/content volume — **not** a re-open of Final Alpha.
+| Contract | Status |
+|----------|--------|
+| E1.1 Presentation floor 2 | **done** (2026-07-31) |
+| E1.2 Content density (2nd stations) | **done** (2026-07-31) |
+| E1.3 Second job kind (patrol/bounty) | pending |
+| E1.4 Trade contrast | pending |
+| E1.5 Enforcement lite (A) | pending |
+| E1.6 Roadmap freeze | pending |
+| **[GATE] E1 feel** | after E1.1–E1.5 |
 
-## Combat (accepted at gate)
+**Sign-off locks:** E1.5 = A enforcement lite; E1.2 = second stations (not new system).
 
-Tab lock → hull %; travel bolts both ways; lead aim; jink; kill FX; systems loop works.
+## Caps (E1)
 
-## Evidence
-
-- Suite last reported **265/265**. Lint green at last wrap.
-- Final Alpha Attempt 1 refused; Attempt 2 **signed** after Combat Fairness Pass re-play.
-
-## Gates
-
-- A1 / A4 **signed**
-- **Final Alpha SIGNED** (Attempt 2) — expand toward full/beta
-
-## Open decisions
-
-- **How to sequence** presentation, content, deeper systems, and Destination roadmap into the first post-Alpha phase plan. Plan before mass build.
-- Save: ask only for new **required** schema fields.
+Systems ≤5 (still 3) · Stations ≤7 (now 6) · Entities ≤6 (still 4) · People ≤20 (now 15) · Job kinds ≤3 (still delivery) · Commodities ≤10 · Recovery 1 · Hulls 1
 
 ## Standing decisions
 
-- Path C hybrid completed its job. Godot 4.6.1. Remote `origin/main` → `https://github.com/elmillgoa/Draywar-Alpha`
-- Final Alpha signed: Destination filters (Fidelity / Tone) govern expansion ambiguity.
-- Do **not** restart Alpha prove-it. Grow from Alpha architecture per expansion path.
+- Destination filters govern expansion. Standing law unchanged. No greenfield P0.
+- New deps/assets: ask. New required save fields: ask.
+- Flying fine-tune deferred unless reopened.
 
 ## Next session starts here
 
-1. `/start` — confirm Final Alpha signed; no more Path C code contracts.
-2. **Plan Beta / expansion Phase 0** (plan only first): order Elliot’s four priorities —
-   - Presentation (art / world feel)
-   - More playable content
-   - Deeper core systems
-   - Full-game roadmap (Destination-aligned, not greenfield P0)
-3. Map Destination `DRAYWAR_PHASE_PLAN_v2.md` against what Alpha already shipped; propose first contracts that grow content/presentation without throwing away standing architecture.
-4. Elliot signs the expansion phase plan before agents mass-build.
-5. Flying fine-tune: deferred unless he re-opens it.
+1. Start **E1.3** second job kind (patrol/bounty).
+2. Do not skip to Operations / Holding / interlock.
+3. After E1.1–E1.5: E1 feel gate for Elliot.
 
 ## Session history
 
-- **2026-07-31 (this session)** — Final Alpha Attempt 2: combat re-play accepted; formal **SIGNED**; priorities all four; Path C closed; next = expansion plan.
-- **2026-07-31** — Combat Fairness Pass code; Final Alpha open.
-- **2026-07-31** — Play fixes; B2–B5; Path C; Attempt 1 refused (tech demo).
-- **2026-07-30–31** — A0–A5 mechanical; Path C hybrid.
+- **2026-07-31** — E1.2 content density: second docks in Alpha/Beta/Gamma, 3 people on Contacts, multi-job boards (6 delivery templates), budget bumps.
+- **2026-07-31** — E1.1 presentation floor 2 done: system contrast, silhouettes, kill/dock FX.
+- **2026-07-31** — E1 plan signed (presentation → density → bounty → trade → enforcement A → roadmap). Build starts E1.1.
+- **2026-07-31** — Final Alpha Attempt 2 signed; Path C closed.
+- **2026-07-30–31** — Alpha A0–A5 + Path C B0–B5 + combat fairness.

@@ -76,8 +76,22 @@ func after_each() -> void:
 		EventBus.on_player_damaged.disconnect(_on_player_damaged)
 	if EventBus.on_weapon_fired.is_connected(_on_weapon_fired):
 		EventBus.on_weapon_fired.disconnect(_on_weapon_fired)
+	# Kill FX outlives the hostile for a short tween; free leftovers so GUT stays clean.
+	_free_kill_flashes(self)
 	StandingService.reset_to_defaults()
 	TimeScale.set_combat_lock(false)
+
+
+func _free_kill_flashes(node: Node) -> void:
+	var to_free: Array[Node] = []
+	for child: Node in node.get_children():
+		if child.name == "KillFlash":
+			to_free.append(child)
+		else:
+			_free_kill_flashes(child)
+	for flash: Node in to_free:
+		if is_instance_valid(flash):
+			flash.free()
 
 
 func _on_crippled() -> void:
@@ -341,8 +355,11 @@ func test_pirate_spawn_offset_is_outside_station_safe_radius() -> void:
 
 
 func test_player_can_fire_while_crippled_if_free_flying() -> void:
+	# Parent under a host so the bolt (parented to ship parent) is freed with autofree.
+	var host: Node3D = Node3D.new()
+	add_child_autofree(host)
 	var ship: PlayerShip = PlayerShip.new()
-	add_child_autofree(ship)
+	host.add_child(ship)
 	await get_tree().process_frame
 	ship.set_flight_enabled(false)
 	ship._crippled = true

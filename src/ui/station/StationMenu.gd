@@ -1,9 +1,9 @@
 class_name StationMenu
 extends CanvasLayer
 
-## Station menu — Path C B3 sections (jobs, services, trade, contacts).
+## Station menu Ã¢â‚¬â€ Path C B3 sections (jobs, services, trade, contacts).
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1Ã¢â‚¬â€œA5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
 ##
 ## Undock, accept / turn in / abandon jobs, recovery talk / complete /
 ## abandon / favor / betray, refuel and repair, buy/sell commodities.
@@ -13,10 +13,13 @@ var _panel: PanelContainer = null
 var _title: Label = null
 var _flavor_label: Label = null
 var _scroll: ScrollContainer = null
-var _accept_job_btn: Button = null
+## Dynamic accept-job buttons (one per offered template for the dock controller).
+var _jobs_box: VBoxContainer = null
 var _turn_in_job_btn: Button = null
 var _abandon_job_btn: Button = null
 var _contacts_header: Label = null
+## Named people for the dock controller (Contacts list Ã¢â‚¬â€ E1.2).
+var _contacts_list: VBoxContainer = null
 var _recovery_hint: Label = null
 var _recovery_btn: Button = null
 var _complete_recovery_btn: Button = null
@@ -164,9 +167,9 @@ func _build_ui() -> void:
 
 	# --- Jobs ---
 	_add_section_header(layout, BalanceEconomy.STATION_SECTION_JOBS)
-	_accept_job_btn = _make_button(layout, button_size, BalanceStanding.STATION_ACCEPT_JOB_LABEL)
-	_accept_job_btn.pressed.connect(_on_accept_job_pressed)
-	_accept_job_btn.visible = false
+	_jobs_box = VBoxContainer.new()
+	_jobs_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.add_child(_jobs_box)
 
 	_turn_in_job_btn = _make_button(layout, button_size, BalanceEconomy.STATION_TURN_IN_JOB_LABEL)
 	_turn_in_job_btn.pressed.connect(_on_turn_in_job_pressed)
@@ -192,6 +195,9 @@ func _build_ui() -> void:
 
 	# --- Contacts / recovery foothold (B5 drama when deep negative) ---
 	_contacts_header = _add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
+	_contacts_list = VBoxContainer.new()
+	_contacts_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.add_child(_contacts_list)
 	_recovery_hint = Label.new()
 	_recovery_hint.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_recovery_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -223,7 +229,7 @@ func _build_ui() -> void:
 	_betray_btn.pressed.connect(_on_betray_pressed)
 	_betray_btn.visible = false
 
-	# Footer always visible — leave dock without scrolling past trade/contacts.
+	# Footer always visible Ã¢â‚¬â€ leave dock without scrolling past trade/contacts.
 	var undock_spacer: Control = Control.new()
 	undock_spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_UNDOCK_SPACER)
 	undock_spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -333,8 +339,8 @@ func _refresh_flavor() -> void:
 
 
 func _hide_action_buttons() -> void:
-	if _accept_job_btn != null:
-		_accept_job_btn.visible = false
+	_clear_jobs_box()
+	_clear_contacts_list()
 	if _turn_in_job_btn != null:
 		_turn_in_job_btn.visible = false
 	if _abandon_job_btn != null:
@@ -357,8 +363,7 @@ func _on_undock_pressed() -> void:
 	EventBus.on_undock_requested.emit(_docked_station_id)
 
 
-func _on_accept_job_pressed() -> void:
-	var template_id: StringName = _offered_template_for_dock()
+func _on_accept_job_pressed(template_id: StringName) -> void:
 	if String(template_id).is_empty():
 		return
 	EventBus.on_mission_accept_requested.emit(template_id)
@@ -528,22 +533,37 @@ func _on_cargo_changed() -> void:
 
 func _refresh_all() -> void:
 	_refresh_job_buttons()
+	_refresh_contacts_list()
 	_refresh_recovery_buttons()
 	_refresh_services()
 	_refresh_trade()
 
 
 func _refresh_job_buttons() -> void:
-	if _accept_job_btn == null:
+	if _jobs_box == null:
 		return
-	var template_id: StringName = _offered_template_for_dock()
+	_clear_jobs_box()
 	var mission_busy: bool = _mission_is_active()
-	_accept_job_btn.visible = (not String(template_id).is_empty() and not mission_busy and visible)
-	if _accept_job_btn.visible:
-		_accept_job_btn.text = _accept_job_label(template_id)
+	if visible and not mission_busy:
+		var button_size: Vector2 = Vector2(
+			BalanceFlight.STATION_MENU_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
+		)
+		for template_id: StringName in _offered_templates_for_dock():
+			var btn: Button = _make_button(_jobs_box, button_size, _accept_job_label(template_id))
+			btn.pressed.connect(_on_accept_job_pressed.bind(template_id))
 	var can_turn_in: bool = mission_busy and _mission_can_complete_here()
 	_turn_in_job_btn.visible = can_turn_in and visible
 	_abandon_job_btn.visible = mission_busy and visible
+
+
+func _clear_jobs_box() -> void:
+	if _jobs_box == null:
+		return
+	# free() not queue_free(): refresh rebuilds children in the same frame.
+	while _jobs_box.get_child_count() > 0:
+		var child: Node = _jobs_box.get_child(0)
+		_jobs_box.remove_child(child)
+		child.free()
 
 
 func _accept_job_label(template_id: StringName) -> String:
@@ -554,6 +574,40 @@ func _accept_job_label(template_id: StringName) -> String:
 	if String(dest_id).is_empty():
 		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
 	return BalanceStanding.STATION_ACCEPT_JOB_TO_FORMAT % _content_name(dest_id)
+
+
+func _refresh_contacts_list() -> void:
+	if _contacts_list == null:
+		return
+	_clear_contacts_list()
+	if not visible:
+		return
+	var controller: StringName = _dock_controller()
+	if String(controller).is_empty():
+		return
+	for person_id: StringName in ContentLibrary.ids_in(&"people"):
+		var item: ContentItem = ContentLibrary.item(person_id)
+		if item == null or not (item is Person):
+			continue
+		var person: Person = item as Person
+		if person.primary_entity_id != controller:
+			continue
+		var line: Label = Label.new()
+		line.text = (
+			BalanceEconomy.STATION_CONTACT_LINE_FORMAT % [person.display_name, String(person.rank)]
+		)
+		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_contacts_list.add_child(line)
+
+
+func _clear_contacts_list() -> void:
+	if _contacts_list == null:
+		return
+	while _contacts_list.get_child_count() > 0:
+		var child: Node = _contacts_list.get_child(0)
+		_contacts_list.remove_child(child)
+		child.free()
 
 
 func _refresh_recovery_buttons() -> void:
@@ -585,7 +639,7 @@ func _refresh_recovery_buttons() -> void:
 	_complete_recovery_btn.visible = recovery_busy and visible
 	if _complete_recovery_btn.visible and not String(_active_recovery_person_id).is_empty():
 		_complete_recovery_btn.text = (
-			"%s — %s"
+			"%s Ã¢â‚¬â€ %s"
 			% [
 				BalanceEconomy.STATION_COMPLETE_RECOVERY_LABEL,
 				_content_name(_active_recovery_person_id),
@@ -639,7 +693,7 @@ func _refresh_recovery_drama_header(deep_negative: bool, person_id: StringName) 
 			_recovery_hint.visible = false
 
 
-## Sticky-deep with the dock controller (hostile hole — recovery foothold path).
+## Sticky-deep with the dock controller (hostile hole Ã¢â‚¬â€ recovery foothold path).
 func _is_deep_negative_with_controller() -> bool:
 	var controller: StringName = _dock_controller()
 	if String(controller).is_empty():
@@ -810,18 +864,28 @@ func _group_bool(group: StringName, method: StringName) -> bool:
 	return active == true
 
 
+## First offered template for this dock (legacy single-pick callers / tests).
 func _offered_template_for_dock() -> StringName:
+	var offered: Array[StringName] = _offered_templates_for_dock()
+	if offered.is_empty():
+		return &""
+	return offered[0]
+
+
+## All delivery templates offered by the dock controller (board stock).
+func _offered_templates_for_dock() -> Array[StringName]:
+	var out: Array[StringName] = []
 	if String(_docked_station_id).is_empty():
-		return &""
+		return out
 	if not ContentLibrary.has_item(_docked_station_id):
-		return &""
+		return out
 	var station_item: ContentItem = ContentLibrary.item(_docked_station_id)
 	if not (station_item is Station):
-		return &""
+		return out
 	var station: Station = station_item as Station
 	var controller: StringName = station.controller_entity_id
 	if controller == Station.CONTROLLER_NOBODY or String(controller).is_empty():
-		return &""
+		return out
 	for id: StringName in ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY):
 		var item: ContentItem = ContentLibrary.item(id)
 		if item == null:
@@ -831,8 +895,8 @@ func _offered_template_for_dock() -> StringName:
 			continue
 		var offering: StringName = StringName(str(offering_raw))
 		if offering == controller:
-			return id
-	return &""
+			out.append(id)
+	return out
 
 
 func _offered_recovery_person_for_dock() -> StringName:
@@ -870,7 +934,7 @@ func _favor_person_for_dock() -> StringName:
 		if StandingService.is_person_closed(person_id):
 			continue
 		if StandingService.can_offer_recovery(person_id):
-			# Already offerable — talk button covers it; favor still ok for top-up.
+			# Already offerable Ã¢â‚¬â€ talk button covers it; favor still ok for top-up.
 			return person_id
 		return person_id
 	return &""

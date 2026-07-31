@@ -1,6 +1,6 @@
 extends GutTest
 
-## Entity / Person shapes and shipped standing content — Alpha A2.
+## Entity / Person shapes and shipped standing content â€” Alpha A2.
 
 
 func test_entity_requires_standing_in_range() -> void:
@@ -46,7 +46,7 @@ func test_shipped_entities_and_people_meet_alpha_caps() -> void:
 	var entities: Array[StringName] = ContentLibrary.ids_in(&"entities")
 	var people: Array[StringName] = ContentLibrary.ids_in(&"people")
 	assert_eq(entities.size(), 4, "A2 ships 4 entities")
-	assert_eq(people.size(), 12, "A2 ships 12 people")
+	assert_gte(people.size(), 12, "at least A2's 12 people")
 	assert_lte(entities.size(), Balance.CONTENT_BUDGET[&"entities"])
 	assert_lte(people.size(), Balance.CONTENT_BUDGET[&"people"])
 

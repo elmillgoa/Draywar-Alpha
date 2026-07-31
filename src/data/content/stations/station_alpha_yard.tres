@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; Secondary Reach Authority yard in Alpha Reach — E1.2 density.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_alpha_yard"
+display_name = "Alpha Yard"
+system_id = &"system_alpha"
+controller_entity_id = &"entity_reach_authority"
+position_offset = Vector3(180, 0, 40)
+flavor_line = "Authority repair yard off the main port. Spare berths and sealed cargo."

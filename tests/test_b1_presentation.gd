@@ -3,6 +3,7 @@ extends GutTest
 ## B1 presentation floor — backdrop, silhouettes, shared UI theme.
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B1
+## Extended mesh counts for E1.1 presentation floor 2.
 
 
 func test_starfield_is_spawned_with_the_world() -> void:
@@ -12,7 +13,7 @@ func test_starfield_is_spawned_with_the_world() -> void:
 	world.build()
 	var stars: Node = world.get_node_or_null("Starfield")
 	assert_ne(stars, null, "starfield root required — not pure black void")
-	assert_eq(stars.get_child_count(), BalanceFlight.STARFIELD_COUNT)
+	assert_eq(stars.get_child_count(), BalanceFlight.starfield_count_for(&"system_alpha"))
 
 
 func test_station_and_gate_use_distinct_mesh_roots() -> void:
@@ -29,8 +30,8 @@ func test_station_and_gate_use_distinct_mesh_roots() -> void:
 			gate = child
 	assert_ne(station, null)
 	assert_ne(gate, null)
-	# Station body uses cylinders; gate uses torus + beacon — different child counts/shapes.
-	assert_gt(station.get_child_count(), 0)
+	# Station body: core + disc + spoke + tower (E1.1 ≥3 meshes).
+	assert_gte(station.get_child_count(), 3, "station core + disc + module(s)")
 	assert_gt(gate.get_child_count(), 2, "gate ring, core, beacon, label")
 
 
@@ -46,7 +47,7 @@ func test_player_ship_is_not_a_lone_box() -> void:
 			var mi: MeshInstance3D = child as MeshInstance3D
 			if mi.mesh is PrismMesh:
 				has_prism = true
-	assert_gte(mesh_count, 2, "hull + engine silhouette")
+	assert_gte(mesh_count, 3, "hull + engine + silhouette detail (E1.1)")
 	assert_true(has_prism, "player freighter uses prism hull")
 
 
@@ -55,9 +56,20 @@ func test_npc_traffic_uses_capsule_silhouettes() -> void:
 	add_child_autofree(traffic)
 	traffic.rebuild_for_system(&"system_alpha")
 	assert_gt(traffic.get_child_count(), 0)
-	var first: MeshInstance3D = traffic.get_child(0) as MeshInstance3D
+	var first: Node = traffic.get_child(0)
 	assert_ne(first, null)
-	assert_true(first.mesh is CapsuleMesh, "NPC capsule distinct from boxes")
+	var has_capsule: bool = false
+	if first is MeshInstance3D:
+		var as_mesh: MeshInstance3D = first as MeshInstance3D
+		has_capsule = as_mesh.mesh is CapsuleMesh
+	else:
+		for child: Node in first.get_children():
+			if child is MeshInstance3D:
+				var mi: MeshInstance3D = child as MeshInstance3D
+				if mi.mesh is CapsuleMesh:
+					has_capsule = true
+					break
+	assert_true(has_capsule, "NPC capsule distinct from boxes")
 
 
 func test_draywar_theme_styles_panel_and_button() -> void:

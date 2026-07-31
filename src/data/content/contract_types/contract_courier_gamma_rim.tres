@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Fringe Collective second haul — rim scrap to Alpha Yard (E1.2 multi-job board).
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"contract_courier_gamma_rim"
+display_name = "Rim scrap haul — to Alpha Yard"
+offering_entity_id = &"entity_gamma_collective"
+kind = &"delivery"
+standing_complete = 6.0
+standing_fail = -2.0
+standing_abandon = -6.0
+pay_credits = 110
+destination_station_id = &"station_alpha_yard"

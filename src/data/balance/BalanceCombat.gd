@@ -113,6 +113,7 @@ const HIT_FLASH_SECONDS: float = 0.12
 const COLOR_HOSTILE: Color = Color(0.92, 0.22, 0.18)
 const COLOR_HOSTILE_ACCENT: Color = Color(1.0, 0.45, 0.2)
 const COLOR_HOSTILE_HIT_FLASH: Color = Color(1.0, 0.85, 0.8)
+const COLOR_HOSTILE_FIN: Color = Color(0.75, 0.12, 0.1)
 
 ## Capsule mesh size.
 const HOSTILE_CAPSULE_RADIUS: float = 1.6
@@ -124,9 +125,22 @@ const HOSTILE_CAPSULE_RADIAL: int = 12
 const HOSTILE_NOSE_SIZE: Vector3 = Vector3(0.9, 0.9, 2.2)
 const HOSTILE_NOSE_Z: float = -2.4
 
+## Large swept fins — threat silhouette vs thin traffic fin (E1.1).
+const HOSTILE_FIN_SIZE: Vector3 = Vector3(4.8, 0.22, 1.8)
+const HOSTILE_FIN_OFFSET: Vector3 = Vector3(0.0, 0.0, 0.6)
+
 ## Collision shape (slightly larger than mesh for fair hits).
 const HOSTILE_HITBOX_RADIUS: float = 2.2
 const HOSTILE_HITBOX_HEIGHT: float = 6.0
+
+## Kill flash before free (expanding unshaded sphere — E1.1).
+const KILL_FLASH_RADIUS: float = 1.8
+const KILL_FLASH_HEIGHT_FACTOR: float = 2.0
+const KILL_FLASH_END_SCALE: float = 4.5
+const KILL_FLASH_DURATION: float = 0.38
+const KILL_FLASH_RADIAL_SEGMENTS: int = 8
+const KILL_FLASH_RINGS: int = 4
+const COLOR_KILL_FLASH: Color = Color(1.0, 0.72, 0.35)
 
 # --- Spawn -----------------------------------------------------------------
 

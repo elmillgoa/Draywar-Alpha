@@ -21,6 +21,7 @@ var _player_docked: bool = false
 var _undock_grace: float = 0.0
 var _body_mat: StandardMaterial3D = null
 var _nose_mat: StandardMaterial3D = null
+var _fin_mat: StandardMaterial3D = null
 var _lock_highlighted: bool = false
 var _hit_flash_left: float = 0.0
 var _jink_time: float = 0.0
@@ -305,7 +306,45 @@ func _die() -> void:
 	EventBus.on_hostile_killed.emit(system_id, victim_entity_id)
 	_report_kill(system_id)
 	_release_combat_lock_if_last()
+	_spawn_kill_flash()
 	queue_free()
+
+
+## Expanding unshaded flash parented to the world so it outlives this node.
+func _spawn_kill_flash() -> void:
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	var flash: MeshInstance3D = MeshInstance3D.new()
+	flash.name = "KillFlash"
+	var sphere: SphereMesh = SphereMesh.new()
+	sphere.radius = BalanceCombat.KILL_FLASH_RADIUS
+	sphere.height = BalanceCombat.KILL_FLASH_RADIUS * BalanceCombat.KILL_FLASH_HEIGHT_FACTOR
+	sphere.radial_segments = BalanceCombat.KILL_FLASH_RADIAL_SEGMENTS
+	sphere.rings = BalanceCombat.KILL_FLASH_RINGS
+	flash.mesh = sphere
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = BalanceCombat.COLOR_KILL_FLASH
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flash.material_override = mat
+	var flash_pos: Vector3 = global_position
+	parent.add_child(flash)
+	flash.global_position = flash_pos
+	# Tear-down safety: parent free mid-tween (tests / jump) must not leave a live FX node.
+	var flash_id: int = flash.get_instance_id()
+	var free_flash: Callable = func() -> void:
+		var still: Object = instance_from_id(flash_id)
+		if still is Node and is_instance_valid(still):
+			(still as Node).queue_free()
+	parent.tree_exiting.connect(free_flash, CONNECT_ONE_SHOT)
+	var end_scale: float = BalanceCombat.KILL_FLASH_END_SCALE
+	var duration: float = BalanceCombat.KILL_FLASH_DURATION
+	var tween: Tween = flash.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(flash, "scale", Vector3(end_scale, end_scale, end_scale), duration)
+	tween.tween_property(mat, "albedo_color:a", 0.0, duration)
+	tween.chain().tween_callback(flash.queue_free)
 
 
 func _report_kill(system_id: StringName) -> void:
@@ -367,6 +406,8 @@ func _start_hit_flash() -> void:
 		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
 	if _nose_mat != null:
 		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
+	if _fin_mat != null:
+		_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
 
 
 func _refresh_materials() -> void:
@@ -375,6 +416,8 @@ func _refresh_materials() -> void:
 	if _hit_flash_left > 0.0:
 		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
 		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
+		if _fin_mat != null:
+			_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
 		return
 	if _lock_highlighted:
 		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE.lightened(
@@ -383,9 +426,15 @@ func _refresh_materials() -> void:
 		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT.lightened(
 			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
 		)
+		if _fin_mat != null:
+			_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_FIN.lightened(
+				BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
+			)
 	else:
 		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
 		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
+		if _fin_mat != null:
+			_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_FIN
 
 
 func _build_mesh() -> void:
@@ -414,6 +463,18 @@ func _build_mesh() -> void:
 	nose.material_override = _nose_mat
 	nose.position = Vector3(0.0, 0.0, BalanceCombat.HOSTILE_NOSE_Z)
 	add_child(nose)
+
+	# Wide swept fins — threat reads at range vs traffic's small dorsal fin.
+	var fins: MeshInstance3D = MeshInstance3D.new()
+	var fin_box: BoxMesh = BoxMesh.new()
+	fin_box.size = BalanceCombat.HOSTILE_FIN_SIZE
+	fins.mesh = fin_box
+	_fin_mat = StandardMaterial3D.new()
+	_fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_FIN
+	fins.material_override = _fin_mat
+	fins.position = BalanceCombat.HOSTILE_FIN_OFFSET
+	add_child(fins)
 
 	var collision: CollisionShape3D = CollisionShape3D.new()
 	var shape: CapsuleShape3D = CapsuleShape3D.new()

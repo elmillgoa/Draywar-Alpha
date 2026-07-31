@@ -254,6 +254,11 @@ const NPC_CAPSULE_RADIUS_FACTOR: float = 0.45
 const NPC_MESH_PITCH_DEGREES: float = 90.0
 const NPC_CAPSULE_RADIAL_SEGMENTS: int = 8
 
+## Small dorsal fin / box so traffic ≠ hostile at a glance (E1.1).
+const NPC_FIN_SIZE: Vector3 = Vector3(0.35, 1.1, 1.4)
+const NPC_FIN_OFFSET: Vector3 = Vector3(0.0, 0.85, 0.15)
+const NPC_FIN_LIGHTEN: float = 0.2
+
 ## Station service button labels.
 const STATION_REFUEL_LABEL: String = "Refuel"
 const STATION_REPAIR_LABEL: String = "Repair ship"
@@ -276,6 +281,8 @@ const STATION_SECTION_JOBS: String = "Jobs"
 const STATION_SECTION_SERVICES: String = "Services"
 const STATION_SECTION_TRADE: String = "Trade"
 const STATION_SECTION_CONTACTS: String = "Contacts"
+## Contacts row: display name + rank (E1.2 density — people used on board).
+const STATION_CONTACT_LINE_FORMAT: String = "%s — %s"
 ## Shown instead of Contacts when local controller standing is sticky-deep.
 const STATION_SECTION_RECOVERY_DRAMA: String = "Recovery foothold"
 ## Hint under recovery header — %s = person display name.

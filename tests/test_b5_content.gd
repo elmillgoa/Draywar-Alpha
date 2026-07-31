@@ -43,7 +43,8 @@ func test_three_systems_distinct_controllers_and_policing() -> void:
 
 func test_three_contract_destinations_span_systems() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY)
-	assert_eq(ids.size(), 3, "contract_types budget is 3")
+	assert_gte(ids.size(), 3, "at least original three courier templates")
+	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceStanding.MISSION_CONTENT_CATEGORY])
 	var destinations: Dictionary = {}
 	var offering: Dictionary = {}
 	for id: StringName in ids:

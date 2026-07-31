@@ -26,6 +26,7 @@ var _nav_here_label: Label = null
 var _nav_gates_label: Label = null
 var _root: Control = null
 var _combat_reticle: Control = null
+var _dock_fade: ColorRect = null
 
 var _current_system_id: StringName = &""
 var _docked_station_id: StringName = &""
@@ -41,6 +42,9 @@ var _target_distance: float = 0.0
 var _target_hull_percent: int = BalanceCombat.HULL_PERCENT_FULL
 var _condition_hit_flash_left: float = 0.0
 var _condition_base_color: Color = Color.WHITE
+var _dock_fade_left: float = 0.0
+var _dock_fade_peak: float = 0.0
+var _dock_fade_base: Color = Color.TRANSPARENT
 
 
 func _ready() -> void:
@@ -223,6 +227,15 @@ func _build_labels() -> void:
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
 	_prompt_label.text = ""
+
+	# Full-screen dock/undock flash (visual only — does not block input).
+	_dock_fade = ColorRect.new()
+	_dock_fade.name = "DockFade"
+	_dock_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dock_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dock_fade.color = Color(0.0, 0.0, 0.0, 0.0)
+	_dock_fade.visible = false
+	_root.add_child(_dock_fade)
 
 
 func _build_nav_panel(parent: Control) -> void:
@@ -519,6 +532,7 @@ func _on_docked(station_id: StringName) -> void:
 	_gate_dest_id = &""
 	_prompt_label.text = ""
 	_refresh_status_line()
+	_start_dock_fade(BalanceUi.DOCK_FADE_COLOR)
 
 
 func _on_undocked(_station_id: StringName) -> void:
@@ -526,6 +540,17 @@ func _on_undocked(_station_id: StringName) -> void:
 	_refresh_status_line()
 	_refresh_hostile_flag()
 	_refresh_prompt()
+	_start_dock_fade(BalanceUi.UNDOCK_FADE_COLOR)
+
+
+func _start_dock_fade(base: Color) -> void:
+	if _dock_fade == null:
+		return
+	_dock_fade_base = base
+	_dock_fade_peak = BalanceUi.DOCK_FADE_PEAK_ALPHA
+	_dock_fade_left = BalanceUi.DOCK_FADE_DURATION
+	_dock_fade.visible = true
+	_dock_fade.color = Color(base.r, base.g, base.b, _dock_fade_peak)
 
 
 func _on_player_crippled() -> void:
@@ -544,12 +569,22 @@ func _on_hostile_killed(_system_id: StringName, _victim_entity_id: StringName) -
 
 
 func _process(delta: float) -> void:
-	if _condition_hit_flash_left <= 0.0:
+	if _condition_hit_flash_left <= 0.0 and _dock_fade_left <= 0.0:
 		return
 	var dt: float = TimeScale.scaled_delta(delta)
-	_condition_hit_flash_left = maxf(0.0, _condition_hit_flash_left - dt)
-	if _condition_hit_flash_left <= 0.0 and _condition_label != null:
-		_condition_label.add_theme_color_override("font_color", _condition_base_color)
+	if _condition_hit_flash_left > 0.0:
+		_condition_hit_flash_left = maxf(0.0, _condition_hit_flash_left - dt)
+		if _condition_hit_flash_left <= 0.0 and _condition_label != null:
+			_condition_label.add_theme_color_override("font_color", _condition_base_color)
+	if _dock_fade_left > 0.0 and _dock_fade != null:
+		_dock_fade_left = maxf(0.0, _dock_fade_left - dt)
+		var duration: float = BalanceUi.DOCK_FADE_DURATION
+		var t: float = 0.0 if duration <= 0.0 else _dock_fade_left / duration
+		var alpha: float = _dock_fade_peak * t
+		_dock_fade.color = Color(_dock_fade_base.r, _dock_fade_base.g, _dock_fade_base.b, alpha)
+		if _dock_fade_left <= 0.0:
+			_dock_fade.visible = false
+			_dock_fade.color = Color(_dock_fade_base.r, _dock_fade_base.g, _dock_fade_base.b, 0.0)
 
 
 func _on_target_lock_changed(locked: bool, label: String, distance: float) -> void:

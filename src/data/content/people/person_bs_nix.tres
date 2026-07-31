@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+; Drift Syndicate low-rank spit fixer — E1.2 Contacts at Beta docks.
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_bs_nix"
+display_name = "Fixer Nix"
+primary_entity_id = &"entity_beta_syndicate"
+rank = &"low"
+network_person_ids = Array[StringName]([&"person_bs_jax", &"person_bs_rim"])
+default_player_standing = 0.0

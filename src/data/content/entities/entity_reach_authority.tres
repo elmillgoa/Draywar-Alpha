@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Entity" load_steps=4 format=3]
 
-; Controls Alpha Reach / Alpha Port — patrolled freight corridor authority.
+; Controls Alpha Reach / Alpha Port + Yard — patrolled freight corridor authority.
 [ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
 [ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
 
@@ -15,6 +15,6 @@ id = &"entity_reach_authority"
 display_name = "Reach Authority"
 relationship_links = Array[ExtResource("2")]([SubResource("Link_rival_beta")])
 reach_system_ids = Array[StringName]([&"system_alpha"])
-reach_station_ids = Array[StringName]([&"station_alpha_port"])
+reach_station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0

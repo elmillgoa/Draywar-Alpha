@@ -398,7 +398,7 @@ func _lock_combat_velocity(target: Node) -> Vector3:
 
 
 func _build_mesh() -> void:
-	# Pointed freighter silhouette (prism hull + rear engine block) — not a box.
+	# Pointed freighter: prism hull, engine, canopy, wings — not a candy box.
 	var hull: MeshInstance3D = MeshInstance3D.new()
 	var prism: PrismMesh = PrismMesh.new()
 	prism.size = BalanceFlight.SHIP_PRISM_SIZE
@@ -423,6 +423,28 @@ func _build_mesh() -> void:
 		0.0, 0.0, BalanceFlight.SHIP_PRISM_SIZE.z * BalanceFlight.SHIP_ENGINE_Z_FACTOR
 	)
 	add_child(engine)
+
+	var canopy: MeshInstance3D = MeshInstance3D.new()
+	var canopy_box: BoxMesh = BoxMesh.new()
+	canopy_box.size = BalanceFlight.SHIP_CANOPY_SIZE
+	canopy.mesh = canopy_box
+	var canopy_mat: StandardMaterial3D = StandardMaterial3D.new()
+	canopy_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	canopy_mat.albedo_color = BalanceFlight.COLOR_SHIP_CANOPY
+	canopy.material_override = canopy_mat
+	canopy.position = BalanceFlight.SHIP_CANOPY_OFFSET
+	add_child(canopy)
+
+	var wings: MeshInstance3D = MeshInstance3D.new()
+	var wing_box: BoxMesh = BoxMesh.new()
+	wing_box.size = BalanceFlight.SHIP_WING_SIZE
+	wings.mesh = wing_box
+	var wing_mat: StandardMaterial3D = StandardMaterial3D.new()
+	wing_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	wing_mat.albedo_color = BalanceFlight.COLOR_SHIP_WING
+	wings.material_override = wing_mat
+	wings.position = BalanceFlight.SHIP_WING_OFFSET
+	add_child(wings)
 
 	# Sphere hurtbox so hostile travel bolts can score hits fairly.
 	var collision: CollisionShape3D = CollisionShape3D.new()

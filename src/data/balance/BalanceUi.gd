@@ -23,3 +23,9 @@ const BORDER_WIDTH: int = 2
 const BUTTON_BORDER_WIDTH: int = 1
 const CONTENT_MARGIN: int = 12
 const BUTTON_CONTENT_MARGIN: int = 8
+
+## Brief full-screen dock / undock flash (FlightHUD ColorRect — E1.1).
+const DOCK_FADE_COLOR: Color = Color(0.12, 0.22, 0.35, 1.0)
+const UNDOCK_FADE_COLOR: Color = Color(0.18, 0.16, 0.10, 1.0)
+const DOCK_FADE_PEAK_ALPHA: float = 0.55
+const DOCK_FADE_DURATION: float = 0.28
