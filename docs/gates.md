@@ -27,3 +27,19 @@ Elliot’s words only. Agents never sign these.
 > Working better now. i think it is something we will need to fine tune over time as we get more visual assets into place. I think it is good enough to move on with testing.
 
 **Notes:** Fine-tune flight/camera later as art lands; not a reopen of A1. Phase A1 closed.
+
+---
+
+## A4 — Personal recovery feel
+
+**Criteria:** recovery path feels like a meaningful, earned lever rather than a menu grind.
+
+### Attempt 1 — 2026-07-31
+
+**Verdict: signed — A4 recovery feel passes.**
+
+**Elliot (verbatim):**
+
+> That worked. We are good to go.
+
+**Notes:** Console offer text was opaque at first (`recovery status`/`list`); fixed to plain-English JOB AVAILABLE before sign-off. Phase A4 closed.
