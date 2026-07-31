@@ -567,6 +567,19 @@ No parameters.
 **Emitted by** `PlayerShip`, `HostileNpc`.
 **Listened to by** (optional VFX / HUD later).
 
+### `on_target_lock_changed(locked: bool, label: String, distance: float)`
+
+Player target lock acquired, cycled, or cleared (Tab).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `locked` | `bool` | True when a live target is locked. |
+| `label` | `String` | Display name for the locked target (empty when cleared). |
+| `distance` | `float` | Metres to the locked target (0 when cleared). |
+
+**Emitted by** `PlayerShip`.
+**Listened to by** `FlightHUD`.
+
 ### `on_hostile_damaged(remaining_hp: float)`
 
 A combat hostile took damage.

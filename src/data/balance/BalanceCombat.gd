@@ -24,6 +24,13 @@ const ACTION_FIRE: StringName = &"fire_weapon"
 const FIRE_KEY: Key = KEY_SPACE
 const FIRE_MOUSE_BUTTON: MouseButton = MOUSE_BUTTON_LEFT
 
+## Target lock cycle (Tab). Closest first, then next furthest, wrap.
+const ACTION_TARGET_LOCK: StringName = &"target_lock"
+const TARGET_LOCK_KEY: Key = KEY_TAB
+
+## Max distance to include a hostile in the lock cycle (metres).
+const TARGET_LOCK_RANGE: float = 400.0
+
 # --- Player weapon ---------------------------------------------------------
 
 ## Seconds between player shots.
@@ -115,10 +122,18 @@ const KILL_EVIDENCE: bool = false
 # --- HUD -------------------------------------------------------------------
 
 ## Shown while a combat hostile exists and the ship is free-flying.
-const HUD_COMBAT_PROMPT: String = "HOSTILE — AIM + SPACE / LMB TO FIRE"
+const HUD_COMBAT_PROMPT: String = "HOSTILE — TAB LOCK · SPACE / LMB FIRE"
+
+## Locked target readout (name + range metres).
+const HUD_TARGET_LOCK_FORMAT: String = "LOCK  %s  %dm"
+const HUD_TARGET_LOCK_NONE: String = "LOCK  —"
+const TARGET_LOCK_DEFAULT_NAME: String = "Hostile"
 
 ## Fail state when hull condition hits zero undocked.
 const HUD_CRIPPLED_MESSAGE: String = "SHIP CRIPPLED — DOCK FOR REPAIR"
+
+## Locked hostile accent brighten (0..1 mix toward white).
+const LOCK_HIGHLIGHT_LIGHTEN: float = 0.45
 
 ## Fail-state console / status line (optional string reuse).
 const FAIL_STATE_MESSAGE: String = "Ship crippled. Dock and repair to fly again."

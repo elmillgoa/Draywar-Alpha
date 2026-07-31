@@ -17,6 +17,9 @@ var _dead: bool = false
 ## EventBus dock mirror — group lookup alone was missing docked state in play.
 var _player_docked: bool = false
 var _undock_grace: float = 0.0
+var _body_mat: StandardMaterial3D = null
+var _nose_mat: StandardMaterial3D = null
+var _lock_highlighted: bool = false
 
 
 func _ready() -> void:
@@ -77,6 +80,28 @@ static func spawn_under(parent: Node3D, world_position: Vector3) -> HostileNpc:
 	parent.add_child(hostile)
 	hostile.global_position = world_position
 	return hostile
+
+
+## HUD / lock readout name (group-safe, no cross-layer type).
+func lock_display_name() -> String:
+	return BalanceCombat.TARGET_LOCK_DEFAULT_NAME
+
+
+## Brighten silhouette while the player has this ship locked.
+func set_lock_highlight(on: bool) -> void:
+	_lock_highlighted = on
+	if _body_mat == null or _nose_mat == null:
+		return
+	if on:
+		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE.lightened(
+			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
+		)
+		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT.lightened(
+			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
+		)
+	else:
+		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
+		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
 
 
 func _physics_process(delta: float) -> void:
@@ -291,10 +316,10 @@ func _build_mesh() -> void:
 	capsule.radial_segments = BalanceCombat.HOSTILE_CAPSULE_RADIAL
 	capsule.rings = BalanceCombat.HOSTILE_CAPSULE_RINGS
 	body.mesh = capsule
-	var body_mat: StandardMaterial3D = StandardMaterial3D.new()
-	body_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
-	body.material_override = body_mat
+	_body_mat = StandardMaterial3D.new()
+	_body_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
+	body.material_override = _body_mat
 	# Lay capsule along forward (-Z) so it reads as a ship, not a buoy.
 	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
 	add_child(body)
@@ -303,10 +328,10 @@ func _build_mesh() -> void:
 	var nose_box: BoxMesh = BoxMesh.new()
 	nose_box.size = BalanceCombat.HOSTILE_NOSE_SIZE
 	nose.mesh = nose_box
-	var nose_mat: StandardMaterial3D = StandardMaterial3D.new()
-	nose_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
-	nose.material_override = nose_mat
+	_nose_mat = StandardMaterial3D.new()
+	_nose_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
+	nose.material_override = _nose_mat
 	nose.position = Vector3(0.0, 0.0, BalanceCombat.HOSTILE_NOSE_Z)
 	add_child(nose)
 

@@ -219,6 +219,10 @@ signal on_trade_completed(
 ## PlayerShip: weapon discharged (hitscan attempt).
 signal on_weapon_fired
 
+## PlayerShip: target lock acquired, cycled, or cleared.
+## locked false clears the HUD lock line; label/distance are then empty / 0.
+signal on_target_lock_changed(locked: bool, label: String, distance: float)
+
 ## HostileNpc: took damage; remaining hull after the hit.
 signal on_hostile_damaged(remaining_hp: float)
 

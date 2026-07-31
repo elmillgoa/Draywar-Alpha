@@ -18,6 +18,7 @@ var _credits_label: Label = null
 var _fuel_label: Label = null
 var _condition_label: Label = null
 var _mission_label: Label = null
+var _target_label: Label = null
 var _nav_title_label: Label = null
 var _nav_here_label: Label = null
 var _nav_gates_label: Label = null
@@ -31,6 +32,9 @@ var _dock_prompt_id: StringName = &""
 var _dock_can_dock: bool = false
 var _crippled: bool = false
 var _hostile_present: bool = false
+var _target_locked: bool = false
+var _target_label_text: String = ""
+var _target_distance: float = 0.0
 
 
 func _ready() -> void:
@@ -56,6 +60,7 @@ func _ready() -> void:
 	EventBus.on_player_crippled.connect(_on_player_crippled)
 	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
 	EventBus.on_hostile_killed.connect(_on_hostile_killed)
+	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
 	_refresh_mission_line()
 
 
@@ -80,6 +85,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_player_crippled, _on_player_crippled)
 	_disconnect(EventBus.on_player_repaired_from_cripple, _on_player_repaired_from_cripple)
 	_disconnect(EventBus.on_hostile_killed, _on_hostile_killed)
+	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -176,6 +182,18 @@ func _build_labels() -> void:
 		)
 	)
 	_mission_label.text = ""
+
+	_target_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
+	_target_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
+	_target_label.position = Vector2(
+		BalanceFlight.HUD_MARGIN,
+		(
+			BalanceFlight.HUD_MARGIN
+			+ float(BalanceFlight.HUD_TITLE_FONT_SIZE)
+			+ float(BalanceFlight.HUD_FONT_SIZE) * (BalanceEconomy.HUD_LINE_MISSION + 1.0)
+		)
+	)
+	_target_label.text = BalanceCombat.HUD_TARGET_LOCK_NONE
 
 	_build_nav_panel(_root)
 
@@ -508,6 +526,24 @@ func _on_player_repaired_from_cripple() -> void:
 func _on_hostile_killed(_system_id: StringName, _victim_entity_id: StringName) -> void:
 	_refresh_hostile_flag()
 	_refresh_prompt()
+
+
+func _on_target_lock_changed(locked: bool, label: String, distance: float) -> void:
+	_target_locked = locked
+	_target_label_text = label
+	_target_distance = distance
+	_refresh_target_line()
+
+
+func _refresh_target_line() -> void:
+	if _target_label == null:
+		return
+	if not _target_locked or _target_label_text.is_empty():
+		_target_label.text = BalanceCombat.HUD_TARGET_LOCK_NONE
+		return
+	_target_label.text = (
+		BalanceCombat.HUD_TARGET_LOCK_FORMAT % [_target_label_text, int(roundf(_target_distance))]
+	)
 
 
 func _refresh_hostile_flag() -> void:

@@ -27,6 +27,7 @@ var _camera: Camera3D = null
 var _last_reported_speed: float = -1.0
 var _fire_cooldown: float = 0.0
 var _crippled: bool = false
+var _locked_target: Node = null
 
 
 func _ready() -> void:
@@ -37,12 +38,15 @@ func _ready() -> void:
 	EventBus.on_pause_changed.connect(_on_pause_changed)
 	EventBus.on_player_crippled.connect(_on_player_crippled)
 	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
+	EventBus.on_hostile_killed.connect(_on_hostile_killed_clear_lock)
 	# Seed HUD listeners that connect before the first physics tick.
 	EventBus.on_player_throttle_changed.emit(_throttle)
 	EventBus.on_player_speed_changed.emit(0.0)
+	EventBus.on_target_lock_changed.emit(false, "", 0.0)
 
 
 func _exit_tree() -> void:
+	_clear_target_lock(false)
 	if EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
 		EventBus.on_console_visibility_changed.disconnect(_on_console_visibility_changed)
 	if EventBus.on_pause_changed.is_connected(_on_pause_changed):
@@ -51,6 +55,8 @@ func _exit_tree() -> void:
 		EventBus.on_player_crippled.disconnect(_on_player_crippled)
 	if EventBus.on_player_repaired_from_cripple.is_connected(_on_player_repaired_from_cripple):
 		EventBus.on_player_repaired_from_cripple.disconnect(_on_player_repaired_from_cripple)
+	if EventBus.on_hostile_killed.is_connected(_on_hostile_killed_clear_lock):
+		EventBus.on_hostile_killed.disconnect(_on_hostile_killed_clear_lock)
 
 
 ## Wire the chase camera used for mouse-aim raycasts.
@@ -112,11 +118,13 @@ func _physics_process(delta: float) -> void:
 	if _fire_cooldown > 0.0:
 		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
 
-	# Weapons work free-flying even when hull is crippled (last stand).
-	# Flight throttle still gated below.
+	# Weapons + target lock work free-flying even when hull is crippled.
 	if not _input_blocked and not _is_docked():
+		if Input.is_action_just_pressed(FlightInput.ACTION_TARGET_LOCK):
+			cycle_target_lock()
 		if Input.is_action_just_pressed(FlightInput.ACTION_FIRE):
 			try_fire()
+	_refresh_lock_hud_if_needed()
 
 	if not _flight_enabled or _input_blocked:
 		return
@@ -162,8 +170,33 @@ func _physics_process(delta: float) -> void:
 		EventBus.on_player_speed_changed.emit(speed)
 
 
+## Cycle target lock: first Tab = nearest; further Tabs = next furthest; wrap.
+func cycle_target_lock() -> void:
+	if _input_blocked or _is_docked():
+		return
+	var ranked: Array[Node] = _hostiles_ranked_by_distance()
+	if ranked.is_empty():
+		_clear_target_lock(true)
+		return
+	var next_index: int = 0
+	if _locked_target != null and is_instance_valid(_locked_target):
+		var found: int = ranked.find(_locked_target)
+		if found >= 0:
+			next_index = (found + 1) % ranked.size()
+	_set_target_lock(ranked[next_index])
+
+
+## Current locked combat target, or null.
+func locked_target() -> Node:
+	if _locked_target != null and is_instance_valid(_locked_target):
+		if _locked_target.has_method(&"is_alive") and _locked_target.call(&"is_alive") != true:
+			return null
+		return _locked_target
+	return null
+
+
 ## Fire hitscan if cooldown allows. Returns true when a shot went out.
-## Free-flying only (not docked / not menu-blocked). Aim follows mouse.
+## Free-flying only. Prefers locked target in range; else mouse-aim hitscan.
 func try_fire() -> bool:
 	if _input_blocked or _is_docked():
 		return false
@@ -173,7 +206,6 @@ func try_fire() -> bool:
 	EventBus.on_weapon_fired.emit()
 
 	var origin: Vector3 = global_position
-	# Shoot toward mouse aim (same point the ship turns toward), not only nose.
 	var aim_point: Vector3 = _mouse_aim_point()
 	var aim_dir: Vector3 = aim_point - origin
 	if aim_dir.length_squared() < BalanceFlight.DIRECTION_EPSILON:
@@ -181,8 +213,10 @@ func try_fire() -> bool:
 	else:
 		aim_dir = aim_dir.normalized()
 	var hit_point: Vector3 = origin + aim_dir * BalanceCombat.HITSCAN_RANGE
-	# World-layer hostiles: group + method only (no class_name cross-layer).
-	var target: Node = _hitscan_hostile(origin, aim_dir)
+
+	var target: Node = _locked_target_in_weapon_range(origin)
+	if target == null:
+		target = _hitscan_hostile(origin, aim_dir)
 	if target != null:
 		var as_node3d: Node3D = target as Node3D
 		if as_node3d != null:
@@ -191,6 +225,114 @@ func try_fire() -> bool:
 			target.call(&"take_damage", BalanceCombat.PLAYER_WEAPON_DAMAGE)
 	_spawn_beam_flash(origin, hit_point, BalanceCombat.COLOR_BEAM)
 	return true
+
+
+func _hostiles_ranked_by_distance() -> Array[Node]:
+	var ranked: Array[Node] = []
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return ranked
+	var entries: Array[Dictionary] = []
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+		if not is_instance_valid(node):
+			continue
+		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
+			continue
+		var body: Node3D = node as Node3D
+		if body == null:
+			continue
+		var dist: float = global_position.distance_to(body.global_position)
+		if dist > BalanceCombat.TARGET_LOCK_RANGE:
+			continue
+		entries.append({&"node": node, &"dist": dist})
+	entries.sort_custom(_sort_hostiles_near_to_far)
+	for entry: Dictionary in entries:
+		var n: Node = entry[&"node"]
+		ranked.append(n)
+	return ranked
+
+
+func _sort_hostiles_near_to_far(a: Dictionary, b: Dictionary) -> bool:
+	var da: float = a[&"dist"]
+	var db: float = b[&"dist"]
+	return da < db
+
+
+func _set_target_lock(target: Node) -> void:
+	if _locked_target == target and is_instance_valid(target):
+		_emit_lock_hud()
+		return
+	_apply_lock_highlight(_locked_target, false)
+	_locked_target = target
+	_apply_lock_highlight(_locked_target, true)
+	_emit_lock_hud()
+
+
+func _clear_target_lock(emit_bus: bool) -> void:
+	_apply_lock_highlight(_locked_target, false)
+	_locked_target = null
+	if emit_bus:
+		EventBus.on_target_lock_changed.emit(false, "", 0.0)
+
+
+func _apply_lock_highlight(target: Node, on: bool) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	if target.has_method(&"set_lock_highlight"):
+		target.call(&"set_lock_highlight", on)
+
+
+func _emit_lock_hud() -> void:
+	var target: Node = locked_target()
+	if target == null:
+		if _locked_target != null:
+			_locked_target = null
+		EventBus.on_target_lock_changed.emit(false, "", 0.0)
+		return
+	var body: Node3D = target as Node3D
+	var dist: float = 0.0
+	if body != null:
+		dist = global_position.distance_to(body.global_position)
+	var label: String = BalanceCombat.TARGET_LOCK_DEFAULT_NAME
+	if target.has_method(&"lock_display_name"):
+		var raw: Variant = target.call(&"lock_display_name")
+		if typeof(raw) == TYPE_STRING:
+			var as_text: String = raw
+			if not as_text.is_empty():
+				label = as_text
+	EventBus.on_target_lock_changed.emit(true, label, dist)
+
+
+func _refresh_lock_hud_if_needed() -> void:
+	if _locked_target == null:
+		return
+	if locked_target() == null:
+		_clear_target_lock(true)
+		return
+	_emit_lock_hud()
+
+
+func _locked_target_in_weapon_range(origin: Vector3) -> Node:
+	var target: Node = locked_target()
+	if target == null:
+		return null
+	var body: Node3D = target as Node3D
+	if body == null:
+		return null
+	if origin.distance_to(body.global_position) > BalanceCombat.HITSCAN_RANGE:
+		return null
+	return target
+
+
+func _on_hostile_killed_clear_lock(_system_id: StringName, _victim_entity_id: StringName) -> void:
+	# Death frees the node next frame; drop lock if it is gone or dead.
+	if _locked_target == null:
+		return
+	if not is_instance_valid(_locked_target):
+		_clear_target_lock(true)
+		return
+	if _locked_target.has_method(&"is_alive") and _locked_target.call(&"is_alive") != true:
+		_clear_target_lock(true)
 
 
 func _update_throttle(dt: float) -> void:
