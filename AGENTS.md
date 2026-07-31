@@ -26,11 +26,13 @@ Ambiguity: resolve with Destination **Fidelity** + **Tone** filters. If those fa
 
 ## 2. Elliot's preferences
 
+- **Talk plain.** No jargon. Few words. Blunt is fine.
+- **Build with subagents.** Main chat orchestrates and verifies. Agents implement.
+  Keep this chat thin.
 - Fix obvious bugs without asking.
 - Gate anything irreversible.
-- Never drive design reviews — present findings and options; he decides.
-- Direct communication, no hedging, KISS.
-- Plain English reports: what the game can *do*, not file lists.
+- Never drive design reviews — options and findings; he decides.
+- Reports: what the game can *do*, not file lists.
 
 ---
 
@@ -78,7 +80,7 @@ Before calling done: run **adversary** (where applicable) then **verify**.
 
 ---
 
-## 6. Architecture non-negotiables (even at Alpha scale)
+## 7. Architecture non-negotiables (even at Alpha scale)
 
 - **No global alignment.** Standing is per-Entity; enforcement only where they have reach.
 - **Status moment protected.** System entry and station entry show local controller standing. Never remove, hide by default, or make unreliable.
@@ -89,7 +91,7 @@ Before calling done: run **adversary** (where applicable) then **verify**.
 
 ---
 
-## 7. Alpha ceilings (hard)
+## 8. Alpha ceilings (hard)
 
 | Element | Cap |
 |---------|-----|
@@ -103,7 +105,7 @@ If a task would exceed these, stop and ask. `/alpha-scope` encodes this.
 
 ---
 
-## 8. Tooling
+## 9. Tooling
 
 - Godot: see `docs/tooling.md`
 - Lint: `powershell -ExecutionPolicy Bypass -File scripts/lint.ps1`

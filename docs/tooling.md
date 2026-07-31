@@ -81,6 +81,50 @@ branch  main
 
 Push at end of session (`/wrap`). Do not force-push `main` without asking Elliot.
 
+---
+
+## Memory system (session safety)
+
+**Problem:** long chats get compressed. The model does not notice. It then writes
+a confident, wrong progress log. Prompting "remember to wrap" does not catch that.
+
+**Fix:** four files + three harness hooks (same design as the earlier Draywar project).
+
+### Four records
+
+| File | Question |
+|------|----------|
+| `docs/state.md` | Where are we now? |
+| `docs/journal/` | Why is it like this? |
+| `docs/traps.md` | What gives a silent wrong answer? |
+| `docs/eras.md` | Which era does an old note belong to? |
+
+### Hooks
+
+Configured in `.grok/hooks/memory-system.json`. Scripts in `scripts/hooks/`.
+
+| Hook | When | Does |
+|------|------|------|
+| `session_start.py` | New session | Reads position from `state.md`; warns if uncommitted/unpushed |
+| `pre_compact.py` | About to compress chat | Warns you; tells agent to write status, commit, push, stop starting new work |
+| `post_compact.py` | After compress | Tells agent memory is incomplete; re-read `state.md` |
+
+All three never fail (catch exceptions). A broken hook is worse than no hook.
+
+**Trust the project folder** once so project hooks run (`/hooks-trust` if asked).
+
+**Hooks do not replace `/wrap`.** They are the safety net.
+
+Quick self-test:
+
+```
+python scripts/hooks/session_start.py
+python scripts/hooks/pre_compact.py
+python scripts/hooks/post_compact.py
+```
+
+Each should print a JSON blob and exit 0.
+
 ## Borrowed from prior Draywar work
 
 GUT, gdtoolkit workflow, boundary/magic-number/globals checkers, journal helper, MCP Pro layout, and session skills were adapted from the earlier Claude-era project. **Code and design authority start over here under Alpha docs.**

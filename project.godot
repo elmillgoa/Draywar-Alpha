@@ -1,5 +1,10 @@
-; Engine configuration file — Godot rewrites this file and strips comments.
-; Intent for debug/typing settings lives in docs/tooling.md.
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -14,6 +19,9 @@ config/icon="res://icon.svg"
 [autoload]
 
 EventBus="*res://src/systems/EventBus.gd"
+MCPScreenshot="*res://addons/godot_mcp/mcp_screenshot_service.gd"
+MCPInputService="*res://addons/godot_mcp/mcp_input_service.gd"
+MCPGameInspector="*res://addons/godot_mcp/mcp_game_inspector_service.gd"
 
 [debug]
 

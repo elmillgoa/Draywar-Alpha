@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${GROK_WORKSPACE_ROOT}/scripts/hooks/pre_compact.py\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${GROK_WORKSPACE_ROOT}/scripts/hooks/post_compact.py\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${GROK_WORKSPACE_ROOT}/scripts/hooks/session_start.py\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

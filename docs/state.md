@@ -21,11 +21,13 @@
 
 ## Standing decisions that bind upcoming work
 
-- **This folder is the only build surface.** Greenfield Alpha. The older `Desktop\Draywar` Claude project may be mined for patterns/tools; it is not the codebase.
-- **Alpha is source of truth.** Full Destination / Phase Plan v2 are post–Final Alpha Gate.
-- **`docs/reputation_and_standing.md` is standing law.** Do not invent standing rules. Population for Alpha follows **Alpha Scope** (4–6 Entities, 12–18 People), not the full-doc 8–12 / 20–35.
+- **This folder is the only build surface.** Greenfield Alpha. Older `Desktop\Draywar` may be mined; it is not this codebase.
+- **Alpha is source of truth.** Full plan is after Final Alpha Gate.
+- **Standing law:** `docs/reputation_and_standing.md`. Alpha population from Alpha Scope (4–6 / 12–18).
 - **Godot 4.6.1** at `C:\Godot\`. Do not upgrade without asking.
-- **MCP Pro is proprietary** — `addons/godot_mcp/` is gitignored; reinstall from local copy if missing.
+- **MCP Pro proprietary** — `addons/godot_mcp/` gitignored.
+- **Talk plain / short / blunt to Elliot.** Subagents build; main chat verifies.
+- **Memory system on disk** — state + journal + traps + eras + compact hooks. Files beat chat memory.
 
 ## Next session starts here
 
