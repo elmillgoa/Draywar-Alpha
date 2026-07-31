@@ -20,3 +20,7 @@ encode it in `scripts/checkin.py` when possible.
 
 9. **Full-plan population counts (8–12 Entities) are not Alpha caps.** Alpha Scope wins (4–6 / 12–18).
 10. **Do not rebuild the older Desktop\Draywar tree into this repo.** Steal patterns; do not merge histories as if this were a continuation.
+
+## UI / EventBus (E1+)
+
+11. **Never `free()` a Control that is still inside its own `pressed` (or any) signal.** Job accept rebuilt the jobs box and freed the Accept button mid-click → crash `Object is locked and can't be freed`. Use `remove_child` + `queue_free()`, and `call_deferred` for full rebuilds triggered from that button.

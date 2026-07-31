@@ -126,6 +126,31 @@ func test_station_menu_shows_two_jobs_and_new_contact() -> void:
 	EventBus.on_undocked.emit(STATION_ALPHA_PORT)
 
 
+func test_accept_job_button_press_does_not_crash() -> void:
+	## Regression: free() on Accept button while pressed locked the object and
+	## crashed play (godot.log: Object is locked and can't be freed).
+	var host: Node = Node.new()
+	add_child_autofree(host)
+	var mission: MissionService = MissionService.new()
+	host.add_child(mission)
+	mission.reset()
+	var menu: StationMenu = StationMenu.new()
+	host.add_child(menu)
+	await get_tree().process_frame
+	EventBus.on_docked.emit(STATION_ALPHA_PORT)
+	await get_tree().process_frame
+	var accept_buttons: Array[Button] = _find_accept_job_buttons(menu)
+	assert_gte(accept_buttons.size(), 1, "need an Accept job button to press")
+	accept_buttons[0].pressed.emit()
+	# Deferred board rebuild needs a frame after the pressed signal stack unwinds.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_true(mission.has_active(), "job accepted via real button press")
+	assert_eq(_find_accept_job_buttons(menu).size(), 0, "accept buttons gone while mission active")
+	EventBus.on_undocked.emit(STATION_ALPHA_PORT)
+	mission.reset()
+
+
 func test_turn_in_at_secondary_destination() -> void:
 	var host: Node = Node.new()
 	add_child_autofree(host)

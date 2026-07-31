@@ -472,11 +472,13 @@ func _on_repair_pressed() -> void:
 
 
 func _on_mission_accepted(_template_id: StringName, _entity_id: StringName) -> void:
-	_refresh_all()
+	# Defer: accept is often fired from a job button still inside pressed();
+	# rebuilding the jobs box must not free that button mid-signal.
+	call_deferred(&"_refresh_all")
 
 
 func _on_mission_closed(_template_id: StringName, _entity_id: StringName, _delta: float) -> void:
-	_refresh_all()
+	call_deferred(&"_refresh_all")
 
 
 func _on_recovery_accepted(
@@ -579,11 +581,15 @@ func _refresh_job_buttons() -> void:
 func _clear_jobs_box() -> void:
 	if _jobs_box == null:
 		return
-	# free() not queue_free(): refresh rebuilds children in the same frame.
-	while _jobs_box.get_child_count() > 0:
-		var child: Node = _jobs_box.get_child(0)
+	# remove + queue_free (never free() mid-pressed): accept job emits on the
+	# button, mission_accepted refreshes the board, and free() on a locked
+	# object crashes Godot ("Object is locked and can't be freed").
+	var doomed: Array[Node] = []
+	for child: Node in _jobs_box.get_children():
+		doomed.append(child)
+	for child: Node in doomed:
 		_jobs_box.remove_child(child)
-		child.free()
+		child.queue_free()
 
 
 func _accept_job_label(template_id: StringName) -> String:
@@ -630,10 +636,12 @@ func _refresh_contacts_list() -> void:
 func _clear_contacts_list() -> void:
 	if _contacts_list == null:
 		return
-	while _contacts_list.get_child_count() > 0:
-		var child: Node = _contacts_list.get_child(0)
+	var doomed: Array[Node] = []
+	for child: Node in _contacts_list.get_children():
+		doomed.append(child)
+	for child: Node in doomed:
 		_contacts_list.remove_child(child)
-		child.free()
+		child.queue_free()
 
 
 func _refresh_recovery_buttons() -> void:
