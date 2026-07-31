@@ -1,7 +1,7 @@
 # Draywar Alpha — Decision bar (Hybrid path C)
 
-**Status:** **Ratified** (Elliot 2026-07-31). Authority for what “Alpha done” means after Final Alpha refuse.  
-**Build order:** `Alpha/ALPHA_DECISION_PHASE_PLAN.md` (Path C phases B0–B5).  
+**Status:** **Ratified** (Elliot 2026-07-31). **Final Alpha SIGNED** Attempt 2 (2026-07-31) — Path C closed; expand toward full/beta.  
+**Build order:** `Alpha/ALPHA_DECISION_PHASE_PLAN.md` (Path C B0–B5 — complete). Post-Alpha: expansion plan (not greenfield Destination P0).  
 **Date:** 2026-07-31  
 **Does not replace:** `docs/reputation_and_standing.md` (standing law) or Destination fidelity/tone filters.  
 **Does replace:** “smallest gray-box tech slice” as the success definition for Final Alpha.
@@ -85,6 +85,8 @@ Elliot signs only when:
 2. He can answer: *worth building the full/beta game or not?*
 
 Not signed if it still feels like a technology demonstrator.
+
+**Outcome:** **SIGNED** Attempt 2 (2026-07-31). See `docs/gates.md`. Residual demo-like presentation/content is expansion work, not a re-open of this gate.
 
 ---
 

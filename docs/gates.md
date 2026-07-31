@@ -167,3 +167,22 @@ Elliot’s words only. Agents never sign these.
 - Not at 100% — good enough to decide on beta.  
 
 **Authority doc:** `Alpha/ALPHA_DECISION_BAR.md` (checklist must be ratified before mass build).
+
+### Attempt 2 — 2026-07-31
+
+**Verdict: signed — Final Alpha passes. Expand toward full/beta.**
+
+**Elliot (verbatim):**
+
+> It is working now. Lock on worked and every just doesn't just hit. Aiming matters. A kill causes a little explosion and you move on. Everything we've built seems to work. Flying still needs fine tuning, but that is something that could be done later. This is still more a a playable technology demonstrator than an alpha though. That said, we should make this more and really look at pushing towards the full build.
+
+**Formal call (same session, after clarification):** **Signed — expand toward full/beta.** Residual polish (flight fine-tune, art, content depth) is later work, not a reopen of this gate. Combat Fairness Pass re-play accepted.
+
+**Next priorities (Elliot, multi-select — all four):**
+
+1. Presentation (art / world feel)
+2. More playable content
+3. Deeper core systems
+4. Start full-game roadmap work
+
+**Notes:** Path C Alpha closed. Do **not** re-open Final Alpha for residual demo feel. Destination / expansion planning is authorized. Sequence the four priorities; do not treat Destination Phase 0 as greenfield — Alpha already proved standing, flight, combat shell, and save.
