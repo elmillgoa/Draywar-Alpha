@@ -285,3 +285,22 @@ const CONSOLE_RECOVERY_OUTCOME_FORMAT: String = "Recovery %s %s → p %s (Δ %s)
 const CONSOLE_RECOVERY_BETRAY_FORMAT: String = "Betrayed %s — closed. p %s (Δ %s); e %s (Δ %s)."
 const CONSOLE_FAVOR_FORMAT: String = "Favor with %s → personal standing %s (delta %s)."
 const CONSOLE_FAVOR_CLOSED_FORMAT: String = "Favor refused — %s is closed (%s)."
+
+## Plain-English recovery status / list lines (console).
+const CONSOLE_RECOVERY_NO_ACTIVE: String = "No job in progress."
+## Args: job display name, person display name.
+const CONSOLE_RECOVERY_JOB_AVAILABLE: String = 'JOB AVAILABLE: "%s" from %s.'
+## Arg: person id for the accept command.
+const CONSOLE_RECOVERY_ACCEPT_HINT: String = "Type: recovery accept %s"
+## Args: person display, Friendly threshold, current personal standing.
+const CONSOLE_RECOVERY_NOT_YET: String = "No job from %s yet (need personal >= %s; have %s)."
+const CONSOLE_RECOVERY_CLOSED_LINE: String = "Route with %s is closed - no recovery."
+const CONSOLE_RECOVERY_CHAIN_DONE: String = "Chain with %s is finished (%d/%d steps)."
+const CONSOLE_RECOVERY_PROGRESS_LINE: String = "  Progress on %s: %d of %d steps done."
+const CONSOLE_RECOVERY_ACTIVE_LINE: String = 'IN PROGRESS: "%s" with %s.'
+const CONSOLE_RECOVERY_COMPLETE_HINT: String = "Type: recovery complete"
+const CONSOLE_RECOVERY_LIST_HEADER: String = "Recovery contacts:"
+const CONSOLE_RECOVERY_LIST_OFFER: String = '  %s - "%s" available (id %s)'
+const CONSOLE_RECOVERY_LIST_GATED: String = "  %s - no offer yet (id %s)"
+const CONSOLE_RECOVERY_LIST_CLOSED: String = "  %s - CLOSED (id %s)"
+const CONSOLE_RECOVERY_LIST_DONE: String = "  %s - chain complete (id %s)"

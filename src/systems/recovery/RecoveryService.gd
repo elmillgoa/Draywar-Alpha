@@ -530,47 +530,117 @@ func _run_list() -> void:
 	if ids.is_empty():
 		_say("No recovery chains loaded.")
 		return
-	_say("Recovery chains:")
+	_say(BalanceStanding.CONSOLE_RECOVERY_LIST_HEADER)
 	for id: StringName in ids:
 		var chain: RecoveryChain = _chain(id)
 		if chain == null:
 			_say("  %s" % id)
 			continue
-		var offerable: String = "no offer"
+		var person_label: String = _person_display(chain.person_id)
+		if StandingService.is_person_closed(chain.person_id):
+			_say(BalanceStanding.CONSOLE_RECOVERY_LIST_CLOSED % [person_label, chain.person_id])
+			continue
+		var done: Array[StringName] = completed_step_ids(id)
+		if done.size() >= chain.steps.size() and chain.steps.size() > 0:
+			_say(BalanceStanding.CONSOLE_RECOVERY_LIST_DONE % [person_label, chain.person_id])
+			continue
 		if has_offer_for_person(chain.person_id):
-			var offer: Dictionary = next_step_for_person(chain.person_id)
-			offerable = "next=%s" % offer[&"step_id"]
-		_say(
-			(
-				"  %s  %s  person=%s entity=%s  (%s)"
-				% [id, chain.display_name, chain.person_id, chain.entity_id, offerable]
+			var job_name: String = _offer_job_name(next_step_for_person(chain.person_id))
+			_say(
+				(
+					BalanceStanding.CONSOLE_RECOVERY_LIST_OFFER
+					% [person_label, job_name, chain.person_id]
+				)
 			)
-		)
+		else:
+			_say(BalanceStanding.CONSOLE_RECOVERY_LIST_GATED % [person_label, chain.person_id])
 
 
 func _run_status() -> void:
-	if not has_active():
-		_say("No active recovery step.")
-		var ids: Array[StringName] = list_chain_ids()
-		for id: StringName in ids:
-			var chain: RecoveryChain = _chain(id)
-			if chain == null:
-				continue
-			var done: Array[StringName] = completed_step_ids(id)
+	if has_active():
+		var chain: RecoveryChain = _chain(active_chain_id())
+		var step: RecoveryStep = _step(chain, active_step_id())
+		var job_name: String = String(active_step_id())
+		var person_label: String = String(active_chain_id())
+		if step != null and not step.display_name.is_empty():
+			job_name = step.display_name
+		if chain != null:
+			person_label = _person_display(chain.person_id)
+		_say(BalanceStanding.CONSOLE_RECOVERY_ACTIVE_LINE % [job_name, person_label])
+		_say(BalanceStanding.CONSOLE_RECOVERY_COMPLETE_HINT)
+		return
+
+	_say(BalanceStanding.CONSOLE_RECOVERY_NO_ACTIVE)
+	var ids: Array[StringName] = list_chain_ids()
+	for id: StringName in ids:
+		var chain: RecoveryChain = _chain(id)
+		if chain == null:
+			continue
+		var person_label: String = _person_display(chain.person_id)
+		var done: Array[StringName] = completed_step_ids(id)
+		var personal: float = StandingService.get_person_standing(chain.person_id)
+
+		if StandingService.is_person_closed(chain.person_id):
+			_say(BalanceStanding.CONSOLE_RECOVERY_CLOSED_LINE % person_label)
+			continue
+
+		_say(
+			(
+				BalanceStanding.CONSOLE_RECOVERY_PROGRESS_LINE
+				% [chain.display_name, done.size(), chain.steps.size()]
+			)
+		)
+
+		if done.size() >= chain.steps.size() and chain.steps.size() > 0:
 			_say(
 				(
-					"  %s progress: %d/%d  closed=%s  personal=%s"
+					BalanceStanding.CONSOLE_RECOVERY_CHAIN_DONE
+					% [person_label, done.size(), chain.steps.size()]
+				)
+			)
+			continue
+
+		if has_offer_for_person(chain.person_id):
+			var job_name: String = _offer_job_name(next_step_for_person(chain.person_id))
+			_say(BalanceStanding.CONSOLE_RECOVERY_JOB_AVAILABLE % [job_name, person_label])
+			_say(BalanceStanding.CONSOLE_RECOVERY_ACCEPT_HINT % chain.person_id)
+		else:
+			_say(
+				(
+					BalanceStanding.CONSOLE_RECOVERY_NOT_YET
 					% [
-						id,
-						done.size(),
-						chain.steps.size(),
-						StandingService.is_person_closed(chain.person_id),
-						StandingService.get_person_standing(chain.person_id),
+						person_label,
+						str(BalanceStanding.TIER_FRIENDLY_MIN),
+						str(personal),
 					]
 				)
 			)
-		return
-	_say("Active recovery: chain=%s step=%s" % [active_chain_id(), active_step_id()])
+
+
+func _offer_job_name(offer: Dictionary) -> String:
+	if offer.is_empty():
+		return ""
+	var chain_id: StringName = &""
+	var step_id: StringName = &""
+	if offer.has(&"chain_id"):
+		chain_id = StringName(str(offer[&"chain_id"]))
+	if offer.has(&"step_id"):
+		step_id = StringName(str(offer[&"step_id"]))
+	var chain: RecoveryChain = _chain(chain_id)
+	var step: RecoveryStep = _step(chain, step_id)
+	if step != null and not step.display_name.is_empty():
+		return step.display_name
+	if step_id != &"":
+		return String(step_id)
+	return ""
+
+
+func _person_display(person_id: StringName) -> String:
+	if ContentLibrary.has_item(person_id):
+		var item: ContentItem = ContentLibrary.item(person_id)
+		if item != null and not item.display_name.is_empty():
+			return item.display_name
+	return String(person_id)
 
 
 func _run_accept(args: PackedStringArray) -> void:
