@@ -38,6 +38,9 @@ var _hostile_present: bool = false
 var _target_locked: bool = false
 var _target_label_text: String = ""
 var _target_distance: float = 0.0
+var _target_hull_percent: int = BalanceCombat.HULL_PERCENT_FULL
+var _condition_hit_flash_left: float = 0.0
+var _condition_base_color: Color = Color.WHITE
 
 
 func _ready() -> void:
@@ -64,6 +67,8 @@ func _ready() -> void:
 	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
 	EventBus.on_hostile_killed.connect(_on_hostile_killed)
 	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
+	EventBus.on_hostile_damaged.connect(_on_hostile_damaged)
+	EventBus.on_player_damaged.connect(_on_player_damaged_flash)
 	_refresh_mission_line()
 
 
@@ -89,6 +94,8 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_player_repaired_from_cripple, _on_player_repaired_from_cripple)
 	_disconnect(EventBus.on_hostile_killed, _on_hostile_killed)
 	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
+	_disconnect(EventBus.on_hostile_damaged, _on_hostile_damaged)
+	_disconnect(EventBus.on_player_damaged, _on_player_damaged_flash)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -174,6 +181,7 @@ func _build_labels() -> void:
 	_condition_label.text = (
 		BalanceEconomy.HUD_CONDITION_FORMAT % int(BalanceEconomy.PERCENT_SCALE)
 	)
+	_condition_base_color = BalanceUi.FONT_COLOR
 
 	_mission_label = _make_label(_root, BalanceFlight.HUD_FONT_SIZE)
 	_mission_label.position = Vector2(
@@ -535,11 +543,64 @@ func _on_hostile_killed(_system_id: StringName, _victim_entity_id: StringName) -
 	_refresh_prompt()
 
 
+func _process(delta: float) -> void:
+	if _condition_hit_flash_left <= 0.0:
+		return
+	var dt: float = TimeScale.scaled_delta(delta)
+	_condition_hit_flash_left = maxf(0.0, _condition_hit_flash_left - dt)
+	if _condition_hit_flash_left <= 0.0 and _condition_label != null:
+		_condition_label.add_theme_color_override("font_color", _condition_base_color)
+
+
 func _on_target_lock_changed(locked: bool, label: String, distance: float) -> void:
 	_target_locked = locked
 	_target_label_text = label
 	_target_distance = distance
+	if locked:
+		_target_hull_percent = _read_locked_hull_percent()
+	else:
+		_target_hull_percent = BalanceCombat.HULL_PERCENT_FULL
 	_refresh_target_line()
+
+
+func _on_hostile_damaged(remaining_hp: float) -> void:
+	if not _target_locked:
+		return
+	_target_hull_percent = BalanceCombat.hostile_hull_percent(remaining_hp)
+	_refresh_target_line()
+
+
+func _on_player_damaged_flash(_condition: float) -> void:
+	if _condition_label == null:
+		return
+	_condition_hit_flash_left = BalanceCombat.HIT_FLASH_SECONDS
+	_condition_label.add_theme_color_override("font_color", BalanceCombat.COLOR_CONDITION_HIT_FLASH)
+
+
+func _read_locked_hull_percent() -> int:
+	var full: int = BalanceCombat.HULL_PERCENT_FULL
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return full
+	var ship: Node = tree.get_first_node_in_group(BalanceSession.GROUP_PLAYER_SHIP)
+	if ship == null or not ship.has_method(&"locked_target"):
+		return full
+	var raw: Variant = ship.call(&"locked_target")
+	if raw == null or not (raw is Node):
+		return full
+	var target: Node = raw
+	if not is_instance_valid(target) or not target.has_method(&"remaining_hp"):
+		return full
+	var hp_raw: Variant = target.call(&"remaining_hp")
+	var hp: float = 0.0
+	if typeof(hp_raw) == TYPE_FLOAT:
+		hp = hp_raw
+	elif typeof(hp_raw) == TYPE_INT:
+		var hp_i: int = hp_raw
+		hp = float(hp_i)
+	else:
+		return full
+	return BalanceCombat.hostile_hull_percent(hp)
 
 
 func _refresh_target_line() -> void:
@@ -548,8 +609,8 @@ func _refresh_target_line() -> void:
 	if not _target_locked or _target_label_text.is_empty():
 		_target_label.text = BalanceCombat.HUD_TARGET_LOCK_NONE
 		return
-	_target_label.text = (
-		BalanceCombat.HUD_TARGET_LOCK_FORMAT % [_target_label_text, int(roundf(_target_distance))]
+	_target_label.text = BalanceCombat.format_target_lock_line(
+		_target_label_text, _target_distance, _target_hull_percent
 	)
 
 

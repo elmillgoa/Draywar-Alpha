@@ -1,12 +1,12 @@
 class_name BalanceCombat
 extends RefCounted
 
-## Thin combat tunables — Path C B4.
+## Thin combat tunables — Path C B4 + Combat Fairness.
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B4
 ##
-## One weapon class, one hostile type. Player bolts travel (beginner freighter —
-## no auto-aim turret). Session combat only. Standing via AttributionService.
+## One weapon class, one hostile type. Both sides fire travel bolts so motion
+## can dodge. Session combat only. Standing via AttributionService.
 
 # --- Groups / identity -----------------------------------------------------
 
@@ -61,11 +61,11 @@ const LEAD_SOLVE_ITERATIONS: int = 4
 ## Hostile hull points (dies at 0). ~3 player hits.
 const HOSTILE_HP: float = 100.0
 
-## Damage applied to player condition per hostile shot (not an instant melt).
+## Damage applied to player condition per hostile bolt hit.
 const HOSTILE_DAMAGE: float = 8.0
 
-## Seconds between hostile shots while engaged.
-const HOSTILE_FIRE_COOLDOWN: float = 1.6
+## Seconds between hostile shots while engaged (slightly fast to offset misses).
+const HOSTILE_FIRE_COOLDOWN: float = 1.4
 
 ## Distance at which the hostile turns and fires on the player (metres).
 const ENGAGE_RANGE: float = 110.0
@@ -76,12 +76,43 @@ const HOSTILE_TURN_RATE: float = 1.4
 ## Hostile closing speed while engaged (m/s).
 const HOSTILE_MOVE_SPEED: float = 18.0
 
-## Stop closing when closer than this (metres).
-const HOSTILE_HOLD_DISTANCE: float = 40.0
+## Hold-band centre (legacy alias; prefer MIN/MAX).
+const HOSTILE_HOLD_DISTANCE: float = 45.0
+
+## Jink within this band instead of ramming the player.
+const HOSTILE_HOLD_DISTANCE_MIN: float = 35.0
+const HOSTILE_HOLD_DISTANCE_MAX: float = 55.0
+
+## Lateral weave speed while in the hold band (m/s).
+const HOSTILE_JINK_SPEED: float = 12.0
+
+## Angular rate for sin jink weave (radians-ish scale on _jink_time).
+const HOSTILE_JINK_FREQ: float = 2.0
+
+## Full hull percent for HUD defaults.
+const HULL_PERCENT_FULL: int = 100
+
+## Hostile travel bolt.
+const HOSTILE_PROJECTILE_SPEED: float = 220.0
+const HOSTILE_PROJECTILE_LIFETIME: float = 1.2
+const HOSTILE_PROJECTILE_RADIUS: float = 0.4
+const HOSTILE_PROJECTILE_HIT_RADIUS_SCALE: float = 2.5
+const HOSTILE_PROJECTILE_LENGTH: float = 2.4
+const COLOR_HOSTILE_PROJECTILE: Color = Color(1.0, 0.35, 0.28)
+
+## Nose must face the player at least this much (dot of forward vs to-player).
+const HOSTILE_FIRE_CONE_DOT: float = 0.65
+
+## Player CharacterBody3D hurtbox sphere radius (metres).
+const PLAYER_HURTBOX_RADIUS: float = 2.8
+
+## Brief material / HUD flash after a hit (seconds).
+const HIT_FLASH_SECONDS: float = 0.12
 
 ## Red-tinted capsule silhouette.
 const COLOR_HOSTILE: Color = Color(0.92, 0.22, 0.18)
 const COLOR_HOSTILE_ACCENT: Color = Color(1.0, 0.45, 0.2)
+const COLOR_HOSTILE_HIT_FLASH: Color = Color(1.0, 0.85, 0.8)
 
 ## Capsule mesh size.
 const HOSTILE_CAPSULE_RADIUS: float = 1.6
@@ -115,12 +146,14 @@ const SPAWN_IN_PATROLLED: bool = false
 const SPAWN_IN_CONTESTED: bool = true
 const SPAWN_IN_LAWLESS: bool = true
 
-# --- Beam flash (visual only) ----------------------------------------------
+# --- Beam flash (visual only — muzzle VFX, not damage) ---------------------
 
 const BEAM_WIDTH: float = 0.18
 const BEAM_DURATION: float = 0.08
 ## Midpoint blend along the beam (from → to) for MeshInstance placement.
 const BEAM_MIDPOINT: float = 0.5
+## Short muzzle flash length (metres); damage is from travel projectiles.
+const MUZZLE_BEAM_LENGTH: float = 6.0
 const COLOR_BEAM: Color = Color(1.0, 0.92, 0.35)
 const COLOR_HOSTILE_BEAM: Color = Color(1.0, 0.35, 0.25)
 
@@ -133,10 +166,10 @@ const KILL_EVIDENCE: bool = false
 # --- HUD -------------------------------------------------------------------
 
 ## Shown while a combat hostile exists and the ship is free-flying.
-const HUD_COMBAT_PROMPT: String = "TAB LOCK · AIM RETICLE AT LEAD · FIRE"
+const HUD_COMBAT_PROMPT: String = "TAB LOCK · AIM LEAD · STRAFE TO DODGE · FIRE"
 
-## Locked target readout (name + range metres).
-const HUD_TARGET_LOCK_FORMAT: String = "LOCK  %s  %dm"
+## Locked target readout (name + range metres + live hull percent).
+const HUD_TARGET_LOCK_FORMAT: String = "LOCK  %s  %dm  HULL %d%%"
 const HUD_TARGET_LOCK_NONE: String = "LOCK  —"
 const TARGET_LOCK_DEFAULT_NAME: String = "Hostile"
 
@@ -148,6 +181,9 @@ const LOCK_HIGHLIGHT_LIGHTEN: float = 0.45
 
 ## Fail-state console / status line (optional string reuse).
 const FAIL_STATE_MESSAGE: String = "Ship crippled. Dock and repair to fly again."
+
+## Player hull condition flash when hit.
+const COLOR_CONDITION_HIT_FLASH: Color = Color(1.0, 0.25, 0.2)
 
 # --- Combat HUD: reticle, lock brackets, lead pip --------------------------
 
@@ -177,3 +213,43 @@ const RETICLE_ARC_SEGMENTS: int = 32
 
 ## Projectile collision sphere scale vs visual radius.
 const PROJECTILE_HIT_RADIUS_SCALE: float = 2.0
+
+
+## Format locked-target HUD line (name, metres, hull 0–100). Pure for tests.
+static func format_target_lock_line(label: String, distance_m: float, hull_percent: int) -> String:
+	return (
+		HUD_TARGET_LOCK_FORMAT
+		% [label, int(roundf(distance_m)), clampi(hull_percent, 0, HULL_PERCENT_FULL)]
+	)
+
+
+## Hull remaining as integer percent of HOSTILE_HP.
+static func hostile_hull_percent(remaining_hp: float) -> int:
+	if HOSTILE_HP <= 0.0:
+		return 0
+	return clampi(
+		int(roundf((remaining_hp / HOSTILE_HP) * float(HULL_PERCENT_FULL))), 0, HULL_PERCENT_FULL
+	)
+
+
+## Lead intercept so a bolt at `shot_speed` meets a moving target.
+## Pure math in the data layer so entities / ui / world share one solver.
+static func lead_point(
+	shooter_pos: Vector3, target_pos: Vector3, target_vel: Vector3, shot_speed: float
+) -> Vector3:
+	if shot_speed <= BalanceFlight.DIRECTION_EPSILON:
+		return target_pos
+	var to_target: Vector3 = target_pos - shooter_pos
+	var distance: float = to_target.length()
+	if distance < BalanceFlight.DIRECTION_EPSILON:
+		return target_pos
+	var t: float = distance / shot_speed
+	var i: int = 0
+	while i < LEAD_SOLVE_ITERATIONS:
+		var predicted: Vector3 = target_pos + target_vel * t
+		var dist: float = shooter_pos.distance_to(predicted)
+		if dist < BalanceFlight.DIRECTION_EPSILON:
+			return predicted
+		t = dist / shot_speed
+		i += 1
+	return target_pos + target_vel * t

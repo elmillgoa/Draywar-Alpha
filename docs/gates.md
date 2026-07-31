@@ -92,25 +92,27 @@ Elliot’s words only. Agents never sign these.
 
 #### 4. Thin combat
 
-17. Jump to **Beta or Gamma** (not Alpha). A **red hostile** may be near the station — **Space** to fire. Take or deal damage; **HULL** drops. Alpha undock stays safe.
-18. If you kill in **patrolled** space (if a fight is forced later), standing with the controller can move (attribution). Contested kills need witnesses/evidence per standing law.
-19. If hull hits zero you are **crippled** (cannot fly). Dock + **Repair ship** restores. Refuel as needed.
+17. Jump to **Beta or Gamma** (not Alpha). A **red hostile** spawns **out near the gate / open space** (not on the undock pad). Station airspace is a **safe zone**; Alpha undock stays pirate-free.
+18. **Tab** locks the target. HUD shows **name, range, and target HULL %**. Aim the mouse reticle at the **red lead diamond**; **Space / LMB** fire travel bolts (no auto-hit on lock).
+19. Enemy shots **travel** — strafe / afterburn can dodge. Your **HULL** drops only if their bolts hit. Kill if you can; or leave.
+20. Contested kills need witnesses/evidence per standing law for attribution. Lawless default is quieter.
+21. If your hull hits zero you are **crippled** (cannot fly). Dock + **Repair ship** restores. Refuel as needed.
 
 #### 5. Sticky hole + recovery foothold (no console)
 
-20. At Alpha, take and **Abandon** courier jobs a few times (or fight enough) until Reach standing is clearly bad (Unfriendly / Hostile / sticky). Status moment and fees/treatment should feel worse.
-21. Dock Alpha Port. Contacts section should become **Recovery foothold** with a hint naming **Dockhand Mendi**.
-22. **Ask favor of Dockhand Mendi** several times until personal trust opens **Talk to Dockhand Mendi**.
-23. Accept recovery work → **Complete recovery work — Dockhand Mendi** (stipend + personal climb). Repeat steps as offered. Entity standing climbs slowly (sticky positives).
+22. At Alpha, take and **Abandon** courier jobs a few times (or fight enough) until Reach standing is clearly bad (Unfriendly / Hostile / sticky). Status moment and fees/treatment should feel worse.
+23. Dock Alpha Port. Contacts section should become **Recovery foothold** with a hint naming **Dockhand Mendi**.
+24. **Ask favor of Dockhand Mendi** several times until personal trust opens **Talk to Dockhand Mendi**.
+25. Accept recovery work → **Complete recovery work — Dockhand Mendi** (stipend + personal climb). Repeat steps as offered. Entity standing climbs slowly (sticky positives).
 
 #### 6. Save / continue
 
-24. **Esc → Save**. **Quit to menu**.
-25. **Continue** — same system/career state (credits, standing, cargo if any, job if active).
+26. **Esc → Save**. **Quit to menu**.
+27. **Continue** — same system/career state (credits, standing, cargo if any, job if active).
 
 #### 7. Judge (Elliot only)
 
-26. Can you answer: *Is this worth building into a beta / full game?*  
+28. Can you answer: *Is this worth building into a beta / full game?*  
    If it still feels only like a tech demo, **refuse** the gate. If core systems are present and the fantasy is legible enough to decide, sign below on a new Attempt.
 
 **Console is optional** (debug standing/save). Do **not** need it for the script above.
@@ -124,6 +126,21 @@ Elliot’s words only. Agents never sign these.
 > This isn't an Alpha. This is a rudimentary technology demonstrator
 
 **Notes:** Mechanical A5 criteria (systems, money, normal-play levers, no console required for the loop) may hold as a tech slice. Final Alpha fantasy sign-off refused. Iterate until the play feels like a prove-it game, not a systems demo. Do not advance to full-plan expansion on this verdict.
+
+### Combat feedback (pre–Attempt 2) — 2026-07-31
+
+**Not a Final Alpha verdict.** Combat-specific refuse while Path C code was otherwise complete. Blocks gate retry until the Combat Fairness Pass lands.
+
+**Elliot (verbatim intent):**
+
+> The aiming does not work. You can't "dodge" shots. You do lock on to the enemy ship, but you can't see anything about it. At a minimum you should have an idea of hull %. … Combat is not good right now.
+
+**Binding fix list (Combat Fairness Pass):**
+
+1. **Aim** — lead pip and mouse aim must match where bolts go (locked aim depth).
+2. **Dodge** — enemy shots must travel; motion must matter (no instant hitscan damage).
+3. **Target info** — locked target shows live **hull %** (name + range at minimum plus hull).
+4. Fight stays thin Alpha (one hostile type) but must feel like a **real exchange**, not a damage timer.
 
 **Elliot’s Alpha bar (clarified same session, verbatim intent):**
 

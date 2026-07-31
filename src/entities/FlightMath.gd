@@ -89,3 +89,12 @@ static func integrate_velocity(
 		var bleed: float = exp(-drag * delta)
 		return moved * bleed
 	return moved
+
+
+## Lead intercept so a bolt at `shot_speed` meets a moving target.
+## Re-exports BalanceCombat.lead_point (data layer is the single solver body —
+## ui/world may not call into entities).
+static func lead_point(
+	shooter_pos: Vector3, target_pos: Vector3, target_vel: Vector3, shot_speed: float
+) -> Vector3:
+	return BalanceCombat.lead_point(shooter_pos, target_pos, target_vel, shot_speed)

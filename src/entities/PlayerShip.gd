@@ -34,6 +34,8 @@ var _locked_target: Node = null
 
 func _ready() -> void:
 	FlightInput.ensure_actions()
+	collision_layer = 1
+	collision_mask = 0
 	_apply_hull_from_library(hull_id)
 	_build_mesh()
 	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
@@ -362,15 +364,37 @@ func _mouse_aim_point() -> Vector3:
 	var mouse: Vector2 = viewport.get_mouse_position()
 	var origin: Vector3 = _camera.project_ray_origin(mouse)
 	var direction: Vector3 = _camera.project_ray_normal(mouse)
-	# Intersect a plane through the ship, facing the camera (stable aim depth).
+	# Plane through lead intercept when locked (depth matches where to aim); else ship.
+	var plane_point: Vector3 = global_position
+	var lock: Node = locked_target()
+	if lock is Node3D:
+		var lock_body: Node3D = lock as Node3D
+		var target_pos: Vector3 = lock_body.global_position
+		var target_vel: Vector3 = _lock_combat_velocity(lock)
+		plane_point = FlightMath.lead_point(
+			global_position, target_pos, target_vel, BalanceCombat.PROJECTILE_SPEED
+		)
 	var plane_normal: Vector3 = _camera.global_transform.basis.z
 	var denom: float = direction.dot(plane_normal)
 	if absf(denom) < BalanceFlight.DIRECTION_EPSILON:
 		return origin + direction * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE
-	var t: float = (global_position - origin).dot(plane_normal) / denom
+	var t: float = (plane_point - origin).dot(plane_normal) / denom
 	if t < 0.0:
 		return origin + direction * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE
 	return origin + direction * t
+
+
+## Velocity of a lock target for lead aim plane (combat_velocity → CB3D.velocity → ZERO).
+func _lock_combat_velocity(target: Node) -> Vector3:
+	if target.has_method(&"combat_velocity"):
+		var raw: Variant = target.call(&"combat_velocity")
+		if typeof(raw) == TYPE_VECTOR3:
+			var v: Vector3 = raw
+			return v
+	if target is CharacterBody3D:
+		var body: CharacterBody3D = target as CharacterBody3D
+		return body.velocity
+	return Vector3.ZERO
 
 
 func _build_mesh() -> void:
@@ -400,9 +424,10 @@ func _build_mesh() -> void:
 	)
 	add_child(engine)
 
+	# Sphere hurtbox so hostile travel bolts can score hits fairly.
 	var collision: CollisionShape3D = CollisionShape3D.new()
-	var shape: BoxShape3D = BoxShape3D.new()
-	shape.size = BalanceFlight.SHIP_PRISM_SIZE
+	var shape: SphereShape3D = SphereShape3D.new()
+	shape.radius = BalanceCombat.PLAYER_HURTBOX_RADIUS
 	collision.shape = shape
 	add_child(collision)
 

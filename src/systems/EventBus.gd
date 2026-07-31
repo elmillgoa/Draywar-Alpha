@@ -216,7 +216,7 @@ signal on_trade_completed(
 	side: StringName, commodity_id: StringName, quantity: int, credits_delta: int
 )
 
-## PlayerShip: weapon discharged (hitscan attempt).
+## PlayerShip / HostileNpc: weapon discharged (travel bolt spawn).
 signal on_weapon_fired
 
 ## PlayerShip: target lock acquired, cycled, or cleared.

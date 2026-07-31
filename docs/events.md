@@ -560,7 +560,7 @@ Ship hull condition changed.
 
 ### `on_weapon_fired()`
 
-A hitscan weapon discharged (player or hostile).
+A weapon discharged (player or hostile travel bolt).
 
 No parameters.
 
@@ -589,6 +589,7 @@ A combat hostile took damage.
 | `remaining_hp` | `float` | Hull remaining after the hit (>= 0). |
 
 **Emitted by** `src/world/HostileNpc.gd`.
+**Listened to by** `FlightHUD` (locked target hull %).
 
 ### `on_hostile_killed(system_id: StringName, victim_entity_id: StringName)`
 
@@ -611,6 +612,7 @@ Player hull took combat damage (condition after the hit).
 | `condition` | `float` | Hull condition after damage. |
 
 **Emitted by** `src/systems/wallet/WalletService.gd` (`apply_damage`).
+**Listened to by** `FlightHUD` (brief condition line flash).
 
 ### `on_player_crippled()`
 

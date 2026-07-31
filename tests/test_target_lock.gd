@@ -57,3 +57,44 @@ func test_lock_clears_when_no_hostiles() -> void:
 	await get_tree().process_frame
 	ship.cycle_target_lock()
 	assert_eq(ship.locked_target(), null)
+
+
+func test_target_lock_format_includes_hull_percent() -> void:
+	var line: String = BalanceCombat.format_target_lock_line("Hostile", 42.0, 75)
+	assert_true(line.contains("Hostile"), "name in lock line")
+	assert_true(line.contains("42"), "range in lock line")
+	assert_true(line.contains("75"), "hull percent in lock line")
+	assert_true(line.contains("HULL"), "HULL token present")
+
+
+func test_hostile_hull_percent_from_remaining_hp() -> void:
+	assert_eq(BalanceCombat.hostile_hull_percent(BalanceCombat.HOSTILE_HP), 100)
+	assert_eq(BalanceCombat.hostile_hull_percent(BalanceCombat.HOSTILE_HP * 0.5), 50)
+	assert_eq(BalanceCombat.hostile_hull_percent(0.0), 0)
+
+
+func test_flight_hud_target_line_updates_hull_on_damage() -> void:
+	var space: Node3D = Node3D.new()
+	add_child_autofree(space)
+	var ship: PlayerShip = PlayerShip.new()
+	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
+	space.add_child(ship)
+	ship.global_position = Vector3.ZERO
+	var hostile: HostileNpc = HostileNpc.spawn_under(space, Vector3(0.0, 0.0, -40.0))
+	var hud: FlightHUD = FlightHUD.new()
+	space.add_child(hud)
+	await get_tree().process_frame
+
+	ship.cycle_target_lock()
+	await get_tree().process_frame
+	assert_true(hud._target_label.text.contains("100") or hud._target_label.text.contains("HULL"))
+
+	hostile.take_damage(BalanceCombat.PLAYER_WEAPON_DAMAGE)
+	await get_tree().process_frame
+	var expected_pct: int = BalanceCombat.hostile_hull_percent(hostile.remaining_hp())
+	# Soft assert: line must show HULL and the live percent (e.g. 60 after 40 dmg from 100).
+	assert_true(hud._target_label.text.contains("HULL"), "HUD lock line should include HULL")
+	assert_true(
+		hud._target_label.text.contains(str(expected_pct)),
+		"HUD lock line should show reduced hull after damage"
+	)

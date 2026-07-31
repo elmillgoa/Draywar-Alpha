@@ -36,25 +36,11 @@ func _draw() -> void:
 
 
 ## Lead intercept so a bolt at `shot_speed` meets a moving target.
+## Delegates to shared pure solver (same math as FlightMath.lead_point).
 static func lead_point(
 	shooter_pos: Vector3, target_pos: Vector3, target_vel: Vector3, shot_speed: float
 ) -> Vector3:
-	if shot_speed <= BalanceFlight.DIRECTION_EPSILON:
-		return target_pos
-	var to_target: Vector3 = target_pos - shooter_pos
-	var distance: float = to_target.length()
-	if distance < BalanceFlight.DIRECTION_EPSILON:
-		return target_pos
-	var t: float = distance / shot_speed
-	var i: int = 0
-	while i < BalanceCombat.LEAD_SOLVE_ITERATIONS:
-		var predicted: Vector3 = target_pos + target_vel * t
-		var dist: float = shooter_pos.distance_to(predicted)
-		if dist < BalanceFlight.DIRECTION_EPSILON:
-			return predicted
-		t = dist / shot_speed
-		i += 1
-	return target_pos + target_vel * t
+	return BalanceCombat.lead_point(shooter_pos, target_pos, target_vel, shot_speed)
 
 
 func _draw_lock_and_lead(cam: Camera3D) -> void:

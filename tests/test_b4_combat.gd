@@ -289,9 +289,11 @@ func test_hostile_does_not_fire_while_player_docked() -> void:
 	)
 	EventBus.on_docked.emit(&"station_beta_hub")
 	await get_tree().process_frame
+	var bolts_before: int = _count_hostile_bolts(space)
 	for _i: int in 5:
 		hostile._physics_process(0.5)
 	assert_eq(wallet.condition(), start, "docked player must not take combat fire")
+	assert_eq(_count_hostile_bolts(space), bolts_before, "docked: hostile must not spawn bolts")
 
 
 func test_station_safe_zone_blocks_fire_when_undocked_near_station() -> void:
@@ -315,9 +317,22 @@ func test_station_safe_zone_blocks_fire_when_undocked_near_station() -> void:
 	# Skip undock grace so only the safe radius is tested.
 	hostile._undock_grace = 0.0
 	await get_tree().process_frame
+	var bolts_before: int = _count_hostile_bolts(space)
 	for _i: int in 5:
 		hostile._physics_process(0.5)
 	assert_eq(wallet.condition(), start, "station airspace must stay peaceful on undock")
+	assert_eq(_count_hostile_bolts(space), bolts_before, "safe zone: hostile must not spawn bolts")
+
+
+func _count_hostile_bolts(parent: Node) -> int:
+	var n: int = 0
+	for child: Node in parent.get_children():
+		if child.get_script() == null:
+			continue
+		var path: String = str(child.get_script().resource_path)
+		if path.ends_with("HostileProjectile.gd"):
+			n += 1
+	return n
 
 
 func test_pirate_spawn_offset_is_outside_station_safe_radius() -> void:

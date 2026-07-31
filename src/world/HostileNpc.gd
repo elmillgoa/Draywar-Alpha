@@ -1,13 +1,15 @@
 class_name HostileNpc
 extends CharacterBody3D
 
-## Thin combat hostile — Path C B4.
+## Thin combat hostile — Path C B4 + Combat Fairness.
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B4
 ##
-## One silhouette, simple engage AI, hitscan fire at the player, death reports
+## One silhouette, jink engage AI, travel bolts at lead point, death reports
 ## a kill through AttributionService. Parent under SystemWorld so jump teardown
 ## frees it with clear_world.
+
+const HostileProjectileScript = preload("res://src/world/HostileProjectile.gd")
 
 var victim_entity_id: StringName = BalanceCombat.VICTIM_ENTITY_ID
 var hp: float = BalanceCombat.HOSTILE_HP
@@ -20,10 +22,14 @@ var _undock_grace: float = 0.0
 var _body_mat: StandardMaterial3D = null
 var _nose_mat: StandardMaterial3D = null
 var _lock_highlighted: bool = false
+var _hit_flash_left: float = 0.0
+var _jink_time: float = 0.0
 
 
 func _ready() -> void:
 	add_to_group(BalanceCombat.GROUP_HOSTILE)
+	collision_layer = 1
+	collision_mask = 0
 	_build_mesh()
 	TimeScale.set_combat_lock(true)
 	EventBus.on_docked.connect(_on_player_docked)
@@ -68,6 +74,7 @@ func take_damage(amount: float) -> void:
 	if _dead or amount <= 0.0:
 		return
 	hp = maxf(0.0, hp - amount)
+	_start_hit_flash()
 	EventBus.on_hostile_damaged.emit(hp)
 	if hp <= 0.0:
 		_die()
@@ -95,18 +102,7 @@ func combat_velocity() -> Vector3:
 ## Brighten silhouette while the player has this ship locked.
 func set_lock_highlight(on: bool) -> void:
 	_lock_highlighted = on
-	if _body_mat == null or _nose_mat == null:
-		return
-	if on:
-		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE.lightened(
-			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
-		)
-		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT.lightened(
-			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
-		)
-	else:
-		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
-		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
+	_refresh_materials()
 
 
 func _physics_process(delta: float) -> void:
@@ -117,6 +113,10 @@ func _physics_process(delta: float) -> void:
 		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
 	if _undock_grace > 0.0:
 		_undock_grace = maxf(0.0, _undock_grace - dt)
+	if _hit_flash_left > 0.0:
+		_hit_flash_left = maxf(0.0, _hit_flash_left - dt)
+		if _hit_flash_left <= 0.0:
+			_refresh_materials()
 
 	# Docked / station airspace / undock grace: hold fire.
 	if _player_docked or _query_docked_now():
@@ -137,12 +137,13 @@ func _physics_process(delta: float) -> void:
 	if distance > BalanceCombat.ENGAGE_RANGE or distance < BalanceFlight.DIRECTION_EPSILON:
 		return
 
+	_jink_time += dt
 	_face_toward(to_player, dt)
 	_close_distance(to_player, distance, dt)
 
 	if _undock_grace > 0.0:
 		return
-	if _fire_cooldown <= 0.0:
+	if _fire_cooldown <= 0.0 and _facing_player(to_player):
 		_fire_at_player(player)
 
 
@@ -214,14 +215,34 @@ func _face_toward(to_player: Vector3, dt: float) -> void:
 	look_at(global_position + to, up)
 
 
+func _facing_player(to_player: Vector3) -> bool:
+	if to_player.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		return false
+	var nose: Vector3 = -global_transform.basis.z
+	if nose.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		return false
+	return nose.normalized().dot(to_player.normalized()) >= BalanceCombat.HOSTILE_FIRE_CONE_DOT
+
+
 func _close_distance(to_player: Vector3, distance: float, dt: float) -> void:
-	if distance <= BalanceCombat.HOSTILE_HOLD_DISTANCE:
-		velocity = Vector3.ZERO
-		return
 	var dir: Vector3 = to_player.normalized()
-	velocity = dir * BalanceCombat.HOSTILE_MOVE_SPEED
-	# CharacterBody3D move; scaled speed already in velocity * real frame is ok
-	# via move_and_slide — multiply position manually for headless safety.
+	if distance > BalanceCombat.HOSTILE_HOLD_DISTANCE_MAX:
+		# Close in from outside the hold band.
+		velocity = dir * BalanceCombat.HOSTILE_MOVE_SPEED
+	elif distance < BalanceCombat.HOSTILE_HOLD_DISTANCE_MIN:
+		# Back off when too close.
+		velocity = -dir * BalanceCombat.HOSTILE_MOVE_SPEED
+	else:
+		# Weave sideways inside the hold band so shots are dodgeable.
+		var lateral: Vector3 = dir.cross(Vector3.UP)
+		if lateral.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+			lateral = dir.cross(Vector3.RIGHT)
+		if lateral.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+			velocity = Vector3.ZERO
+		else:
+			lateral = lateral.normalized()
+			var side: float = sin(_jink_time * BalanceCombat.HOSTILE_JINK_FREQ)
+			velocity = lateral * (BalanceCombat.HOSTILE_JINK_SPEED * side)
 	global_position = global_position + velocity * dt
 
 
@@ -232,14 +253,48 @@ func _fire_at_player(player: Node3D) -> void:
 		return
 	_fire_cooldown = BalanceCombat.HOSTILE_FIRE_COOLDOWN
 	EventBus.on_weapon_fired.emit()
-	_spawn_beam(global_position, player.global_position, BalanceCombat.COLOR_HOSTILE_BEAM)
-	_apply_player_damage(BalanceCombat.HOSTILE_DAMAGE)
+
+	var player_vel: Vector3 = _player_velocity(player)
+	var aim: Vector3 = HostileProjectileScript.lead_point(
+		global_position, player.global_position, player_vel, BalanceCombat.HOSTILE_PROJECTILE_SPEED
+	)
+	var aim_dir: Vector3 = aim - global_position
+	if aim_dir.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		aim_dir = -global_transform.basis.z
+	else:
+		aim_dir = aim_dir.normalized()
+
+	# Short muzzle flash only — damage is the travel bolt.
+	var muzzle_end: Vector3 = global_position + aim_dir * BalanceCombat.MUZZLE_BEAM_LENGTH
+	_spawn_beam(global_position, muzzle_end, BalanceCombat.COLOR_HOSTILE_BEAM)
+	_spawn_projectile(aim_dir)
 
 
-func _apply_player_damage(amount: float) -> void:
-	var wallet: Node = _wallet_node()
-	if wallet != null and wallet.has_method(&"apply_damage"):
-		wallet.call(&"apply_damage", amount)
+func _spawn_projectile(direction: Vector3) -> void:
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	var bolt: Node = HostileProjectileScript.new()
+	parent.add_child(bolt)
+	if bolt is Node3D:
+		var bolt_3d: Node3D = bolt as Node3D
+		bolt_3d.global_position = (
+			global_position + direction * BalanceCombat.HOSTILE_PROJECTILE_LENGTH
+		)
+	if bolt.has_method(&"launch"):
+		bolt.call(&"launch", direction)
+
+
+func _player_velocity(player: Node3D) -> Vector3:
+	if player is CharacterBody3D:
+		var body: CharacterBody3D = player as CharacterBody3D
+		return body.velocity
+	if player.has_method(&"combat_velocity"):
+		var raw: Variant = player.call(&"combat_velocity")
+		if typeof(raw) == TYPE_VECTOR3:
+			var v: Vector3 = raw
+			return v
+	return Vector3.ZERO
 
 
 func _die() -> void:
@@ -294,13 +349,6 @@ func _player_ship() -> Node3D:
 	return node as Node3D
 
 
-func _wallet_node() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(&"wallet_service")
-
-
 func _release_combat_lock_if_last() -> void:
 	var tree: SceneTree = get_tree()
 	if tree == null:
@@ -311,6 +359,33 @@ func _release_combat_lock_if_last() -> void:
 		if node != self and is_instance_valid(node):
 			return
 	TimeScale.set_combat_lock(false)
+
+
+func _start_hit_flash() -> void:
+	_hit_flash_left = BalanceCombat.HIT_FLASH_SECONDS
+	if _body_mat != null:
+		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
+	if _nose_mat != null:
+		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
+
+
+func _refresh_materials() -> void:
+	if _body_mat == null or _nose_mat == null:
+		return
+	if _hit_flash_left > 0.0:
+		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
+		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
+		return
+	if _lock_highlighted:
+		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE.lightened(
+			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
+		)
+		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT.lightened(
+			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
+		)
+	else:
+		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
+		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
 
 
 func _build_mesh() -> void:
