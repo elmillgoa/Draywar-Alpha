@@ -66,7 +66,7 @@ func test_three_contract_destinations_span_systems() -> void:
 func test_commodities_budget_and_positive_prices() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceEconomy.COMMODITY_CONTENT_CATEGORY)
 	assert_gte(ids.size(), 6)
-	assert_lte(ids.size(), 8)
+	assert_lte(ids.size(), 10)
 	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceEconomy.COMMODITY_CONTENT_CATEGORY])
 	for id: StringName in ids:
 		var commodity: Commodity = ContentLibrary.item(id) as Commodity

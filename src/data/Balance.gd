@@ -19,7 +19,8 @@ const CONTENT_BUDGET: Dictionary[StringName, int] = {
 	&"entities": 6,
 	## E1 cap: people ≤20 (density pack contacts).
 	&"people": 20,
-	&"commodities": 8,
+	## E1.4 trade contrast: commodities toward 8–10 (E1 cap ≤10).
+	&"commodities": 10,
 	## E1.2 room for multi-job boards; E1.3 bounty kind needs headroom.
 	&"contract_types": 8,
 	&"hulls": 2,

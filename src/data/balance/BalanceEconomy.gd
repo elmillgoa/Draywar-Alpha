@@ -32,27 +32,30 @@ const FUEL_EMPTY_EPSILON: float = 0.001
 # --- Docking fees by system policing ---------------------------------------
 
 ## Docking fee (credits) in patrolled space.
-const DOCK_FEE_PATROLLED: int = 25
+## E1.4: mild bump so dock fees stay a real credit sink.
+const DOCK_FEE_PATROLLED: int = 30
 
 ## Docking fee in contested space.
-const DOCK_FEE_CONTESTED: int = 15
+const DOCK_FEE_CONTESTED: int = 18
 
 ## Docking fee in lawless space (cheaper, riskier).
 const DOCK_FEE_LAWLESS: int = 5
 
 ## Default fee when policing is unknown.
-const DOCK_FEE_DEFAULT: int = 15
+const DOCK_FEE_DEFAULT: int = 18
 
 # --- Station services ------------------------------------------------------
 
 ## Credits per fuel unit when refueling.
-const REFUEL_CREDITS_PER_UNIT: float = 2.0
+## E1.4: slight raise — fuel remains a real money pressure without trapping the player.
+const REFUEL_CREDITS_PER_UNIT: float = 2.5
 
 ## Minimum fuel units purchased in one refuel action (or remaining capacity).
 const REFUEL_CHUNK: float = 25.0
 
 ## Full repair cost when condition is empty.
-const REPAIR_FULL_COST: int = 80
+## E1.4: mild bump; full repair still affordable after a few jobs.
+const REPAIR_FULL_COST: int = 100
 
 ## Ship condition range.
 const CONDITION_MAX: float = 100.0
@@ -120,44 +123,74 @@ const TRADE_PRICE_MUL_DEFAULT: float = 1.0
 const TRADE_PRICE_MIN: int = 1
 
 ## Per-system buy multipliers: system_id → { commodity_id → float mul on base_buy }.
-## Thin static contrast — not a dynamic economy. Grain is cheaper at Alpha Reach.
+## Static contrast only — not a dynamic economy (E1.4).
+##
+## Documented profitable player routes (buy_at_source < sell_at_dest):
+##   1) Grain Alpha → Gamma   (staple out to the fringe)
+##   2) Scrap Gamma → Alpha   (salvage / industrial reverse)
+##   3) Ore Gamma → Alpha     (raw ore into industry)
+##   4) Luxuries Alpha → Gamma (wealth goods outward)
+##   5) Munitions Beta → Gamma (arms from contested docks to lawless)
+##   6) Rations Alpha → Beta  (packaged food into contested space)
+## Same-station round-trips still lose (sell < buy at one dock).
 const TRADE_SYSTEM_BUY_MUL: Dictionary = {
 	&"system_alpha":
 	{
-		&"commodity_grain": 0.9,
-		&"commodity_scrap": 1.1,
+		&"commodity_grain": 0.8,
+		&"commodity_rations": 0.8,
+		&"commodity_luxuries": 0.85,
+		&"commodity_scrap": 1.15,
+		&"commodity_ore": 1.2,
+		&"commodity_munitions": 1.1,
 	},
 	&"system_beta":
 	{
-		&"commodity_alloy": 0.9,
-		&"commodity_medical": 1.1,
+		&"commodity_alloy": 0.85,
+		&"commodity_munitions": 0.8,
+		&"commodity_spare_parts": 0.9,
+		&"commodity_fuel_cells": 0.9,
+		&"commodity_medical": 1.15,
+		&"commodity_grain": 1.05,
 	},
 	&"system_gamma":
 	{
-		&"commodity_grain": 1.2,
-		&"commodity_scrap": 0.8,
+		&"commodity_scrap": 0.7,
+		&"commodity_ore": 0.75,
+		&"commodity_grain": 1.25,
+		&"commodity_luxuries": 1.2,
+		&"commodity_medical": 1.15,
+		&"commodity_munitions": 1.15,
 	},
 }
 
 ## Per-system sell multipliers: system_id → { commodity_id → float mul on base_sell }.
-## Grain pays best at Gamma Fringe; scrap pays better at Alpha industry.
+## Mirrors the buy table so the six documented routes stay profitable.
 const TRADE_SYSTEM_SELL_MUL: Dictionary = {
 	&"system_alpha":
 	{
-		&"commodity_grain": 0.85,
-		&"commodity_scrap": 1.5,
+		&"commodity_grain": 0.8,
+		&"commodity_luxuries": 0.9,
+		&"commodity_scrap": 1.7,
+		&"commodity_ore": 1.55,
+		&"commodity_munitions": 1.1,
 	},
 	&"system_beta":
 	{
-		&"commodity_grain": 1.15,
+		&"commodity_grain": 1.2,
 		&"commodity_fuel_cells": 1.25,
 		&"commodity_spare_parts": 1.2,
+		&"commodity_rations": 1.5,
+		&"commodity_medical": 1.1,
+		&"commodity_munitions": 0.95,
 	},
 	&"system_gamma":
 	{
-		&"commodity_grain": 1.8,
-		&"commodity_medical": 1.45,
-		&"commodity_scrap": 0.9,
+		&"commodity_grain": 2.0,
+		&"commodity_medical": 1.5,
+		&"commodity_luxuries": 1.55,
+		&"commodity_munitions": 1.55,
+		&"commodity_scrap": 0.85,
+		&"commodity_ore": 0.85,
 	},
 }
 

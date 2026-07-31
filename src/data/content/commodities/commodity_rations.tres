@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Commodity" load_steps=2 format=3]
+
+; Packaged rations — spare food cargo; cheap at Alpha, demand in contested Beta.
+[ext_resource type="Script" path="res://src/data/shapes/Commodity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"commodity_rations"
+display_name = "Rations"
+base_buy_price = 14
+base_sell_price = 9
+unit_volume = 1

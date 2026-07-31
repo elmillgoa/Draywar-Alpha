@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Commodity" load_steps=2 format=3]
+
+; Raw ore — cheap on the fringe, pays at Alpha industry (Gamma → Alpha route).
+[ext_resource type="Script" path="res://src/data/shapes/Commodity.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"commodity_ore"
+display_name = "Ore"
+base_buy_price = 18
+base_sell_price = 12
+unit_volume = 1
