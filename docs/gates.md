@@ -70,10 +70,10 @@ Elliot’s words only. Agents never sign these.
 
 ### Attempt 1 — 2026-07-31
 
-**Status: OPEN — waiting for Elliot.**
-
-**Verdict:** _(not signed)_
+**Verdict: not signed — not Alpha yet.**
 
 **Elliot (verbatim):**
 
-_(play and reply)_
+> This isn't an Alpha. This is a rudimentary technology demonstrator
+
+**Notes:** Mechanical A5 criteria (systems, money, normal-play levers, no console required for the loop) may hold as a tech slice. Final Alpha fantasy sign-off refused. Iterate until the play feels like a prove-it game, not a systems demo. Do not advance to full-plan expansion on this verdict.

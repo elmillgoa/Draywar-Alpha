@@ -2,16 +2,17 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **A5 — Minimal Playable Slice complete** (mechanical). **Final Alpha Gate open.**
+**Current position:** **A5 mechanical landed; Final Alpha Gate failed (not signed).**
 
 - A0 Foundation ✓
 - A1 Flight & One System ✓ (feel gate signed)
 - A2 Standing Core ✓
 - A3 Attribution & Everyday Change ✓
 - A4 Personal Recovery ✓ (feel gate signed)
-- **A5 Minimal Playable Slice** ✓ — 3 systems, jump gates, NPC traffic by policing, money loop, normal-play mission/recovery (no console required for fantasy)
+- A5 Minimal Playable Slice — **mechanical** (systems/money/loop wired); **not accepted as Alpha**
+- **Final Alpha Gate** — **not signed** (2026-07-31): tech demonstrator, not Alpha
 
-**Next:** **Final Alpha Gate** — Elliot signs core fantasy legible and worth expanding.
+**Next:** Iterate until play feels like a prove-it Alpha, then re-run Final Alpha Gate. Do not expand to full plan.
 
 ## Proof (A5)
 
@@ -28,7 +29,7 @@
 - lint exit 0 · GUT **188/188**
 - A1 flight feel **signed**
 - A4 recovery feel **signed**
-- **Final Alpha Gate OPEN** — play and sign in `docs/gates.md`
+- **Final Alpha Gate** — attempt 1 **not signed** (tech demonstrator). Re-gate after iterate.
 
 ## Open decisions
 
@@ -46,10 +47,10 @@
 
 ## Next session starts here
 
-1. `/start` — orient; A5 mechanical done, Final Alpha open.
-2. Play Final Alpha gate (see `docs/gates.md` play script).
-3. If signed: wrap Alpha, full plan may start per expansion path.
-4. If not signed: iterate on notes, re-gate.
+1. `/start` — A5 mechanical exists; Final Alpha refused (demo, not Alpha).
+2. Decide iterate target with Elliot (feel / content / loop / presentation).
+3. Build that slice; re-run Final Alpha Gate.
+4. Only on sign: wrap Alpha and open full-plan expansion.
 
 ## Session history
 
