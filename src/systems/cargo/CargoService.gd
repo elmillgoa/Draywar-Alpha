@@ -143,7 +143,7 @@ func can_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT)
 		return false
 	if not can_add(commodity_id, qty):
 		return false
-	var cost: int = commodity.base_buy_price * qty
+	var cost: int = _unit_buy_price(commodity) * qty
 	var wallet: Node = _wallet()
 	if wallet == null or not wallet.has_method(&"can_afford"):
 		return false
@@ -165,7 +165,7 @@ func try_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT)
 	if qty > 0 and _is_docked():
 		var commodity: Commodity = _commodity(commodity_id)
 		if commodity != null and can_add(commodity_id, qty):
-			var cost: int = commodity.base_buy_price * qty
+			var cost: int = _unit_buy_price(commodity) * qty
 			var wallet: Node = _wallet()
 			if wallet != null and wallet.has_method(&"try_spend"):
 				if wallet.call(&"try_spend", cost) == true:
@@ -187,7 +187,7 @@ func try_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT
 	if qty > 0 and _is_docked():
 		var commodity: Commodity = _commodity(commodity_id)
 		if commodity != null and quantity(commodity_id) >= qty:
-			var payout: int = _sell_price(commodity) * qty
+			var payout: int = _unit_sell_price(commodity) * qty
 			if remove(commodity_id, qty):
 				var wallet: Node = _wallet()
 				if wallet != null and wallet.has_method(&"add_credits") and payout > 0:
@@ -208,9 +208,14 @@ func _on_sell_requested(commodity_id: StringName, qty: int) -> void:
 	try_sell(commodity_id, qty)
 
 
-func _sell_price(commodity: Commodity) -> int:
-	var base: float = float(commodity.base_sell_price) * BalanceEconomy.STATION_SELL_BONUS
-	return maxi(1, int(roundf(base)))
+## Unit buy price at the currently docked station's system.
+func _unit_buy_price(commodity: Commodity) -> int:
+	return BalanceEconomy.buy_price_at(commodity, _dock_system_id())
+
+
+## Unit sell price at the currently docked station's system.
+func _unit_sell_price(commodity: Commodity) -> int:
+	return BalanceEconomy.sell_price_at(commodity, _dock_system_id())
 
 
 func _record_legal_trade() -> void:
@@ -235,14 +240,27 @@ func _docked_station_id() -> StringName:
 
 
 func _dock_controller() -> StringName:
+	var station: Station = _docked_station()
+	if station == null:
+		return &""
+	return station.controller_entity_id
+
+
+func _dock_system_id() -> StringName:
+	var station: Station = _docked_station()
+	if station == null:
+		return &""
+	return station.system_id
+
+
+func _docked_station() -> Station:
 	var station_id: StringName = _docked_station_id()
 	if String(station_id).is_empty() or not ContentLibrary.has_item(station_id):
-		return &""
+		return null
 	var item: ContentItem = ContentLibrary.item(station_id)
-	if not (item is Station):
-		return &""
-	var station: Station = item as Station
-	return station.controller_entity_id
+	if item is Station:
+		return item as Station
+	return null
 
 
 func _commodity(commodity_id: StringName) -> Commodity:

@@ -22,6 +22,9 @@ const CONTROLLER_NOBODY: StringName = &"nobody"
 ## Optional local offset from the system's station anchor. Zero for A1.
 @export var position_offset: Vector3 = Vector3.ZERO
 
+## Optional one-line dock flavor under the station title (empty is fine).
+@export var flavor_line: String = ""
+
 
 ## Everything wrong with this station. Empty means valid.
 func validation_errors() -> PackedStringArray:

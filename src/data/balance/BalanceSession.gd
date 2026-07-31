@@ -87,6 +87,29 @@ const LOAD_OK_FORMAT: String = "Loaded '%s'."
 const LOAD_FAIL_FORMAT: String = "Load failed: %s"
 const LOAD_NONE: String = "No save to load."
 
+# --- New game tip (B5) -----------------------------------------------------
+
+## Canvas layer above HUD (10) / station (20), below pause (35).
+const NEW_GAME_TIP_CANVAS_LAYER: int = 32
+
+const NEW_GAME_TIP_WIDTH: float = 420.0
+const NEW_GAME_TIP_HEIGHT: float = 220.0
+const NEW_GAME_TIP_HALF_WIDTH: float = 210.0
+const NEW_GAME_TIP_HALF_HEIGHT: float = 110.0
+const NEW_GAME_TIP_BUTTON_WIDTH: float = 160.0
+const NEW_GAME_TIP_BUTTON_HEIGHT: float = 40.0
+const NEW_GAME_TIP_SPACER: float = 10.0
+const NEW_GAME_TIP_DIM_ALPHA: float = 0.55
+
+const NEW_GAME_TIP_TITLE: String = "How to fly"
+const NEW_GAME_TIP_BODY: String = (
+	"Mouse aim · WASD move · Shift afterburn\n"
+	+ "F  dock at station / jump at gate\n"
+	+ "Space  fire\n"
+	+ "Esc  pause · captain sheet · save"
+)
+const NEW_GAME_TIP_DISMISS: String = "Got it"
+
 # --- Input -----------------------------------------------------------------
 
 ## Pause menu action (bound to Escape via FlightInput).

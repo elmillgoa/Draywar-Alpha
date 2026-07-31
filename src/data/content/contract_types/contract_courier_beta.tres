@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1")
 id = &"contract_courier_beta"
-display_name = "Beta Drift Drop"
+display_name = "Syndicate return — drop to Alpha Port"
 offering_entity_id = &"entity_beta_syndicate"
 kind = &"delivery"
 standing_complete = 8.0

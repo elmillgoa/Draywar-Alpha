@@ -48,21 +48,23 @@ Each row must be **playable without debug console** for the fantasy path (consol
 
 | # | System | Decision-quality bar | Now (honest) |
 |---|--------|----------------------|--------------|
-| 1 | **Flight** | Controllable mouse-aim freighter; not a nauseating tech demo | Partial (feel signed A1) |
-| 2 | **World / travel** | **3–4 systems** you can **reach and tell apart** (not one start + mystery boxes); jump/dock clear | **Fail** — lives as one start system |
-| 3 | **Station menus** | Dock → readable station UI (services, jobs, undock) | Partial (gray panel buttons) |
-| 4 | **Main menu / pause** | Start / continue / quit / settings bare minimum | **Missing** |
-| 5 | **Character / captain sheet** | See who you are: money, ship, standing summary, open jobs | **Missing** |
-| 6 | **Job tracking** | Accept, objective, destination, complete/fail/abandon without guessing | Partial (HUD job line; thin) |
-| 7 | **Standing + status moment** | Different treatment by place; status on entry; sticky + recovery foothold | Partial (logic stronger than presentation) |
-| 8 | **Personal recovery** | One chain, visible in normal play, works when deep negative | Partial |
-| 9 | **Trade** | Buy/sell or station trade that moves cargo/money (thin OK) | **Missing** |
-| 10 | **Combat** | Shoot / be shot / win or lose a fight that matters (thin OK, not full interlock) | **Missing** (attribution stub only) |
-| 11 | **Money loop** | Pay in and out (jobs, fuel, fees, repairs, trade) | Partial |
-| 12 | **NPC traffic** | Space feels occupied; security reads differently | Partial (boxes by density) |
-| 13 | **Save / load** | Career continues without console-only ritual | Partial (console save) |
-| 14 | **Presentation floor** | More than black void + colored primitives — placeholders OK if readable (silhouettes, skybox, basic UI theme) | **Fail** |
-| 15 | **Minimal content pack** | Enough systems/stations/jobs/entities for a 30–60 min vetting session | **Fail** as *felt* content |
+| 1 | **Flight** | Controllable mouse-aim freighter; not a nauseating tech demo | **Present / good enough** (A1 signed; mouse-aim freighter) |
+| 2 | **World / travel** | **3–4 systems** you can **reach and tell apart** (not one start + mystery boxes); jump/dock clear | **Present / good enough** (B0: Alpha/Beta/Gamma, gates, NAV, dock) |
+| 3 | **Station menus** | Dock → readable station UI (services, jobs, undock) | **Present / good enough** (B1 theme + B3 sections: jobs/services/trade/contacts) |
+| 4 | **Main menu / pause** | Start / continue / quit / settings bare minimum | **Present / good enough** (B2: New Game / Continue / Quit; Esc pause) — settings still thin/absent |
+| 5 | **Character / captain sheet** | See who you are: money, ship, standing summary, open jobs | **Present / good enough** (B2 captain sheet) |
+| 6 | **Job tracking** | Accept, objective, destination, complete/fail/abandon without guessing | **Present / good enough** (HUD + sheet + station accept/turn-in/abandon; dest on button) |
+| 7 | **Standing + status moment** | Different treatment by place; status on entry; sticky + recovery foothold | **Present / good enough** (status moment, fees/NPC by place; B5 drama header when deep negative) |
+| 8 | **Personal recovery** | One chain, visible in normal play, works when deep negative | **Present / good enough** (Mendi chain; favor/talk/complete on station; deep-neg foothold copy) |
+| 9 | **Trade** | Buy/sell or station trade that moves cargo/money (thin OK) | **Present / good enough** (B3 cargo + B5 per-system price contrast) |
+| 10 | **Combat** | Shoot / be shot / win or lose a fight that matters (thin OK, not full interlock) | **Present / good enough** (B4 Space fire, hostile, hull, attribution, cripple/repair) |
+| 11 | **Money loop** | Pay in and out (jobs, fuel, fees, repairs, trade) | **Present / good enough** (pay in/out wired; thin balance) |
+| 12 | **NPC traffic** | Space feels occupied; security reads differently | **Present / good enough** (density by policing; still placeholder silhouettes) |
+| 13 | **Save / load** | Career continues without console-only ritual | **Present / good enough** (B2 menu/pause save·load + continue) |
+| 14 | **Presentation floor** | More than black void + colored primitives — placeholders OK if readable (silhouettes, skybox, basic UI theme) | **Present / good enough** (B1 skybox/silhouettes/theme — not final art) |
+| 15 | **Minimal content pack** | Enough systems/stations/jobs/entities for a 30–60 min vetting session | **Present / good enough** (B5: 3 systems, 3 jobs, 6 goods, flavor, recovery path, play script) |
+
+**Residual partials (honest, not blockers for “judge”):** settings menu; final art/audio; NPC still simple; combat/trade depth thin by design; recovery only at Reach/Mendi; no dynamic economy.
 
 ---
 

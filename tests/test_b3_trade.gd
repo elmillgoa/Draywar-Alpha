@@ -72,7 +72,8 @@ func test_buy_spends_credits_and_adds_cargo_when_docked() -> void:
 
 	assert_true(cargo.try_buy(GRAIN, 1), "buy should succeed when docked and funded")
 	assert_eq(cargo.quantity(GRAIN), 1)
-	assert_eq(wallet.credits(), start_credits - grain.base_buy_price)
+	var buy_at_alpha: int = BalanceEconomy.buy_price_at(grain, &"system_alpha")
+	assert_eq(wallet.credits(), start_credits - buy_at_alpha)
 	assert_eq(cargo.used_volume(), grain.unit_volume)
 
 
@@ -98,7 +99,9 @@ func test_sell_reduces_cargo_and_net_credit_change() -> void:
 	assert_true(cargo.try_buy(GRAIN, 1))
 	assert_true(cargo.try_sell(GRAIN, 1))
 	assert_eq(cargo.quantity(GRAIN), 0)
-	var expected: int = start_credits - grain.base_buy_price + grain.base_sell_price
+	var buy_at_alpha: int = BalanceEconomy.buy_price_at(grain, &"system_alpha")
+	var sell_at_alpha: int = BalanceEconomy.sell_price_at(grain, &"system_alpha")
+	var expected: int = start_credits - buy_at_alpha + sell_at_alpha
 	assert_eq(wallet.credits(), expected)
 	assert_ne(wallet.credits(), start_credits, "same-station round-trip must move credits")
 	assert_lt(wallet.credits(), start_credits, "sell < buy so net loss on same station")

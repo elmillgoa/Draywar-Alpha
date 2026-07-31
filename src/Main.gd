@@ -26,6 +26,7 @@ var _station_menu: StationMenu = null
 var _main_menu: MainMenu = null
 var _pause_menu: PauseMenu = null
 var _captain_sheet: CaptainSheet = null
+var _new_game_tip: NewGameTip = null
 
 var _in_play: bool = false
 var _pause_open: bool = false
@@ -89,6 +90,10 @@ func _create_session_ui() -> void:
 	_captain_sheet.name = "CaptainSheet"
 	add_child(_captain_sheet)
 
+	_new_game_tip = NewGameTip.new()
+	_new_game_tip.name = "NewGameTip"
+	add_child(_new_game_tip)
+
 	_raise_debug_console()
 
 
@@ -139,6 +144,8 @@ func _start_new_game() -> void:
 	_in_play = true
 	_hide_main_menu()
 	_set_pause(false)
+	if _new_game_tip != null:
+		_new_game_tip.show_tip()
 
 
 func _on_continue_requested() -> void:
@@ -165,6 +172,8 @@ func _continue_career() -> void:
 	_in_play = true
 	_hide_main_menu()
 	_set_pause(false)
+	if _new_game_tip != null:
+		_new_game_tip.hide_tip()
 
 
 func _on_quit_to_desktop_requested() -> void:
@@ -179,6 +188,8 @@ func _return_to_menu() -> void:
 	_set_pause(false)
 	if _captain_sheet != null:
 		_captain_sheet.visible = false
+	if _new_game_tip != null:
+		_new_game_tip.hide_tip()
 	await _tear_down_play_session()
 	_reset_career_services()
 	_in_play = false

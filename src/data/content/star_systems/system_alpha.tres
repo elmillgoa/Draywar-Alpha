@@ -11,3 +11,4 @@ held_by = &"entity_reach_authority"
 policing = &"patrolled"
 station_ids = Array[StringName]([&"station_alpha_port"])
 gate_destination_ids = Array[StringName]([&"system_beta"])
+flavor_line = "Patrolled Authority space — fees high, grain cheap at the port."

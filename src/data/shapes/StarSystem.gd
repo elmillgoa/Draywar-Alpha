@@ -35,6 +35,9 @@ const HELD_BY_NOBODY: StringName = &"nobody"
 ## System ids this system's gates lead to. Empty is legal until A1 adds gates.
 @export var gate_destination_ids: Array[StringName] = []
 
+## Optional one-line place flavor for HUD / station (empty is fine).
+@export var flavor_line: String = ""
+
 
 ## Whether anybody flies patrols here.
 func is_policed() -> bool:

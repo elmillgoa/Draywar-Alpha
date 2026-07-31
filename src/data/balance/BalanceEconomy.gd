@@ -110,8 +110,56 @@ const TRADE_QTY_UNIT: int = 1
 const TRADE_SIDE_BUY: StringName = &"buy"
 const TRADE_SIDE_SELL: StringName = &"sell"
 
-## Optional future station sell multiplier (1.0 = global base sell price).
+## Global sell multiplier (1.0 = base sell price). Layered under system modifiers.
 const STATION_SELL_BONUS: float = 1.0
+
+## Default buy/sell multiplier when a system has no row for a commodity.
+const TRADE_PRICE_MUL_DEFAULT: float = 1.0
+
+## Floor for resolved unit prices after modifiers (credits).
+const TRADE_PRICE_MIN: int = 1
+
+## Per-system buy multipliers: system_id → { commodity_id → float mul on base_buy }.
+## Thin static contrast — not a dynamic economy. Grain is cheaper at Alpha Reach.
+const TRADE_SYSTEM_BUY_MUL: Dictionary = {
+	&"system_alpha":
+	{
+		&"commodity_grain": 0.9,
+		&"commodity_scrap": 1.1,
+	},
+	&"system_beta":
+	{
+		&"commodity_alloy": 0.9,
+		&"commodity_medical": 1.1,
+	},
+	&"system_gamma":
+	{
+		&"commodity_grain": 1.2,
+		&"commodity_scrap": 0.8,
+	},
+}
+
+## Per-system sell multipliers: system_id → { commodity_id → float mul on base_sell }.
+## Grain pays best at Gamma Fringe; scrap pays better at Alpha industry.
+const TRADE_SYSTEM_SELL_MUL: Dictionary = {
+	&"system_alpha":
+	{
+		&"commodity_grain": 0.85,
+		&"commodity_scrap": 1.5,
+	},
+	&"system_beta":
+	{
+		&"commodity_grain": 1.15,
+		&"commodity_fuel_cells": 1.25,
+		&"commodity_spare_parts": 1.2,
+	},
+	&"system_gamma":
+	{
+		&"commodity_grain": 1.8,
+		&"commodity_medical": 1.45,
+		&"commodity_scrap": 0.9,
+	},
+}
 
 # --- Save (optional sections, schema v1) -----------------------------------
 
@@ -217,11 +265,17 @@ const STATION_ASK_FAVOR_FORMAT: String = "Ask favor of %s"
 const STATION_BETRAY_FORMAT: String = "Betray %s"
 const STATION_UNDOCK_LABEL: String = "Undock"
 
-## Station menu section headers (B3).
+## Station menu section headers (B3 / B5 drama).
 const STATION_SECTION_JOBS: String = "Jobs"
 const STATION_SECTION_SERVICES: String = "Services"
 const STATION_SECTION_TRADE: String = "Trade"
 const STATION_SECTION_CONTACTS: String = "Contacts"
+## Shown instead of Contacts when local controller standing is sticky-deep.
+const STATION_SECTION_RECOVERY_DRAMA: String = "Recovery foothold"
+## Hint under recovery header — %s = person display name.
+const STATION_RECOVERY_DRAMA_HINT_FORMAT: String = (
+	"%s still deals under the table. " + "Ask a favor, then take their work."
+)
 
 ## Trade row copy.
 const STATION_TRADE_BUY_LABEL: String = "Buy 1"
@@ -260,3 +314,56 @@ const PERCENT_SCALE: float = 100.0
 
 ## Refuel cost rounding ceiling uses this unit floor when credits are partial.
 const REFUEL_MIN_UNITS: float = 0.01
+
+# --- Trade price resolution (B5 system contrast) ---------------------------
+
+
+## Buy multiplier for a commodity in a system (1.0 when unlisted).
+static func trade_buy_mul(system_id: StringName, commodity_id: StringName) -> float:
+	return _trade_mul_from(TRADE_SYSTEM_BUY_MUL, system_id, commodity_id)
+
+
+## Sell multiplier for a commodity in a system (1.0 when unlisted).
+static func trade_sell_mul(system_id: StringName, commodity_id: StringName) -> float:
+	return _trade_mul_from(TRADE_SYSTEM_SELL_MUL, system_id, commodity_id)
+
+
+## Credits to buy one unit at this system (min TRADE_PRICE_MIN).
+static func buy_price_at(commodity: Commodity, system_id: StringName) -> int:
+	if commodity == null:
+		return TRADE_PRICE_MIN
+	var mul: float = trade_buy_mul(system_id, commodity.id)
+	var base: float = float(commodity.base_buy_price)
+	return maxi(TRADE_PRICE_MIN, int(roundf(base * mul)))
+
+
+## Credits paid for selling one unit at this system (min TRADE_PRICE_MIN).
+static func sell_price_at(commodity: Commodity, system_id: StringName) -> int:
+	if commodity == null:
+		return TRADE_PRICE_MIN
+	var mul: float = trade_sell_mul(system_id, commodity.id) * STATION_SELL_BONUS
+	var base: float = float(commodity.base_sell_price)
+	return maxi(TRADE_PRICE_MIN, int(roundf(base * mul)))
+
+
+static func _trade_mul_from(
+	table: Dictionary, system_id: StringName, commodity_id: StringName
+) -> float:
+	if String(system_id).is_empty() or String(commodity_id).is_empty():
+		return TRADE_PRICE_MUL_DEFAULT
+	if not table.has(system_id):
+		return TRADE_PRICE_MUL_DEFAULT
+	var row_raw: Variant = table[system_id]
+	if typeof(row_raw) != TYPE_DICTIONARY:
+		return TRADE_PRICE_MUL_DEFAULT
+	var row: Dictionary = row_raw
+	if not row.has(commodity_id):
+		return TRADE_PRICE_MUL_DEFAULT
+	var mul_raw: Variant = row[commodity_id]
+	if typeof(mul_raw) == TYPE_FLOAT:
+		var as_float: float = mul_raw
+		return as_float
+	if typeof(mul_raw) == TYPE_INT:
+		var as_int: int = mul_raw
+		return float(as_int)
+	return TRADE_PRICE_MUL_DEFAULT

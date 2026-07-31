@@ -11,9 +11,12 @@ extends CanvasLayer
 
 var _panel: PanelContainer = null
 var _title: Label = null
+var _flavor_label: Label = null
 var _accept_job_btn: Button = null
 var _turn_in_job_btn: Button = null
 var _abandon_job_btn: Button = null
+var _contacts_header: Label = null
+var _recovery_hint: Label = null
 var _recovery_btn: Button = null
 var _complete_recovery_btn: Button = null
 var _abandon_recovery_btn: Button = null
@@ -45,6 +48,7 @@ func _ready() -> void:
 	EventBus.on_recovery_betrayed.connect(_on_recovery_betrayed)
 	EventBus.on_person_closed.connect(_on_person_closed)
 	EventBus.on_person_standing_changed.connect(_on_person_standing_changed)
+	EventBus.on_entity_standing_changed.connect(_on_entity_standing_changed)
 	EventBus.on_credits_changed.connect(_on_wallet_changed)
 	EventBus.on_fuel_changed.connect(_on_fuel_changed)
 	EventBus.on_condition_changed.connect(_on_condition_changed)
@@ -65,6 +69,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_recovery_betrayed, _on_recovery_betrayed)
 	_disconnect(EventBus.on_person_closed, _on_person_closed)
 	_disconnect(EventBus.on_person_standing_changed, _on_person_standing_changed)
+	_disconnect(EventBus.on_entity_standing_changed, _on_entity_standing_changed)
 	_disconnect(EventBus.on_credits_changed, _on_wallet_changed)
 	_disconnect(EventBus.on_fuel_changed, _on_fuel_changed)
 	_disconnect(EventBus.on_condition_changed, _on_condition_changed)
@@ -111,6 +116,14 @@ func _build_ui() -> void:
 	_title.text = "Station"
 	outer.add_child(_title)
 
+	_flavor_label = Label.new()
+	_flavor_label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
+	_flavor_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_flavor_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_flavor_label.text = ""
+	_flavor_label.visible = false
+	outer.add_child(_flavor_label)
+
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(
 		BalanceEconomy.STATION_MENU_WIDTH_B3 - BalanceFlight.HUD_MARGIN - BalanceFlight.HUD_MARGIN,
@@ -156,8 +169,15 @@ func _build_ui() -> void:
 	_trade_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	layout.add_child(_trade_box)
 
-	# --- Contacts ---
-	_add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
+	# --- Contacts / recovery foothold (B5 drama when deep negative) ---
+	_contacts_header = _add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
+	_recovery_hint = Label.new()
+	_recovery_hint.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
+	_recovery_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_recovery_hint.text = ""
+	_recovery_hint.visible = false
+	layout.add_child(_recovery_hint)
+
 	_recovery_btn = _make_button(layout, button_size, "Talk")
 	_recovery_btn.pressed.connect(_on_recovery_pressed)
 	_recovery_btn.visible = false
@@ -191,7 +211,7 @@ func _build_ui() -> void:
 	undock_btn.pressed.connect(_on_undock_pressed)
 
 
-func _add_section_header(parent: Control, text: String) -> void:
+func _add_section_header(parent: Control, text: String) -> Label:
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_SECTION_SPACER)
 	parent.add_child(spacer)
@@ -199,6 +219,7 @@ func _add_section_header(parent: Control, text: String) -> void:
 	header.add_theme_color_override("font_color", BalanceUi.ACCENT)
 	header.text = text
 	parent.add_child(header)
+	return header
 
 
 func _make_button(parent: Control, size: Vector2, text: String) -> Button:
@@ -220,6 +241,7 @@ func _content_name(id: StringName) -> String:
 func _on_docked(station_id: StringName) -> void:
 	_docked_station_id = station_id
 	_title.text = _content_name(station_id)
+	_refresh_flavor()
 	# visible first so section refresh can show jobs/trade/services.
 	visible = true
 	_refresh_all()
@@ -230,9 +252,38 @@ func _on_undocked(_station_id: StringName) -> void:
 	_offer_person_id = &""
 	_favor_person_id = &""
 	_active_recovery_person_id = &""
+	if _flavor_label != null:
+		_flavor_label.text = ""
+		_flavor_label.visible = false
+	if _recovery_hint != null:
+		_recovery_hint.visible = false
+		_recovery_hint.text = ""
+	if _contacts_header != null:
+		_contacts_header.text = BalanceEconomy.STATION_SECTION_CONTACTS
+		_contacts_header.add_theme_color_override("font_color", BalanceUi.ACCENT)
 	_hide_action_buttons()
 	_clear_trade_rows()
 	visible = false
+
+
+func _refresh_flavor() -> void:
+	if _flavor_label == null:
+		return
+	var line: String = ""
+	if ContentLibrary.has_item(_docked_station_id):
+		var item: ContentItem = ContentLibrary.item(_docked_station_id)
+		if item is Station:
+			var station: Station = item as Station
+			if not station.flavor_line.is_empty():
+				line = station.flavor_line
+			elif ContentLibrary.has_item(station.system_id):
+				var sys_item: ContentItem = ContentLibrary.item(station.system_id)
+				if sys_item is StarSystem:
+					var system: StarSystem = sys_item as StarSystem
+					if not system.flavor_line.is_empty():
+						line = system.flavor_line
+	_flavor_label.text = line
+	_flavor_label.visible = not line.is_empty()
 
 
 func _hide_action_buttons() -> void:
@@ -359,6 +410,13 @@ func _on_person_standing_changed(
 		_refresh_all()
 
 
+func _on_entity_standing_changed(
+	_entity_id: StringName, _old_value: float, _new_value: float, _tier: StringName
+) -> void:
+	if visible:
+		_refresh_recovery_buttons()
+
+
 func _on_wallet_changed(_credits: int) -> void:
 	if visible:
 		_refresh_services()
@@ -421,6 +479,12 @@ func _refresh_recovery_buttons() -> void:
 	elif not recovery_busy:
 		_active_recovery_person_id = &""
 
+	var deep_negative: bool = _is_deep_negative_with_controller()
+	var drama_person: StringName = _favor_person_id
+	if String(drama_person).is_empty():
+		drama_person = _offer_person_id
+	_refresh_recovery_drama_header(deep_negative, drama_person)
+
 	var offer_visible: bool = (
 		not String(_offer_person_id).is_empty() and not recovery_busy and visible
 	)
@@ -431,8 +495,20 @@ func _refresh_recovery_buttons() -> void:
 		)
 
 	_complete_recovery_btn.visible = recovery_busy and visible
+	if _complete_recovery_btn.visible and not String(_active_recovery_person_id).is_empty():
+		_complete_recovery_btn.text = (
+			"%s — %s"
+			% [
+				BalanceEconomy.STATION_COMPLETE_RECOVERY_LABEL,
+				_content_name(_active_recovery_person_id),
+			]
+		)
+	else:
+		_complete_recovery_btn.text = BalanceEconomy.STATION_COMPLETE_RECOVERY_LABEL
+
 	_abandon_recovery_btn.visible = recovery_busy and visible
 
+	# Deep-negative path: always surface the recovery contact by name via favor.
 	var favor_visible: bool = (
 		not String(_favor_person_id).is_empty() and not recovery_busy and visible
 	)
@@ -454,6 +530,33 @@ func _refresh_recovery_buttons() -> void:
 	if betray_visible:
 		_betray_btn.text = BalanceEconomy.STATION_BETRAY_FORMAT % _content_name(betray_target)
 		_active_recovery_person_id = betray_target
+
+
+func _refresh_recovery_drama_header(deep_negative: bool, person_id: StringName) -> void:
+	if _contacts_header == null:
+		return
+	if deep_negative and not String(person_id).is_empty() and visible:
+		_contacts_header.text = BalanceEconomy.STATION_SECTION_RECOVERY_DRAMA
+		_contacts_header.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
+		if _recovery_hint != null:
+			_recovery_hint.text = (
+				BalanceEconomy.STATION_RECOVERY_DRAMA_HINT_FORMAT % _content_name(person_id)
+			)
+			_recovery_hint.visible = true
+	else:
+		_contacts_header.text = BalanceEconomy.STATION_SECTION_CONTACTS
+		_contacts_header.add_theme_color_override("font_color", BalanceUi.ACCENT)
+		if _recovery_hint != null:
+			_recovery_hint.text = ""
+			_recovery_hint.visible = false
+
+
+## Sticky-deep with the dock controller (hostile hole — recovery foothold path).
+func _is_deep_negative_with_controller() -> bool:
+	var controller: StringName = _dock_controller()
+	if String(controller).is_empty():
+		return false
+	return StandingService.get_entity_standing(controller) <= BalanceStanding.STICKY_NEGATIVE_FLOOR
 
 
 func _refresh_services() -> void:
@@ -478,6 +581,7 @@ func _refresh_trade() -> void:
 	if not visible:
 		return
 	var cargo: Node = _cargo_service()
+	var system_id: StringName = _dock_system_id()
 	for commodity_id: StringName in ContentLibrary.ids_in(
 		BalanceEconomy.COMMODITY_CONTENT_CATEGORY
 	):
@@ -490,6 +594,8 @@ func _refresh_trade() -> void:
 		var hold: int = 0
 		if cargo != null and cargo.has_method(&"quantity"):
 			hold = _variant_to_int(cargo.call(&"quantity", commodity_id))
+		var buy_price: int = BalanceEconomy.buy_price_at(commodity, system_id)
+		var sell_price: int = BalanceEconomy.sell_price_at(commodity, system_id)
 		var row: HBoxContainer = HBoxContainer.new()
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_trade_box.add_child(row)
@@ -502,8 +608,8 @@ func _refresh_trade() -> void:
 			BalanceEconomy.STATION_TRADE_LINE_FORMAT
 			% [
 				commodity.display_name,
-				commodity.base_buy_price,
-				commodity.base_sell_price,
+				buy_price,
+				sell_price,
 				hold,
 			]
 		)
@@ -683,16 +789,29 @@ func _favor_person_for_dock() -> StringName:
 
 
 func _dock_controller() -> StringName:
-	if String(_docked_station_id).is_empty() or not ContentLibrary.has_item(_docked_station_id):
+	var station: Station = _docked_station()
+	if station == null:
 		return &""
-	var station_item: ContentItem = ContentLibrary.item(_docked_station_id)
-	if not (station_item is Station):
-		return &""
-	var station: Station = station_item as Station
 	var controller: StringName = station.controller_entity_id
 	if controller == Station.CONTROLLER_NOBODY or String(controller).is_empty():
 		return &""
 	return controller
+
+
+func _dock_system_id() -> StringName:
+	var station: Station = _docked_station()
+	if station == null:
+		return &""
+	return station.system_id
+
+
+func _docked_station() -> Station:
+	if String(_docked_station_id).is_empty() or not ContentLibrary.has_item(_docked_station_id):
+		return null
+	var station_item: ContentItem = ContentLibrary.item(_docked_station_id)
+	if station_item is Station:
+		return station_item as Station
+	return null
 
 
 func _first_offerable_person(service: Node, controller: StringName) -> StringName:

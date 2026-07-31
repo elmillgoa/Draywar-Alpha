@@ -11,3 +11,4 @@ held_by = &"entity_beta_syndicate"
 policing = &"contested"
 station_ids = Array[StringName]([&"station_beta_hub"])
 gate_destination_ids = Array[StringName]([&"system_alpha", &"system_gamma"])
+flavor_line = "Contested corridor — Syndicate gray market, mixed traffic."

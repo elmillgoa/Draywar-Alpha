@@ -54,19 +54,66 @@ Elliot’s words only. Agents never sign these.
 
 - Different places treat you differently (status line, fees, NPC traffic, controllers).
 - Sticky negative standing is real, and there is one personal recovery foothold without the debug console.
-- You can fly a short session: dock, take a job, jump, turn in, refuel, talk to Mendi — without needing console for the fantasy.
+- You can fly a short session: dock, take a job, jump, turn in, trade, fight, recover — without needing console for the fantasy.
 
-### Play script (cold launch)
+**Signed only by Elliot** after Path C B0–B5 and the decision-bar checklist in `Alpha/ALPHA_DECISION_BAR.md`. Agents never mark this signed.
 
-1. Run main scene. Note **SYSTEM**, **STANDING**, **CREDITS**, **FUEL**.
-2. Dock Alpha Port (F). Accept job → destination name on the button. Undock.
-3. Fly to the **blue gate**, F to jump (needs fuel). Status line should change with the new system.
-4. Dock Beta Hub. **Turn in job**. Credits and standing should move.
-5. Jump around; notice NPC traffic density (busy Alpha vs thinner Gamma).
-6. At Alpha Port: **Ask favor of Mendi** a few times until **Talk to Mendi** appears. Accept, **Complete recovery work**.
-7. Optional: grind Reach down hard (abandon jobs). You should still be able to dock Alpha to reach Mendi while that recovery route is open.
+### Final Alpha play script (cold launch — no console)
 
-**Console is optional** (save/load, debug). Do not need it for the loop above.
+**Goal:** one continuous session (~30–60 min) that touches every decision-bar row enough to judge.
+
+#### 0. Boot
+
+1. Run the main scene (project main).
+2. You should see the **DRAYWAR** main menu: **New Game / Continue / Quit**.
+3. Click **New Game**.
+4. A short **controls tip** appears (mouse aim, WASD, F dock/jump, Space fire, Esc pause). Click **Got it**.
+5. You are in space. Note HUD: **SYSTEM**, **STANDING**, **CREDITS**, **FUEL**, **HULL**, **NAV** (HERE + GATES).
+
+#### 1. Flight + dock (place treatment)
+
+6. Fly toward the station (large dock structure). **F** when prompted to dock.
+7. Station menu opens: title + flavor line, sections **Jobs / Services / Trade / Contacts**, **Undock**.
+8. Read the **status / standing** line (HUD + docked strip). Alpha is **Reach Authority**, patrolled — fees higher, more NPCs.
+9. **Esc** → pause: Resume, Captain sheet, Save, Load, Quit to menu. Open **Captain sheet** — credits, fuel, hull, cargo, local standing, job line. Close.
+
+#### 2. Job loop across systems
+
+10. At Alpha Port **Jobs**: accept the courier (**Accept job → Beta Hub**). HUD shows **JOB … → Beta Hub**.
+11. Undock. Fly to the **gate** (blue / labeled). **F** to jump when in range (needs fuel). Watch **SYSTEM** and **STANDING** change on arrival (**Beta Drift**, contested Syndicate).
+12. Dock **Beta Hub**. **Turn in job**. Credits and Reach standing should move. Note flavor / fee difference vs Alpha.
+13. Optional second hop: take Beta’s return job to Alpha, or jump **Gamma Fringe** (lawless, thinner traffic). Dock **Gamma Outpost**. Feel density and standing controller change.
+
+#### 3. Trade contrast (money loop)
+
+14. At a station, open **Trade**. Buy **Grain** at **Alpha Port** (cheaper buy).
+15. Jump to **Gamma**, dock, **Sell Grain** — sell price should be **higher** than Alpha’s sell (fringe pays for grain).
+16. Optional: buy **Scrap** at Gamma, sell at Alpha (scrap pays better at industry). Watch credits on HUD / sheet.
+
+#### 4. Thin combat
+
+17. In a system with a **hostile** (spawned in play): **Space** to fire. Take or deal damage; **HULL** drops.
+18. If you kill in **patrolled Alpha**, standing with **Reach Authority** should move (attribution).
+19. If hull hits zero you are **crippled** (cannot fly). Dock + **Repair ship** restores. Refuel as needed.
+
+#### 5. Sticky hole + recovery foothold (no console)
+
+20. At Alpha, take and **Abandon** courier jobs a few times (or fight enough) until Reach standing is clearly bad (Unfriendly / Hostile / sticky). Status moment and fees/treatment should feel worse.
+21. Dock Alpha Port. Contacts section should become **Recovery foothold** with a hint naming **Dockhand Mendi**.
+22. **Ask favor of Dockhand Mendi** several times until personal trust opens **Talk to Dockhand Mendi**.
+23. Accept recovery work → **Complete recovery work — Dockhand Mendi** (stipend + personal climb). Repeat steps as offered. Entity standing climbs slowly (sticky positives).
+
+#### 6. Save / continue
+
+24. **Esc → Save**. **Quit to menu**.
+25. **Continue** — same system/career state (credits, standing, cargo if any, job if active).
+
+#### 7. Judge (Elliot only)
+
+26. Can you answer: *Is this worth building into a beta / full game?*  
+   If it still feels only like a tech demo, **refuse** the gate. If core systems are present and the fantasy is legible enough to decide, sign below on a new Attempt.
+
+**Console is optional** (debug standing/save). Do **not** need it for the script above.
 
 ### Attempt 1 — 2026-07-31
 

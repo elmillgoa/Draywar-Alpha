@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1")
 id = &"contract_courier_gamma"
-display_name = "Gamma Scrap Haul"
+display_name = "Fringe scrap haul — to Beta Hub"
 offering_entity_id = &"entity_gamma_collective"
 kind = &"delivery"
 standing_complete = 6.0

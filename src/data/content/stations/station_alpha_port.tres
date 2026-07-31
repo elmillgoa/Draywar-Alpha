@@ -10,3 +10,4 @@ display_name = "Alpha Port"
 system_id = &"system_alpha"
 controller_entity_id = &"entity_reach_authority"
 position_offset = Vector3(0, 0, 0)
+flavor_line = "Reach Authority dock. Jobs, fuel, and Dockhand Mendi if you're in deep."

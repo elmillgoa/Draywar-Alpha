@@ -11,3 +11,4 @@ held_by = &"entity_gamma_collective"
 policing = &"lawless"
 station_ids = Array[StringName]([&"station_gamma_outpost"])
 gate_destination_ids = Array[StringName]([&"system_beta"])
+flavor_line = "Lawless fringe — thin patrols, grain pays well, scrap is cheap."
