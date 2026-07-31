@@ -72,6 +72,15 @@ python scripts/journal.py new-session "topic"
 python scripts/journal.py add NOTE "…" --detail "…"
 ```
 
+## Git remote
+
+```
+origin  https://github.com/elmillgoa/Draywar-Alpha.git
+branch  main
+```
+
+Push at end of session (`/wrap`). Do not force-push `main` without asking Elliot.
+
 ## Borrowed from prior Draywar work
 
 GUT, gdtoolkit workflow, boundary/magic-number/globals checkers, journal helper, MCP Pro layout, and session skills were adapted from the earlier Claude-era project. **Code and design authority start over here under Alpha docs.**

@@ -36,7 +36,16 @@ session starts here** (numbered, first item actionable cold).
 
 Version-bump. Docs and code must not diverge.
 
-## Step 6 — Commit (and push if remote exists)
+## Step 6 — Commit and push
+
+Remote backup: `https://github.com/elmillgoa/Draywar-Alpha` (`origin/main`).
+
+```
+git push
+git status -sb
+```
+
+A session that ends unpushed leaves everything since the last push on one machine only.
 
 ## Report to Elliot
 
