@@ -168,6 +168,8 @@ func _on_dock_requested(station_id: StringName) -> void:
 	_ship.visible = false
 	_emit_prompt_if_changed(&"", false)
 	_charge_dock_fee()
+	# E3.3: contraband inspection only on fee-charging docks (not session restore).
+	_inspect_contraband()
 	EventBus.on_docked.emit(docked_id)
 
 
@@ -189,8 +191,21 @@ func _charge_dock_fee() -> void:
 			var as_text: String = system_raw
 			system_id = StringName(as_text)
 	# Station controller standing drives E1.5 fee surcharge when available.
+	# charge_dock_fee also runs E3.2 debt grace (session restore never calls this).
 	var station_id: StringName = _controller.docked_station_id()
 	wallet_node.call(&"charge_dock_fee", system_id, station_id)
+
+
+## E3.3 jurisdictional contraband check. CargoService is single writer for hold
+## + inspection side effects (fine, standing via StandingService, seize).
+func _inspect_contraband() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	var cargo_node: Node = tree.get_first_node_in_group(&"cargo_service")
+	if cargo_node == null or not cargo_node.has_method(&"inspect_on_dock"):
+		return
+	cargo_node.call(&"inspect_on_dock")
 
 
 func _emit_dock_refused(station_id: StringName) -> void:

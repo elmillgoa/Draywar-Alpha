@@ -16,6 +16,8 @@ const BUTTON_BORDER: Color = Color(0.45, 0.65, 0.80, 0.9)
 const BUTTON_DISABLED_BG: Color = Color(0.12, 0.12, 0.14, 0.7)
 const FONT_COLOR: Color = Color(0.92, 0.94, 0.96, 1.0)
 const FONT_COLOR_MUTED: Color = Color(0.72, 0.78, 0.86, 1.0)
+## Credits / funds warning (E3.1 low-funds HUD).
+const FONT_COLOR_WARNING: Color = Color(0.95, 0.72, 0.28, 1.0)
 const TITLE_COLOR: Color = Color(0.95, 0.88, 0.55, 1.0)
 const ACCENT: Color = Color(0.35, 0.78, 0.95, 1.0)
 const CORNER_RADIUS: int = 6

@@ -186,6 +186,8 @@ func _sync_hull_id_from_service() -> void:
 
 func _physics_process(delta: float) -> void:
 	var dt: float = TimeScale.scaled_delta(delta)
+	# E3.1: life-support burns undocked (crippled or flying); off while docked.
+	_wallet_tick_upkeep(dt)
 	if _fire_cooldown > 0.0:
 		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
 
@@ -642,6 +644,12 @@ func _wallet_has_fuel() -> bool:
 	if wallet == null or not wallet.has_method(&"has_fuel"):
 		return true
 	return wallet.call(&"has_fuel") == true
+
+
+func _wallet_tick_upkeep(dt: float) -> void:
+	var wallet: Node = _wallet_node()
+	if wallet != null and wallet.has_method(&"tick_upkeep"):
+		wallet.call(&"tick_upkeep", dt, _is_docked())
 
 
 func _wallet_burn(dt: float, throttle_value: float, afterburning: bool) -> void:

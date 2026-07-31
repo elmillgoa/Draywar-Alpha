@@ -11,6 +11,7 @@ extends CanvasLayer
 var _panel: PanelContainer = null
 var _ship_label: Label = null
 var _credits_label: Label = null
+var _debt_label: Label = null
 var _cargo_label: Label = null
 var _fuel_label: Label = null
 var _hull_label: Label = null
@@ -28,6 +29,7 @@ func _ready() -> void:
 	EventBus.on_captain_sheet_close_requested.connect(_on_close_requested)
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
 	EventBus.on_credits_changed.connect(_on_credits_changed)
+	EventBus.on_debt_changed.connect(_on_debt_changed)
 	EventBus.on_hull_changed.connect(_on_hull_changed)
 	EventBus.on_hull_purchased.connect(_on_hull_purchased)
 
@@ -41,6 +43,8 @@ func _exit_tree() -> void:
 		EventBus.on_cargo_changed.disconnect(_on_cargo_changed)
 	if EventBus.on_credits_changed.is_connected(_on_credits_changed):
 		EventBus.on_credits_changed.disconnect(_on_credits_changed)
+	if EventBus.on_debt_changed.is_connected(_on_debt_changed):
+		EventBus.on_debt_changed.disconnect(_on_debt_changed)
 	if EventBus.on_hull_changed.is_connected(_on_hull_changed):
 		EventBus.on_hull_changed.disconnect(_on_hull_changed)
 	if EventBus.on_hull_purchased.is_connected(_on_hull_purchased):
@@ -62,6 +66,11 @@ func _on_cargo_changed() -> void:
 
 
 func _on_credits_changed(_credits: int) -> void:
+	if visible:
+		_refresh_wallet()
+
+
+func _on_debt_changed(_debt_owed: int, _lender_id: StringName, _grace_docks_left: int) -> void:
 	if visible:
 		_refresh_wallet()
 
@@ -111,6 +120,7 @@ func _build_ui() -> void:
 
 	_ship_label = _add_line(layout)
 	_credits_label = _add_line(layout)
+	_debt_label = _add_line(layout)
 	_cargo_label = _add_line(layout)
 	_fuel_label = _add_line(layout)
 	_hull_label = _add_line(layout)
@@ -187,6 +197,8 @@ func _ship_display_name() -> String:
 
 func _refresh_wallet() -> void:
 	var credits: int = 0
+	var debt_owed: int = 0
+	var debt_lender: StringName = &""
 	var cargo_used: int = 0
 	var cargo_cap: int = BalanceEconomy.CARGO_CAPACITY
 	var fuel_pct: int = int(BalanceEconomy.PERCENT_SCALE)
@@ -200,6 +212,14 @@ func _refresh_wallet() -> void:
 	if wallet != null:
 		if wallet.has_method(&"credits"):
 			credits = _variant_to_int(wallet.call(&"credits"))
+		if wallet.has_method(&"debt_state"):
+			var debt_raw: Variant = wallet.call(&"debt_state")
+			if typeof(debt_raw) == TYPE_DICTIONARY:
+				var debt: Dictionary = debt_raw
+				if debt.has(&"owed"):
+					debt_owed = _variant_to_int(debt[&"owed"])
+				if debt.has(&"lender_id"):
+					debt_lender = _variant_to_name(debt[&"lender_id"])
 		if wallet.has_method(&"fuel") and wallet.has_method(&"fuel_max"):
 			var fuel: float = _variant_to_float(wallet.call(&"fuel"))
 			var fuel_max: float = _variant_to_float(wallet.call(&"fuel_max"))
@@ -216,6 +236,14 @@ func _refresh_wallet() -> void:
 		if cargo.has_method(&"capacity"):
 			cargo_cap = _variant_to_int(cargo.call(&"capacity"))
 	_credits_label.text = BalanceSession.SHEET_CREDITS_FORMAT % credits
+	if _debt_label != null:
+		if debt_owed > 0:
+			var lender_name: String = _content_name(debt_lender)
+			if lender_name.is_empty():
+				lender_name = _content_name(BalanceEconomy.LOAN_LENDER_ENTITY_ID)
+			_debt_label.text = BalanceSession.SHEET_DEBT_FORMAT % [debt_owed, lender_name]
+		else:
+			_debt_label.text = BalanceSession.SHEET_DEBT_NONE
 	_cargo_label.text = BalanceSession.SHEET_CARGO_FORMAT % [cargo_used, cargo_cap]
 	_fuel_label.text = BalanceSession.SHEET_FUEL_FORMAT % fuel_pct
 	_hull_label.text = BalanceSession.SHEET_HULL_FORMAT % hull_pct
@@ -257,6 +285,19 @@ func _refresh_job() -> void:
 				target_id = _variant_to_name(mission.call(&"active_target_system_id"))
 			_job_label.text = (BalanceSession.SHEET_JOB_BOUNTY_FORMAT % _content_name(target_id))
 			_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_BOUNTY_HUNT
+		return
+	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		var cargo_name: String = _smuggle_cargo_name(template_id)
+		var smuggle_dest: StringName = &""
+		if mission.has_method(&"active_destination_station_id"):
+			smuggle_dest = _variant_to_name(mission.call(&"active_destination_station_id"))
+		if String(smuggle_dest).is_empty():
+			_job_label.text = (BalanceSession.SHEET_JOB_SMUGGLE_NO_DEST_FORMAT % cargo_name)
+		else:
+			_job_label.text = (
+				BalanceSession.SHEET_JOB_SMUGGLE_FORMAT % [cargo_name, _content_name(smuggle_dest)]
+			)
+		_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_SMUGGLE
 		return
 	var job_name: String = _content_name(template_id)
 	var dest_id: StringName = &""
@@ -331,6 +372,20 @@ func _content_name(id: StringName) -> String:
 		if item != null and not item.display_name.is_empty():
 			return item.display_name
 	return String(id)
+
+
+## Commodity display name for an active smuggle template, or "cargo".
+func _smuggle_cargo_name(template_id: StringName) -> String:
+	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
+		return "cargo"
+	var item: ContentItem = ContentLibrary.item(template_id)
+	if item == null or not (item is ContractType):
+		return "cargo"
+	var contract: ContractType = item as ContractType
+	var cargo_id: StringName = contract.cargo_commodity_id
+	if String(cargo_id).is_empty():
+		return "cargo"
+	return _content_name(cargo_id)
 
 
 func _variant_to_name(value: Variant) -> StringName:

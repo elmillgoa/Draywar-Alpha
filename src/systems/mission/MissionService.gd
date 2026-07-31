@@ -1,14 +1,16 @@
 class_name MissionService
 extends Node
 
-## One active mission max; outcomes move Entity standing — Alpha A3 / E1.3.
+## One active mission max; outcomes move Entity standing — Alpha A3 / E1.3 / E3.4.
 ##
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A3, docs/BETA_E1_LEGIBLE_SECTOR.md E1.3
-## Law: docs/reputation_and_standing.md §7
+## E3.4 smuggle: docs/BETA_E3_ECONOMY.md. Law: docs/reputation_and_standing.md §7
 ##
 ## Not a standing writer. Completes/fails/abandons call StandingService.
 ## Child of Main (not an autoload). Optional save section `mission` (B2).
 ## Delivery: turn in at destination. Bounty: kill in target system, then turn in.
+## Smuggle: accept loads cargo; complete needs dest + cargo still held; abandon
+## leaves cargo. Reach contraband inspection still applies to munitions holds.
 ## Console: `mission list|accept|complete|fail|abandon|status`.
 
 const MISSION: StringName = &"mission"
@@ -122,6 +124,7 @@ func active_target_system_id() -> StringName:
 
 
 ## True when the kill/objective gate is satisfied (delivery always true).
+## Smuggle: cargo qty for the template commodity must still be in the hold.
 func is_objective_ready() -> bool:
 	if not has_active():
 		return false
@@ -130,6 +133,8 @@ func is_objective_ready() -> bool:
 		return false
 	if template.kind == BalanceStanding.MISSION_KIND_BOUNTY:
 		return _bounty_kills >= BalanceStanding.BOUNTY_KILLS_REQUIRED
+	if template.kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		return _hold_has_smuggle_cargo(template)
 	return true
 
 
@@ -152,6 +157,7 @@ func to_section() -> Dictionary:
 
 
 ## Restore mission from save. Emits on_mission_accepted so HUD refreshes.
+## Does not re-load smuggle cargo (cargo section already restored the hold).
 func apply_section(raw: Variant) -> void:
 	reset()
 	if typeof(raw) != TYPE_DICTIONARY:
@@ -165,8 +171,8 @@ func apply_section(raw: Variant) -> void:
 	var template: ContractType = _template(template_id)
 	if template == null:
 		return
-	# Prefer accept() so HUD/listeners refresh without double-standing writes.
-	if not accept(template_id):
+	# Skip cargo load on restore — hold already has inventory from cargo section.
+	if not _accept_internal(template_id, false):
 		return
 	if data.get(BalanceSession.MISSION_KEY_OBJECTIVE_MET, false) == true:
 		_bounty_kills = BalanceStanding.BOUNTY_KILLS_REQUIRED
@@ -177,12 +183,23 @@ func list_template_ids() -> Array[StringName]:
 	return ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY)
 
 
-## Accept a template. Fails if one is already active or id is unknown.
+## Accept a template. Fails if one is already active, id unknown, or (smuggle)
+## free volume cannot hold the cargo load.
 func accept(template_id: StringName) -> bool:
+	return _accept_internal(template_id, true)
+
+
+func _accept_internal(template_id: StringName, load_smuggle_cargo: bool) -> bool:
 	if has_active():
 		return false
 	var template: ContractType = _template(template_id)
 	if template == null:
+		return false
+	if (
+		load_smuggle_cargo
+		and template.kind == BalanceStanding.MISSION_KIND_SMUGGLE
+		and not _try_load_smuggle_cargo(template)
+	):
 		return false
 	_active_template_id = template_id
 	_state = STATE_ACTIVE
@@ -235,7 +252,8 @@ func try_complete_at(station_id: StringName) -> Dictionary:
 
 
 ## Complete the active mission → positive standing + credits with offering Entity.
-## Bounty requires the kill objective first; delivery has no kill gate.
+## Bounty requires the kill objective first; smuggle needs cargo still held;
+## delivery has no extra gate.
 func complete() -> Dictionary:
 	if has_active() and not is_objective_ready():
 		return {
@@ -330,11 +348,17 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 		reason = BalanceStanding.REASON_MISSION_FAIL
 		outcome = OUTCOME_FAILED
 
+	# Smuggle complete removes the cargo load; abandon/fail leave it (locked D).
+	if succeeded and not abandoned and template.kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		if not _remove_smuggle_cargo(template):
+			return empty
+
 	var applied: float = StandingService.apply_entity_delta(entity_id, raw_delta, reason, true)
 	var pay: int = 0
 	if succeeded and not abandoned:
-		pay = maxi(0, template.pay_credits)
-		_pay_credits(pay)
+		var gross: int = maxi(0, template.pay_credits)
+		# Net after E3.2 garnish (if any); station turn-in shows what the player got.
+		pay = _pay_credits(gross)
 
 	if abandoned:
 		EventBus.on_mission_abandoned.emit(template_id, entity_id, applied)
@@ -355,15 +379,35 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 	}
 
 
-func _pay_credits(amount: int) -> void:
+## Pay job credits through the wallet garnish path when present (E3.2).
+## Returns net credits the player received.
+func _pay_credits(amount: int) -> int:
+	var net: int = 0
 	if amount <= 0:
-		return
+		return net
 	var tree: SceneTree = get_tree()
 	if tree == null:
-		return
+		return net
 	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
-	if wallet != null and wallet.has_method(&"add_credits"):
+	if wallet == null:
+		return net
+	if wallet.has_method(&"apply_job_pay_with_garnish"):
+		var net_raw: Variant = wallet.call(&"apply_job_pay_with_garnish", amount)
+		net = _variant_to_int(net_raw)
+	elif wallet.has_method(&"add_credits"):
 		wallet.call(&"add_credits", amount)
+		net = amount
+	return net
+
+
+func _variant_to_int(value: Variant) -> int:
+	if typeof(value) == TYPE_INT:
+		var as_int: int = value
+		return as_int
+	if typeof(value) == TYPE_FLOAT:
+		var as_float: float = value
+		return int(as_float)
+	return 0
 
 
 func _template(template_id: StringName) -> ContractType:
@@ -373,6 +417,60 @@ func _template(template_id: StringName) -> ContractType:
 	if item is ContractType:
 		return item as ContractType
 	return null
+
+
+func _cargo_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"cargo_service")
+
+
+## True when hold has at least the smuggle template quantity of its commodity.
+func _hold_has_smuggle_cargo(template: ContractType) -> bool:
+	if template == null:
+		return false
+	var commodity_id: StringName = _normalize_id(template.cargo_commodity_id)
+	var qty: int = maxi(0, template.cargo_quantity)
+	if String(commodity_id).is_empty() or qty <= 0:
+		return false
+	var cargo: Node = _cargo_service()
+	if cargo == null or not cargo.has_method(&"quantity"):
+		return false
+	var have: int = _variant_to_int(cargo.call(&"quantity", commodity_id))
+	return have >= qty
+
+
+## Load smuggle cargo into the hold. Fails when free volume is too small.
+func _try_load_smuggle_cargo(template: ContractType) -> bool:
+	if template == null:
+		return false
+	var commodity_id: StringName = _normalize_id(template.cargo_commodity_id)
+	var qty: int = maxi(0, template.cargo_quantity)
+	if String(commodity_id).is_empty() or qty <= 0:
+		return false
+	var cargo: Node = _cargo_service()
+	if cargo == null:
+		return false
+	if not cargo.has_method(&"can_add") or not cargo.has_method(&"add"):
+		return false
+	if cargo.call(&"can_add", commodity_id, qty) != true:
+		return false
+	return cargo.call(&"add", commodity_id, qty) == true
+
+
+## Remove smuggle cargo on successful turn-in. Fails if hold is short.
+func _remove_smuggle_cargo(template: ContractType) -> bool:
+	if template == null:
+		return false
+	var commodity_id: StringName = _normalize_id(template.cargo_commodity_id)
+	var qty: int = maxi(0, template.cargo_quantity)
+	if String(commodity_id).is_empty() or qty <= 0:
+		return false
+	var cargo: Node = _cargo_service()
+	if cargo == null or not cargo.has_method(&"remove"):
+		return false
+	return cargo.call(&"remove", commodity_id, qty) == true
 
 
 # --- Console -----------------------------------------------------------------
@@ -457,6 +555,15 @@ func _run_status() -> void:
 			(
 				"Active mission: %s (bounty %s, target %s)"
 				% [active_template_id(), phase, active_target_system_id()]
+			)
+		)
+		return
+	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		var cargo_state: String = "cargo ok" if is_objective_ready() else "cargo missing"
+		_say(
+			(
+				"Active mission: %s (smuggle %s → %s)"
+				% [active_template_id(), cargo_state, active_destination_station_id()]
 			)
 		)
 		return

@@ -3,7 +3,7 @@ extends ContentItem
 
 ## Mission / contract template — full-sized Alpha shape, tiny A3 content.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A3, docs/BETA_E3_ECONOMY.md E3.4
 ##
 ## Offered by an Entity. Standing outcomes default to BalanceStanding mission
 ## deltas; content may override magnitudes. One active mission max at runtime
@@ -12,7 +12,8 @@ extends ContentItem
 ## Who pays standing for this contract.
 @export var offering_entity_id: StringName = &""
 
-## Mission family (e.g. delivery, bounty). See BalanceStanding.MISSION_KIND_*.
+## Mission family (e.g. delivery, bounty, smuggle).
+## See BalanceStanding.MISSION_KIND_*.
 @export var kind: StringName = BalanceStanding.MISSION_KIND_DELIVERY
 
 ## Standing on complete / fail / abandon. Defaults match BalanceStanding.
@@ -28,6 +29,12 @@ extends ContentItem
 
 ## Bounty: system where a hostile kill counts. Empty for non-bounty kinds.
 @export var target_system_id: StringName = &""
+
+## Smuggle: commodity content id loaded into the hold on accept.
+@export var cargo_commodity_id: StringName = &""
+
+## Smuggle: units loaded on accept; must still be held at turn-in.
+@export var cargo_quantity: int = 0
 
 
 ## Everything wrong with this contract template. Empty means valid.
@@ -62,6 +69,26 @@ func validation_errors() -> PackedStringArray:
 					"`destination_station_id` is empty. Bounty contracts name the "
 					+ "station where you turn the job in after the kill."
 				)
+			)
+
+	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		if String(destination_station_id).strip_edges().is_empty():
+			problems.append(
+				(
+					"`destination_station_id` is empty. Smuggle contracts name the "
+					+ "station that receives the cargo."
+				)
+			)
+		if String(cargo_commodity_id).strip_edges().is_empty():
+			problems.append(
+				(
+					"`cargo_commodity_id` is empty. Smuggle contracts name the "
+					+ "commodity loaded on accept."
+				)
+			)
+		if cargo_quantity <= 0:
+			problems.append(
+				"`cargo_quantity` must be greater than zero for smuggle " + "contracts."
 			)
 
 	problems.append_array(_delta_problems(standing_complete, "standing_complete"))

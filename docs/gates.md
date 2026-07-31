@@ -259,3 +259,36 @@ Not a re-open of E1 or Final Alpha. Refuse → iterate E2 list only. Sign → op
 
 *(No attempts yet — E2 code complete 2026-07-31; awaiting Elliot play.)*
 
+---
+
+## E3.6 — Economy pressure feel
+
+**Criteria:** Do bills, risk, and the thin debt hatch force real money choices?  
+Not a re-open of E2. Refuse → iterate E3 list only. Sign → open roadmap E4.
+
+**What that means in play (plain):**
+
+- Sitting in free-fly burns credits; docked life is free of that drain.
+- Fuel and jumps still cost; idle multi-hop travel without earning loses money vs taking a courier.
+- Broke is not dead — Free Haulers loan at Services once; repay or live with garnish.
+- Munitions are illegal at Reach docks (fine + standing + seize); legal elsewhere.
+- Smuggle jobs pay more because of that risk; Hauler can take them, Fighter hold cannot.
+- Captain sheet and HUD show money, fuel, hull, debt, and active job clearly.
+
+### Play script (cold, ~30–45 min)
+
+1. **New Game** — docked Alpha Port. Open **Captain sheet** (pause or menu): credits **500**, fuel full, hull full, **Debt — none**, no job.
+2. **Undock Alpha** — fly for ~30–60s. Watch **credits fall** on HUD (LOW warn near 50). Re-dock — drain stops. Note dock fee bite.
+3. **First courier** — Jobs: accept courier → Beta. Jump (fuel drops). Deliver / turn in. Credits up. Compare “working” vs step 2 idle.
+4. **Pressure without earning (optional feel)** — undock, free-fly and/or hop without taking pay. Confirm you are poorer for it; still not stuck if you re-dock for a job.
+5. **Broke escape** — if not broke yet, spend on refuel/fees or free-fly down. At Services: **Borrow 400 (owe 480)**. Sheet shows debt. No second borrow while open.
+6. **Garnish** — take and complete a job with debt open. Pay is less than full (25% toward debt); remainder still lands in credits. **Repay** at Services when you can; debt clears; borrow available again.
+7. **Contraband** — buy munitions at **Beta** (legal). Dock **Alpha** with them still held → fine, Reach standing hit, munitions seized. Try trade at Alpha: munitions **RESTRICTED**.
+8. **Smuggle** — at Beta (Hauler): accept smuggle → Gamma. Cargo loads. Do **not** stop at Reach with the load if you want the pay. Turn in at Gamma Outpost for **240**. (Fighter: confirm accept refuses — hold too small.)
+9. **Save / Continue** once with debt and/or cargo state if interesting.
+10. Judge: do bills + risk force choices worth E4, or still optional money?
+
+### Attempt log
+
+*(No attempts yet — E3 code complete 2026-07-31; awaiting Elliot play.)*
+

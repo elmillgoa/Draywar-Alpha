@@ -106,6 +106,9 @@ const MISSION_KIND_DELIVERY: StringName = &"delivery"
 ## ContractType.kind value for E1.3 patrol/bounty (kill then turn in).
 const MISSION_KIND_BOUNTY: StringName = &"bounty"
 
+## ContractType.kind value for E3.4 smuggle (load cargo, deliver still held).
+const MISSION_KIND_SMUGGLE: StringName = &"smuggle"
+
 ## Hostiles that must die in the target system before bounty turn-in.
 const BOUNTY_KILLS_REQUIRED: int = 1
 
@@ -193,6 +196,27 @@ const REASON_RECOVERY_FAIL: StringName = &"recovery_fail"
 const REASON_RECOVERY_ABANDON: StringName = &"recovery_abandon"
 const REASON_RECOVERY_BETRAYAL: StringName = &"recovery_betrayal"
 const REASON_RECOVERY_FAVOR: StringName = &"recovery_favor"
+## E3.2: emergency loan grace expired (Free Haulers Entity only).
+const REASON_DEBT_GRACE_EXPIRED: StringName = &"debt_grace_expired"
+
+## E3.3: dock inspection found jurisdictional contraband for the controller.
+const REASON_CONTRABAND: StringName = &"contraband"
+
+# --- Debt grace standing hit (E3.2) ----------------------------------------
+# Magnitude lives here (standing law). Wallet only requests the write via
+# StandingService. No dock ban invent; no ship loss.
+
+## Free Haulers standing delta when grace docks are exhausted with unpaid debt.
+## Mild-hard Unfriendly lean from Neutral; not Hostile-floor.
+const DEBT_GRACE_EXPIRED_DELTA: float = -12.0
+
+# --- Contraband dock inspection (E3.3 / D3) --------------------------------
+# Magnitude lives here. CargoService requests the write via StandingService.
+# Per-Entity jurisdiction only — not a global ban. No new tiers.
+
+## Controller standing hit when docked with restricted goods in hold.
+## Mild Unfriendly lean from Neutral; not Hostile-floor (same band as debt).
+const CONTRABAND_STANDING_DELTA: float = -10.0
 
 # --- Status moment / HUD copy ----------------------------------------------
 
@@ -286,6 +310,12 @@ const STATION_ACCEPT_BOUNTY_LABEL: String = "Accept bounty"
 ## Station menu: accept bounty with target system display name.
 const STATION_ACCEPT_BOUNTY_FORMAT: String = "Accept bounty — clear %s"
 
+## Station menu: accept smuggle (no destination fallback).
+const STATION_ACCEPT_SMUGGLE_LABEL: String = "Accept smuggle"
+
+## Station menu: accept smuggle with destination display name.
+const STATION_ACCEPT_SMUGGLE_FORMAT: String = "Accept smuggle → %s"
+
 ## Station menu: talk to recovery contact when a step is available.
 const STATION_RECOVERY_TALK_FORMAT: String = "Talk to %s"
 
@@ -300,6 +330,12 @@ const HUD_MISSION_BOUNTY_FORMAT: String = "BOUNTY  clear hostiles in %s"
 
 ## HUD bounty ready for turn-in; arg = destination station display name.
 const HUD_MISSION_BOUNTY_READY_FORMAT: String = "BOUNTY  turn in at %s"
+
+## HUD smuggle active; args = commodity display, destination display.
+const HUD_MISSION_SMUGGLE_FORMAT: String = "SMUGGLE  %s → %s"
+
+## HUD smuggle without destination (should not ship in content).
+const HUD_MISSION_SMUGGLE_NO_DEST_FORMAT: String = "SMUGGLE  %s"
 
 ## `recovery accept` / `favor` arg counts (tokens after the verb).
 const CONSOLE_RECOVERY_ACCEPT_ARGS: int = 2

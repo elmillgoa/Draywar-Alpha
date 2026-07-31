@@ -710,6 +710,37 @@ No parameters.
 **Emitted by** `StationMenu`.
 **Listened to by** `WalletService`.
 
+### `on_loan_borrow_requested()`
+
+UI asked to take the Free Haulers emergency loan (E3.2, docked Services).
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `WalletService`.
+
+### `on_loan_repay_requested()`
+
+UI asked to repay open debt from credits (E3.2, docked Services).
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `WalletService`.
+
+### `on_debt_changed(debt_owed: int, lender_id: StringName, grace_docks_left: int)`
+
+Emergency loan debt state changed (borrow, garnish, repay, grace burn, load).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `debt_owed` | `int` | Credits still owed (>= 0). |
+| `lender_id` | `StringName` | Lender Entity id, or empty when clear. |
+| `grace_docks_left` | `int` | Grace dock events remaining before standing hit. |
+
+**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Listened to by** `StationMenu`, `CaptainSheet`.
+
 ## Session shell (B2)
 
 ### `on_new_game_requested()`
@@ -843,6 +874,22 @@ A legal buy or sell finished; credits and cargo already updated.
 
 **Emitted by** `CargoService`.
 **Listened to by** (debug / future sheet money event; optional).
+
+### `on_contraband_seized(station_id: StringName, entity_id: StringName, commodity_ids: PackedStringArray, fine_paid: int, standing_delta: float)`
+
+Fee-charging dock inspection found goods restricted for the station controller.
+Fine and standing hit already applied (standing via StandingService only).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Dock where inspection ran. |
+| `entity_id` | `StringName` | Controller Entity that enforced (e.g. Reach). |
+| `commodity_ids` | `PackedStringArray` | Restricted commodity ids found (string form). |
+| `fine_paid` | `int` | Credits actually taken (partial if broke). |
+| `standing_delta` | `float` | Applied standing change for that Entity. |
+
+**Emitted by** `CargoService` (`inspect_on_dock`, real docks only).
+**Listened to by** (optional UI toast; console line also emitted).
 
 ## Hull ownership / switch (E2.5)
 

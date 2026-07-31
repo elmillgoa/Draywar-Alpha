@@ -14,6 +14,11 @@ static func accept_job_label(template_id: StringName) -> String:
 		if String(target_id).is_empty():
 			return BalanceStanding.STATION_ACCEPT_BOUNTY_LABEL
 		return BalanceStanding.STATION_ACCEPT_BOUNTY_FORMAT % _content_name(target_id)
+	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		var smuggle_dest: StringName = _as_name(item.get("destination_station_id"))
+		if String(smuggle_dest).is_empty():
+			return BalanceStanding.STATION_ACCEPT_SMUGGLE_LABEL
+		return BalanceStanding.STATION_ACCEPT_SMUGGLE_FORMAT % _content_name(smuggle_dest)
 	var dest_id: StringName = _as_name(item.get("destination_station_id"))
 	if String(dest_id).is_empty():
 		return BalanceStanding.STATION_ACCEPT_JOB_LABEL

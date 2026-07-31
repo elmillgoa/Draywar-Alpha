@@ -314,6 +314,20 @@ func _content_name(id: StringName) -> String:
 	return String(id)
 
 
+## Commodity display name for an active smuggle template, or "cargo".
+func _smuggle_cargo_name(template_id: StringName) -> String:
+	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
+		return "cargo"
+	var item: ContentItem = ContentLibrary.item(template_id)
+	if item == null or not (item is ContractType):
+		return "cargo"
+	var contract: ContractType = item as ContractType
+	var cargo_id: StringName = contract.cargo_commodity_id
+	if String(cargo_id).is_empty():
+		return "cargo"
+	return _content_name(cargo_id)
+
+
 func _variant_to_name(value: Variant) -> StringName:
 	if typeof(value) == TYPE_STRING_NAME:
 		var as_name: StringName = value
@@ -394,7 +408,12 @@ func _on_throttle_changed(throttle: float) -> void:
 
 
 func _on_credits_changed(credits: int) -> void:
-	_credits_label.text = BalanceEconomy.HUD_CREDITS_FORMAT % credits
+	if credits <= BalanceEconomy.UPKEEP_LOW_FUNDS_THRESHOLD:
+		_credits_label.text = BalanceEconomy.HUD_CREDITS_LOW_FORMAT % credits
+		_credits_label.add_theme_color_override(&"font_color", BalanceUi.FONT_COLOR_WARNING)
+	else:
+		_credits_label.text = BalanceEconomy.HUD_CREDITS_FORMAT % credits
+		_credits_label.add_theme_color_override(&"font_color", BalanceUi.FONT_COLOR)
 
 
 func _on_fuel_changed(fuel: float, fuel_max: float) -> void:
@@ -460,6 +479,19 @@ func _refresh_mission_line() -> void:
 				target_id = _variant_to_name(service.call(&"active_target_system_id"))
 			_mission_label.text = (
 				BalanceStanding.HUD_MISSION_BOUNTY_FORMAT % _content_name(target_id)
+			)
+		return
+	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		var cargo_name: String = _smuggle_cargo_name(template_id)
+		var smuggle_dest: StringName = &""
+		if service.has_method(&"active_destination_station_id"):
+			smuggle_dest = _variant_to_name(service.call(&"active_destination_station_id"))
+		if String(smuggle_dest).is_empty():
+			_mission_label.text = (BalanceStanding.HUD_MISSION_SMUGGLE_NO_DEST_FORMAT % cargo_name)
+		else:
+			_mission_label.text = (
+				BalanceStanding.HUD_MISSION_SMUGGLE_FORMAT
+				% [cargo_name, _content_name(smuggle_dest)]
 			)
 		return
 	var job_name: String = _content_name(template_id)

@@ -48,6 +48,9 @@ static func refresh(
 		var hold: int = 0
 		if cargo != null and cargo.has_method(&"quantity"):
 			hold = _variant_to_int(cargo.call(&"quantity", commodity_id))
+		var restricted: bool = false
+		if cargo != null and cargo.has_method(&"is_restricted_at_dock"):
+			restricted = cargo.call(&"is_restricted_at_dock", commodity_id) == true
 		var buy_price: int = BalanceEconomy.buy_price_at(commodity, system_id)
 		var sell_price: int = BalanceEconomy.sell_price_at(commodity, system_id)
 		var row: HBoxContainer = HBoxContainer.new()
@@ -58,10 +61,15 @@ static func refresh(
 		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		line.text = (
-			BalanceEconomy.STATION_TRADE_LINE_FORMAT
-			% [commodity.display_name, buy_price, sell_price, hold]
-		)
+		if restricted:
+			line.text = (
+				BalanceEconomy.STATION_TRADE_RESTRICTED_FORMAT % [commodity.display_name, hold]
+			)
+		else:
+			line.text = (
+				BalanceEconomy.STATION_TRADE_LINE_FORMAT
+				% [commodity.display_name, buy_price, sell_price, hold]
+			)
 		row.add_child(line)
 
 		var buy_btn: Button = Button.new()
@@ -70,7 +78,7 @@ static func refresh(
 			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
 		)
 		var can_buy: bool = false
-		if cargo != null and cargo.has_method(&"can_buy"):
+		if not restricted and cargo != null and cargo.has_method(&"can_buy"):
 			can_buy = cargo.call(&"can_buy", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
 		buy_btn.disabled = not can_buy
 		buy_btn.pressed.connect(on_buy.bind(commodity_id))
@@ -82,7 +90,7 @@ static func refresh(
 			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
 		)
 		var can_sell: bool = false
-		if cargo != null and cargo.has_method(&"can_sell"):
+		if not restricted and cargo != null and cargo.has_method(&"can_sell"):
 			can_sell = cargo.call(&"can_sell", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
 		sell_btn.disabled = not can_sell
 		sell_btn.pressed.connect(on_sell.bind(commodity_id))

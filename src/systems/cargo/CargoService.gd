@@ -1,14 +1,16 @@
 class_name CargoService
 extends Node
 
-## Player cargo hold and station buy/sell — Path C B3.
+## Player cargo hold and station buy/sell — Path C B3 / E3.3.
 ##
-## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
+## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B3, docs/BETA_E3_ECONOMY.md E3.3
 ##
 ## Single writer for cargo inventory. Child of Main (not an autoload).
 ## Optional save section `cargo` (schema v1, no envelope bump).
-## Standing writes only via StandingService.record_legal_trade after legal trades.
+## Standing writes only via StandingService (legal trade + contraband inspection).
 ## Console: `cargo` lists hold contents.
+## E3.3: open-market buy/sell blocked when commodity is contraband for the
+## dock controller; fee-charging docks call inspect_on_dock() (not session restore).
 
 var _inventory: Dictionary = {}  # StringName commodity_id → int qty
 
@@ -161,39 +163,147 @@ func trade_allowed_at_dock() -> bool:
 	return not BalanceEconomy.trade_denied_for_tier(tier)
 
 
-## True when docked and can afford + fit a buy of this qty.
-func can_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
-	if qty <= 0 or not _is_docked():
+## True when this commodity is open-market restricted for the dock controller (E3.3).
+func is_restricted_at_dock(commodity_id: StringName) -> bool:
+	if not _is_docked():
 		return false
-	if not trade_allowed_at_dock():
+	return is_restricted_for_controller(commodity_id, _dock_controller())
+
+
+## True when this commodity is restricted for a station controller Entity.
+func is_restricted_for_controller(commodity_id: StringName, controller: StringName) -> bool:
+	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
 		return false
 	var commodity: Commodity = _commodity(commodity_id)
 	if commodity == null:
 		return false
-	if not can_add(commodity_id, qty):
-		return false
-	var cost: int = _unit_buy_price(commodity) * qty
-	var wallet: Node = _wallet()
-	if wallet == null or not wallet.has_method(&"can_afford"):
-		return false
-	return wallet.call(&"can_afford", cost) == true
+	return commodity.is_contraband_for(controller)
+
+
+## Fee-charging dock inspection (E3.3). Call only from real docks — not session
+## restore. If hold has goods restricted for the controller: fine (partial if
+## broke), standing hit via StandingService, optional seize-all. Returns a
+## result dictionary for tests / UI.
+func inspect_on_dock() -> Dictionary:
+	var empty: Dictionary = {
+		&"found": false,
+		&"fine_paid": 0,
+		&"standing_delta": 0.0,
+		&"entity_id": &"",
+		&"station_id": &"",
+		&"seized_units": 0,
+	}
+	if not _is_docked():
+		return empty
+	var controller: StringName = _dock_controller()
+	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
+		return empty
+
+	var restricted_ids: Array[StringName] = []
+	var restricted_units: int = 0
+	for key: Variant in _inventory:
+		var commodity_id: StringName = _as_name(key)
+		if not is_restricted_for_controller(commodity_id, controller):
+			continue
+		var qty: int = quantity(commodity_id)
+		if qty <= 0:
+			continue
+		restricted_ids.append(commodity_id)
+		restricted_units += qty
+
+	if restricted_units <= 0:
+		return empty
+
+	var seized_units: int = 0
+	var seized_id_strings: PackedStringArray = []
+	if BalanceEconomy.CONTRABAND_SEIZE_ALL:
+		for commodity_id: StringName in restricted_ids:
+			var qty: int = quantity(commodity_id)
+			if qty > 0 and remove(commodity_id, qty):
+				seized_units += qty
+				seized_id_strings.append(String(commodity_id))
+	else:
+		for commodity_id: StringName in restricted_ids:
+			seized_id_strings.append(String(commodity_id))
+
+	var fine_paid: int = _charge_contraband_fine(BalanceEconomy.CONTRABAND_FINE_BASE)
+	var standing_delta: float = StandingService.apply_entity_delta(
+		controller,
+		BalanceStanding.CONTRABAND_STANDING_DELTA,
+		BalanceStanding.REASON_CONTRABAND,
+		false
+	)
+	var station_id: StringName = _docked_station_id()
+	var station_name: String = _content_display_name(station_id)
+	var entity_name: String = _content_display_name(controller)
+	var line: String = ""
+	if BalanceEconomy.CONTRABAND_SEIZE_ALL and seized_units > 0:
+		line = (
+			BalanceEconomy.CONSOLE_CONTRABAND_SEIZED_FORMAT % [station_name, fine_paid, entity_name]
+		)
+	else:
+		line = (
+			BalanceEconomy.CONSOLE_CONTRABAND_FINE_FORMAT % [station_name, fine_paid, entity_name]
+		)
+	EventBus.on_console_output.emit(line)
+	EventBus.on_contraband_seized.emit(
+		station_id, controller, seized_id_strings, fine_paid, standing_delta
+	)
+	return {
+		&"found": true,
+		&"fine_paid": fine_paid,
+		&"standing_delta": standing_delta,
+		&"entity_id": controller,
+		&"station_id": station_id,
+		&"seized_units": seized_units,
+	}
+
+
+## True when docked and can afford + fit a buy of this qty.
+func can_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
+	var allowed: bool = (
+		qty > 0
+		and _is_docked()
+		and trade_allowed_at_dock()
+		and not is_restricted_at_dock(commodity_id)
+	)
+	var commodity: Commodity = null
+	if allowed:
+		commodity = _commodity(commodity_id)
+		allowed = commodity != null and can_add(commodity_id, qty)
+	var wallet: Node = null
+	if allowed:
+		wallet = _wallet()
+		allowed = wallet != null and wallet.has_method(&"can_afford")
+	if allowed:
+		var cost: int = _unit_buy_price(commodity) * qty
+		allowed = wallet.call(&"can_afford", cost) == true
+	return allowed
 
 
 ## True when docked and hold has at least qty to sell.
 func can_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
-	if qty <= 0 or not _is_docked():
-		return false
-	if not trade_allowed_at_dock():
-		return false
-	if _commodity(commodity_id) == null:
-		return false
-	return quantity(commodity_id) >= qty
+	var allowed: bool = (
+		qty > 0
+		and _is_docked()
+		and trade_allowed_at_dock()
+		and not is_restricted_at_dock(commodity_id)
+		and _commodity(commodity_id) != null
+	)
+	if allowed:
+		allowed = quantity(commodity_id) >= qty
+	return allowed
 
 
 ## Buy from the docked station. Returns true on success.
 func try_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
 	var ok: bool = false
-	if qty > 0 and _is_docked() and trade_allowed_at_dock():
+	if (
+		qty > 0
+		and _is_docked()
+		and trade_allowed_at_dock()
+		and not is_restricted_at_dock(commodity_id)
+	):
 		var commodity: Commodity = _commodity(commodity_id)
 		if commodity != null and can_add(commodity_id, qty):
 			var cost: int = _unit_buy_price(commodity) * qty
@@ -215,7 +325,12 @@ func try_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT)
 ## Sell to the docked station. Returns true on success.
 func try_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
 	var ok: bool = false
-	if qty > 0 and _is_docked() and trade_allowed_at_dock():
+	if (
+		qty > 0
+		and _is_docked()
+		and trade_allowed_at_dock()
+		and not is_restricted_at_dock(commodity_id)
+	):
 		var commodity: Commodity = _commodity(commodity_id)
 		if commodity != null and quantity(commodity_id) >= qty:
 			var payout: int = _unit_sell_price(commodity) * qty
@@ -254,6 +369,38 @@ func _record_legal_trade() -> void:
 	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
 		return
 	StandingService.record_legal_trade(controller)
+
+
+## Partial fine if broke (same floor pattern as dock fees). Returns credits paid.
+func _charge_contraband_fine(amount: int) -> int:
+	if amount <= 0:
+		return 0
+	var wallet: Node = _wallet()
+	if wallet == null:
+		return 0
+	var paid: int = 0
+	if wallet.has_method(&"credits"):
+		var have_raw: Variant = wallet.call(&"credits")
+		var have: int = _variant_to_int(have_raw)
+		paid = mini(amount, maxi(0, have))
+	if paid > 0 and wallet.has_method(&"try_spend"):
+		if wallet.call(&"try_spend", paid) != true:
+			# Fall back to partial spend via add_credits if try_spend is all-or-nothing.
+			if wallet.has_method(&"add_credits"):
+				wallet.call(&"add_credits", -paid)
+			else:
+				paid = 0
+	return paid
+
+
+func _content_display_name(content_id: StringName) -> String:
+	if String(content_id).is_empty():
+		return ""
+	if ContentLibrary.has_item(content_id):
+		var item: ContentItem = ContentLibrary.item(content_id)
+		if item != null and not item.display_name.is_empty():
+			return item.display_name
+	return String(content_id)
 
 
 func _is_docked() -> bool:

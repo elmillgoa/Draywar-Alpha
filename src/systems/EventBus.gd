@@ -175,6 +175,15 @@ signal on_refuel_requested
 ## UI: request full repair at the docked station.
 signal on_repair_requested
 
+## UI: request Free Haulers emergency loan (E3.2, docked Services).
+signal on_loan_borrow_requested
+
+## UI: request manual debt repay from credits (E3.2, docked Services).
+signal on_loan_repay_requested
+
+## WalletService: debt owed / lender / grace changed (E3.2).
+signal on_debt_changed(debt_owed: int, lender_id: StringName, grace_docks_left: int)
+
 ## Main menu: start a new career.
 signal on_new_game_requested
 
@@ -214,6 +223,15 @@ signal on_cargo_changed
 ## CargoService: a buy or sell finished (credits already moved).
 signal on_trade_completed(
 	side: StringName, commodity_id: StringName, quantity: int, credits_delta: int
+)
+
+## CargoService: fee-charging dock found jurisdictional contraband (fine + standing done).
+signal on_contraband_seized(
+	station_id: StringName,
+	entity_id: StringName,
+	commodity_ids: PackedStringArray,
+	fine_paid: int,
+	standing_delta: float
 )
 
 ## PlayerShip / HostileNpc: weapon discharged (travel bolt spawn).

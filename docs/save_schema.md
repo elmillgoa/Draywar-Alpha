@@ -51,8 +51,12 @@ Console save merges this section when a wallet service is present (A5).
 | `credits` | `int` | Player credits (>= 0). |
 | `fuel` | `float` | Current fuel units. |
 | `condition` | `float` | Hull condition. |
+| `debt_owed` | `int` | Optional (E3.2). Flat amount still owed on the Free Haulers emergency loan. Missing or ≤0 → no debt. |
+| `debt_lender_id` | `String` | Optional (E3.2). Lender Entity id while debt is open (default Free Haulers when owed > 0 and key empty). |
+| `debt_grace_docks_left` | `int` | Optional (E3.2). Fee-charging docks left before Free Haulers standing hit while broke with debt. Missing with other debt keys → 0. |
 
 Missing section → boot defaults from `BalanceEconomy`.
+Missing debt keys (old saves) → no debt.
 No envelope version bump — optional inside schema v1.
 
 ### Optional section: `cargo` (schema v1)
@@ -109,6 +113,10 @@ Applied by `MissionService.apply_section()` (restores active template; emits
 |---|---|---|
 | `template_id` | `String` | Active contract template content id. |
 | `objective_met` | `bool` | Optional (E1.3). True when a bounty kill gate is done. Missing = false. |
+
+Smuggle (E3.4) does **not** add mission keys. Cargo for the job lives in the
+`cargo` section. Restore applies cargo first, then mission without re-loading
+crates (so save/load does not double the hold).
 
 Missing section → no active mission. No envelope version bump.
 

@@ -18,6 +18,61 @@ const STARTING_CREDITS: int = 500
 ## Affordable after a few jobs (MISSION_PAY_DEFAULT 120) from the 500 start.
 const FIGHTER_PURCHASE_COST: int = 1000
 
+## Life-support / free-fly upkeep while undocked (E3.1 / D1).
+## Credits burned per second of scaled game time. Docked = off.
+## 1.0 → ~30–60s free-fly is a clear bite vs STARTING_CREDITS (500);
+## broke stops drain at 0 (never negative; debt is E3.2).
+const UPKEEP_CREDITS_PER_SECOND: float = 1.0
+
+## HUD warns on the credits line at or below this balance (E3.1 optional).
+const UPKEEP_LOW_FUNDS_THRESHOLD: int = 50
+
+# --- E3.5 pressure scenario windows (integration / balance pass) ------------
+# Named so tests and balance share one free-fly / hop / short-travel definition.
+# Rates above are the real levers; these only size the scenario math.
+
+## Free-fly scaled seconds used in "idle costs more than a courier" checks.
+const SCENARIO_FREE_FLY_SLICE_SECONDS: float = 60.0
+
+## Gate hops in multi-system travel pressure (Alpha → Beta → Gamma style).
+const SCENARIO_PRESSURE_JUMP_COUNT: int = 3
+
+## Short travel upkeep window for smuggle margin vs fine + bills.
+const SCENARIO_SHORT_UPKEEP_SECONDS: float = 30.0
+
+## Brief undock window before first dock/job on a new career (softlock path).
+const SCENARIO_FIRST_JOB_UNDOCK_SECONDS: float = 20.0
+
+# --- Emergency loan (E3.2 / D2) --------------------------------------------
+# One Free Haulers thin loan. No repossession, no game-over. Grace → standing
+# hit on Free Haulers only (via StandingService). Optional wallet save keys.
+
+## Credits the player receives when borrowing (principal paid out).
+const LOAN_PRINCIPAL: int = 400
+
+## Flat amount owed after borrow (principal + 20% fee → 480).
+const LOAN_REPAY_TOTAL: int = 480
+
+## Fraction of job pay seized toward debt until clear (25%).
+const GARNISH_RATE: float = 0.25
+
+## Dock events with unpaid debt and credits below MIN_PAYMENT_FLOOR before
+## Free Haulers standing hit. Decrements only on real fee-charging docks.
+const GRACE_DOCKS: int = 3
+
+## If docked with debt and credits below this, one grace dock is burned.
+## Small floor so a broke player still feels pressure without needing a full
+## installment ready every stop.
+const MIN_PAYMENT_FLOOR: int = 20
+
+## Lender Entity content id (Free Haulers).
+const LOAN_LENDER_ENTITY_ID: StringName = &"entity_free_haulers"
+
+## Wallet mutation / log reason tags (money path; standing uses BalanceStanding).
+const REASON_LOAN_BORROW: StringName = &"loan_borrow"
+const REASON_LOAN_REPAY: StringName = &"loan_repay"
+const REASON_LOAN_GARNISH: StringName = &"loan_garnish"
+
 ## Fuel tank capacity (units). Full at boot.
 const FUEL_MAX: float = 100.0
 
@@ -25,7 +80,8 @@ const FUEL_MAX: float = 100.0
 const STARTING_FUEL: float = 100.0
 
 ## Fuel units burned per second at full throttle (scaled by throttle).
-const FUEL_BURN_PER_SECOND_AT_FULL: float = 0.35
+## E3.1 light retune: free-fly + travel must spend (D7); was 0.35.
+const FUEL_BURN_PER_SECOND_AT_FULL: float = 0.4
 
 ## Extra fuel burn multiplier while afterburner is held.
 const FUEL_AFTERBURNER_MULTIPLIER: float = 1.8
@@ -105,7 +161,8 @@ const CONDITION_MIN_SPEED_FACTOR: float = 0.55
 # --- Jump / gate -----------------------------------------------------------
 
 ## Fuel cost to jump through a gate.
-const JUMP_FUEL_COST: float = 12.0
+## E3.1 light retune: gate hops stay a real fuel tax with upkeep pressure; was 12.
+const JUMP_FUEL_COST: float = 14.0
 
 ## Distance at which the HUD shows a jump prompt (metres).
 const GATE_APPROACH_RADIUS: float = 90.0
@@ -146,6 +203,23 @@ const TRADE_QTY_UNIT: int = 1
 ## Trade sides for on_trade_completed.
 const TRADE_SIDE_BUY: StringName = &"buy"
 const TRADE_SIDE_SELL: StringName = &"sell"
+
+# --- Contraband jurisdiction (E3.3 / D3) -----------------------------------
+# Munitions restricted for Reach Authority. Open market blocked at Reach
+# stations; legal elsewhere. Fee-charging dock with restricted hold → fine +
+# standing hit (via StandingService) + optional seize. Session restore does
+# not re-inspect (same path as debt grace: real docks only).
+
+## Flat fine (credits) charged once per inspection when restricted cargo found.
+## Partial if broke (floors at remaining credits); standing + seize still apply.
+const CONTRABAND_FINE_BASE: int = 100
+
+## When true, all restricted goods for the controller are removed from hold.
+## Prefer seize-all for Alpha (locked D3 preference).
+const CONTRABAND_SEIZE_ALL: bool = true
+
+## Wallet / log reason tag for the fine (standing uses BalanceStanding.REASON_CONTRABAND).
+const REASON_CONTRABAND_FINE: StringName = &"contraband_fine"
 
 ## Global sell multiplier (1.0 = base sell price). Layered under system modifiers.
 const STATION_SELL_BONUS: float = 1.0
@@ -234,6 +308,10 @@ const SAVE_SECTION_KEY: StringName = &"wallet"
 const SAVE_KEY_CREDITS: StringName = &"credits"
 const SAVE_KEY_FUEL: StringName = &"fuel"
 const SAVE_KEY_CONDITION: StringName = &"condition"
+## Optional E3.2 debt keys (missing → no debt; no envelope version bump).
+const SAVE_KEY_DEBT_OWED: StringName = &"debt_owed"
+const SAVE_KEY_DEBT_LENDER_ID: StringName = &"debt_lender_id"
+const SAVE_KEY_DEBT_GRACE_DOCKS_LEFT: StringName = &"debt_grace_docks_left"
 
 ## Optional cargo section key (inventory map is the section body).
 const SAVE_SECTION_CARGO: StringName = &"cargo"
@@ -300,6 +378,7 @@ const HUD_LINE_FUEL: float = 5.0
 const HUD_LINE_MISSION: float = 6.0
 
 const HUD_CREDITS_FORMAT: String = "CREDITS  %d"
+const HUD_CREDITS_LOW_FORMAT: String = "CREDITS  %d  LOW"
 const HUD_FUEL_FORMAT: String = "FUEL  %d%%"
 const HUD_CONDITION_FORMAT: String = "HULL  %d%%"
 
@@ -343,6 +422,15 @@ const NPC_FIN_LIGHTEN: float = 0.2
 const STATION_REFUEL_LABEL: String = "Refuel"
 const STATION_REFUEL_MARKUP_LABEL: String = "Refuel (standing markup)"
 const STATION_REPAIR_LABEL: String = "Repair ship"
+## E3.2 emergency loan (Services desk, docked only).
+const STATION_BORROW_FORMAT: String = "Borrow %d credits (owe %d)"
+const STATION_REPAY_FORMAT: String = "Repay debt (%d owed)"
+const STATION_REPAY_LABEL: String = "Repay debt"
+const STATION_BORROW_OK_FORMAT: String = "Borrowed %d. Owe %d to Free Haulers."
+const STATION_BORROW_DENIED: String = "Cannot borrow — already in debt."
+const STATION_REPAY_OK_FORMAT: String = "Paid %d toward debt. %d left."
+const STATION_REPAY_CLEARED: String = "Debt cleared."
+const STATION_REPAY_BROKE: String = "No credits to put toward debt."
 ## E2.5 hull buy / switch (Services desk, docked only).
 const STATION_BUY_FIGHTER_FORMAT: String = "Buy Fighter (%d credits)"
 const STATION_BUY_FIGHTER_OWNED_LABEL: String = "Fighter owned"
@@ -391,6 +479,17 @@ const STATION_RECOVERY_DRAMA_HINT_FORMAT: String = (
 const STATION_TRADE_BUY_LABEL: String = "Buy 1"
 const STATION_TRADE_SELL_LABEL: String = "Sell 1"
 const STATION_TRADE_LINE_FORMAT: String = "%s  buy %d  sell %d  hold %d"
+## Trade row when commodity is restricted for the dock controller (E3.3).
+## Args: display name, hold qty.
+const STATION_TRADE_RESTRICTED_FORMAT: String = "%s  RESTRICTED here  hold %d"
+## Dock inspection feedback (console / toast). Args: station name, fine, entity name.
+const CONSOLE_CONTRABAND_SEIZED_FORMAT: String = (
+	"Contraband seized at %s — fine %d credits. " + "Standing fell with %s."
+)
+## Dock inspection when fine applied but nothing left to seize (flag off / empty).
+const CONSOLE_CONTRABAND_FINE_FORMAT: String = (
+	"Contraband fine at %s — %d credits. " + "Standing fell with %s."
+)
 
 ## Station menu size for A5 service buttons (kept for older references).
 const STATION_MENU_HEIGHT_A5: float = 420.0

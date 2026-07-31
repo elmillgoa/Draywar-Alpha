@@ -12,6 +12,7 @@ extends CanvasLayer
 const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
 const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
 const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
+const StationLoanUiScript = preload("res://src/ui/station/StationLoanUi.gd")
 
 var _panel: PanelContainer = null
 var _title: Label = null
@@ -32,6 +33,8 @@ var _favor_btn: Button = null
 var _betray_btn: Button = null
 var _refuel_btn: Button = null
 var _repair_btn: Button = null
+var _borrow_btn: Button = null
+var _repay_btn: Button = null
 var _buy_fighter_btn: Button = null
 var _switch_hull_btn: Button = null
 var _dock_fee_label: Label = null
@@ -64,6 +67,7 @@ func _ready() -> void:
 	EventBus.on_person_standing_changed.connect(_on_person_standing_changed)
 	EventBus.on_entity_standing_changed.connect(_on_entity_standing_changed)
 	EventBus.on_credits_changed.connect(_on_wallet_changed)
+	EventBus.on_debt_changed.connect(_on_debt_changed)
 	EventBus.on_fuel_changed.connect(_on_fuel_changed)
 	EventBus.on_condition_changed.connect(_on_condition_changed)
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
@@ -87,6 +91,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_person_standing_changed, _on_person_standing_changed)
 	_disconnect(EventBus.on_entity_standing_changed, _on_entity_standing_changed)
 	_disconnect(EventBus.on_credits_changed, _on_wallet_changed)
+	_disconnect(EventBus.on_debt_changed, _on_debt_changed)
 	_disconnect(EventBus.on_fuel_changed, _on_fuel_changed)
 	_disconnect(EventBus.on_condition_changed, _on_condition_changed)
 	_disconnect(EventBus.on_cargo_changed, _on_cargo_changed)
@@ -205,6 +210,12 @@ func _build_ui() -> void:
 
 	_repair_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REPAIR_LABEL)
 	_repair_btn.pressed.connect(_on_repair_pressed)
+
+	var loan_btns: Array[Button] = StationLoanUiScript.make_buttons(layout, button_size)
+	_borrow_btn = loan_btns[0]
+	_repay_btn = loan_btns[1]
+	_borrow_btn.pressed.connect(_on_borrow_pressed)
+	_repay_btn.pressed.connect(_on_repay_pressed)
 
 	_buy_fighter_btn = _make_button(
 		layout,
@@ -493,6 +504,31 @@ func _on_repair_pressed() -> void:
 	EventBus.on_repair_requested.emit()
 
 
+func _on_borrow_pressed() -> void:
+	# Deferred refresh — never rebuild mid-pressed (trap #11).
+	EventBus.on_loan_borrow_requested.emit()
+	call_deferred(&"_after_borrow")
+
+
+func _after_borrow() -> void:
+	_set_status(StationLoanUiScript.borrow_status_text(_wallet_service()))
+	_refresh_services()
+
+
+func _on_repay_pressed() -> void:
+	var before_owed: int = StationLoanUiScript.debt_owed_from_wallet(_wallet_service())
+	if before_owed <= 0:
+		call_deferred(&"_refresh_services")
+		return
+	EventBus.on_loan_repay_requested.emit()
+	call_deferred(&"_after_repay", before_owed)
+
+
+func _after_repay(before_owed: int) -> void:
+	_set_status(StationLoanUiScript.repay_status_text(before_owed, _wallet_service()))
+	_refresh_services()
+
+
 func _on_buy_fighter_pressed() -> void:
 	var ships: Node = _ship_service()
 	if ships == null or StationHullUiScript.owns_fighter(ships):
@@ -606,6 +642,11 @@ func _on_wallet_changed(_credits: int) -> void:
 	if visible:
 		_refresh_services()
 		_refresh_trade()
+
+
+func _on_debt_changed(_debt_owed: int, _lender_id: StringName, _grace_docks_left: int) -> void:
+	if visible:
+		call_deferred(&"_refresh_services")
 
 
 func _on_fuel_changed(_fuel: float, _fuel_max: float) -> void:
@@ -771,63 +812,23 @@ func _is_deep_negative_with_controller() -> bool:
 func _refresh_services() -> void:
 	if _refuel_btn == null:
 		return
-	# Always show while docked; wallet refuses if full/broke or repair denied.
-	_refuel_btn.visible = visible
-	_repair_btn.visible = visible
-	_refresh_dock_fee_line()
+	StationLoanUiScript.refresh_core_services(
+		_refuel_btn,
+		_repair_btn,
+		_dock_fee_label,
+		_borrow_btn,
+		_repay_btn,
+		_wallet_service(),
+		_docked_station_id,
+		visible
+	)
 	_refresh_hull_buttons()
-	if not visible:
-		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_LABEL
-		_repair_btn.text = BalanceEconomy.STATION_REPAIR_LABEL
-		_refuel_btn.disabled = false
-		_repair_btn.disabled = false
-		return
-
-	var tier: StringName = StationDockQueries.controller_tier(_docked_station_id)
-	var service_mult: float = BalanceEconomy.service_cost_mult_for_tier(tier)
-	if service_mult > BalanceEconomy.SERVICE_COST_MULT_DEFAULT:
-		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_MARKUP_LABEL
-	else:
-		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_LABEL
-	_refuel_btn.disabled = false
-
-	if BalanceEconomy.service_repair_denied_for_tier(tier):
-		_repair_btn.text = BalanceEconomy.STATION_REPAIR_DENIED_LABEL
-		_repair_btn.disabled = true
-	else:
-		_repair_btn.text = BalanceEconomy.STATION_REPAIR_LABEL
-		_repair_btn.disabled = false
 
 
 func _refresh_hull_buttons() -> void:
 	StationHullUiScript.refresh_buttons(
 		_buy_fighter_btn, _switch_hull_btn, _ship_service(), visible
 	)
-
-
-func _refresh_dock_fee_line() -> void:
-	if _dock_fee_label == null:
-		return
-	if not visible or String(_docked_station_id).is_empty():
-		_dock_fee_label.visible = false
-		_dock_fee_label.text = ""
-		return
-	var wallet: Node = _wallet_service()
-	if wallet == null or not wallet.has_method(&"dock_fee_for_system"):
-		_dock_fee_label.visible = false
-		return
-	var system_id: StringName = StationDockQueries.system_id(_docked_station_id)
-	var fee: int = _variant_to_int(
-		wallet.call(&"dock_fee_for_system", system_id, _docked_station_id)
-	)
-	var mult: float = BalanceEconomy.dock_fee_mult_for_tier(
-		StationDockQueries.controller_tier(_docked_station_id)
-	)
-	if mult > BalanceEconomy.DOCK_FEE_STANDING_MULT_DEFAULT:
-		_dock_fee_label.text = BalanceEconomy.STATION_DOCK_FEE_SURCHARGE_FORMAT % fee
-	else:
-		_dock_fee_label.text = BalanceEconomy.STATION_DOCK_FEE_FORMAT % fee
-	_dock_fee_label.visible = true
 
 
 func _clear_trade_rows() -> void:

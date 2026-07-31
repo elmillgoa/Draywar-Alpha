@@ -55,13 +55,15 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 
 **Not:** Operations, Holding.
 
-### E3 — Economy pressure
+### E3 — Economy pressure — **code complete** (gate open)
 **Job:** Money stops being optional.
 
-- Upkeep / fuel as career pressure (time or jump-based)
-- Debt or financing seed (thin)
-- Contraband / jurisdiction goods if standing law hooks land
-- Job variety: escort or smuggle as third kind
+- Upkeep / fuel as career pressure (time or jump-based) — **done**
+- Debt or financing seed (thin) — **done**
+- Contraband / jurisdiction goods if standing law hooks land — **done**
+- Job variety: smuggle as third kind — **done**
+- Integration / balance pass — **done**
+- **[GATE] E3.6 economy feel** — open (`docs/gates.md`); sign → E4
 
 ### E4 — Opening & cast
 **Job:** Career starts as a story, not mid-dock.
