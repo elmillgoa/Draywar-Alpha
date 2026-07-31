@@ -12,6 +12,7 @@ extends CanvasLayer
 var _panel: PanelContainer = null
 var _title: Label = null
 var _flavor_label: Label = null
+var _scroll: ScrollContainer = null
 var _accept_job_btn: Button = null
 var _turn_in_job_btn: Button = null
 var _abandon_job_btn: Button = null
@@ -24,6 +25,7 @@ var _favor_btn: Button = null
 var _betray_btn: Button = null
 var _refuel_btn: Button = null
 var _repair_btn: Button = null
+var _undock_btn: Button = null
 var _trade_box: VBoxContainer = null
 var _docked_station_id: StringName = &""
 var _offer_person_id: StringName = &""
@@ -93,26 +95,32 @@ func _build_ui() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(dim)
 
+	# Viewport-anchored height so the footer (Undock) is never clipped off-screen.
 	_panel = PanelContainer.new()
 	_panel.theme = DraywarUiTheme.build()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.custom_minimum_size = Vector2(
-		BalanceEconomy.STATION_MENU_WIDTH_B3, BalanceEconomy.STATION_MENU_HEIGHT_B3
-	)
+	_panel.clip_contents = true
+	_panel.anchor_left = BalanceEconomy.STATION_MENU_ANCHOR_CENTER
+	_panel.anchor_right = BalanceEconomy.STATION_MENU_ANCHOR_CENTER
+	_panel.anchor_top = BalanceEconomy.STATION_MENU_ANCHOR_TOP
+	_panel.anchor_bottom = BalanceEconomy.STATION_MENU_ANCHOR_BOTTOM
 	_panel.offset_left = -BalanceEconomy.STATION_MENU_HALF_WIDTH_B3
-	_panel.offset_top = -BalanceEconomy.STATION_MENU_HALF_HEIGHT_B3
 	_panel.offset_right = BalanceEconomy.STATION_MENU_HALF_WIDTH_B3
-	_panel.offset_bottom = BalanceEconomy.STATION_MENU_HALF_HEIGHT_B3
+	_panel.offset_top = 0.0
+	_panel.offset_bottom = 0.0
+	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	root.add_child(_panel)
 
 	var outer: VBoxContainer = VBoxContainer.new()
 	outer.alignment = BoxContainer.ALIGNMENT_BEGIN
+	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_panel.add_child(outer)
 
 	_title = Label.new()
 	_title.add_theme_font_size_override("font_size", BalanceFlight.HUD_TITLE_FONT_SIZE)
 	_title.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_title.text = "Station"
 	outer.add_child(_title)
 
@@ -120,22 +128,25 @@ func _build_ui() -> void:
 	_flavor_label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
 	_flavor_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_flavor_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_flavor_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_flavor_label.text = ""
 	_flavor_label.visible = false
 	outer.add_child(_flavor_label)
 
-	var scroll: ScrollContainer = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(
-		BalanceEconomy.STATION_MENU_WIDTH_B3 - BalanceFlight.HUD_MARGIN - BalanceFlight.HUD_MARGIN,
-		BalanceEconomy.STATION_MENU_SCROLL_HEIGHT
-	)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	outer.add_child(scroll)
+	# Body scrolls; footer Undock stays pinned below.
+	_scroll = ScrollContainer.new()
+	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_MENU_SCROLL_MIN_HEIGHT)
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	outer.add_child(_scroll)
 
 	var layout: VBoxContainer = VBoxContainer.new()
 	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(layout)
+	# Shrink-begin so content height drives scroll (expand would steal the bar).
+	layout.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_scroll.add_child(layout)
 
 	var button_size: Vector2 = Vector2(
 		BalanceFlight.STATION_MENU_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
@@ -202,13 +213,29 @@ func _build_ui() -> void:
 	_betray_btn.pressed.connect(_on_betray_pressed)
 	_betray_btn.visible = false
 
-	# Undock fixed at bottom (outside scroll).
+	# Footer always visible — leave dock without scrolling past trade/contacts.
 	var undock_spacer: Control = Control.new()
-	undock_spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_SECTION_SPACER)
+	undock_spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_UNDOCK_SPACER)
+	undock_spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	outer.add_child(undock_spacer)
 
-	var undock_btn: Button = _make_button(outer, button_size, BalanceEconomy.STATION_UNDOCK_LABEL)
-	undock_btn.pressed.connect(_on_undock_pressed)
+	var undock_size: Vector2 = Vector2(
+		(
+			BalanceEconomy.STATION_MENU_WIDTH_B3
+			- float(BalanceUi.CONTENT_MARGIN) * BalanceEconomy.STATION_MENU_SIDE_MARGINS
+		),
+		BalanceFlight.STATION_MENU_BUTTON_HEIGHT
+	)
+	_undock_btn = _make_button(outer, undock_size, BalanceEconomy.STATION_UNDOCK_LABEL)
+	_undock_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_undock_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_undock_btn.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
+	_undock_btn.pressed.connect(_on_undock_pressed)
+
+
+## Undock control (tests / external readers). Always outside the scroll body.
+func undock_button() -> Button:
+	return _undock_btn
 
 
 func _add_section_header(parent: Control, text: String) -> Label:

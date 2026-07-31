@@ -287,13 +287,25 @@ const STATION_MENU_HEIGHT_A5: float = 420.0
 const STATION_MENU_HALF_HEIGHT_A5: float = 210.0
 
 ## Station menu size for B3 sections + trade list.
-const STATION_MENU_WIDTH_B3: float = 420.0
-const STATION_MENU_HALF_WIDTH_B3: float = 210.0
-const STATION_MENU_HEIGHT_B3: float = 560.0
-const STATION_MENU_HALF_HEIGHT_B3: float = 280.0
+## Height uses viewport anchors so Undock stays on screen; body scrolls.
+const STATION_MENU_WIDTH_B3: float = 440.0
+const STATION_MENU_HALF_WIDTH_B3: float = 220.0
+## Horizontal center anchor (0.5 = middle of viewport).
+const STATION_MENU_ANCHOR_CENTER: float = 0.5
+## Top / bottom anchors (fraction of viewport) for the station panel.
+const STATION_MENU_ANCHOR_TOP: float = 0.05
+const STATION_MENU_ANCHOR_BOTTOM: float = 0.95
+## Minimum body scroll height so trade list is usable on small windows.
+const STATION_MENU_SCROLL_MIN_HEIGHT: float = 220.0
+## Both side content margins when sizing the undock footer button width.
+const STATION_MENU_SIDE_MARGINS: float = 2.0
+## Kept for older size references / tests that only need a panel present.
+const STATION_MENU_HEIGHT_B3: float = 640.0
+const STATION_MENU_HALF_HEIGHT_B3: float = 320.0
 const STATION_MENU_SCROLL_HEIGHT: float = 460.0
 const STATION_TRADE_BUTTON_WIDTH: float = 72.0
 const STATION_SECTION_SPACER: float = 6.0
+const STATION_UNDOCK_SPACER: float = 10.0
 
 # --- Console ---------------------------------------------------------------
 

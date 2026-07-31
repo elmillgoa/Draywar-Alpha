@@ -138,6 +138,27 @@ func test_approach_prompt_outside_interact_but_inside_approach() -> void:
 	assert_eq(_docked.size(), 0, "F outside interact radius must not dock")
 
 
+func test_station_menu_undock_is_outside_scroll_and_always_present() -> void:
+	var menu: StationMenu = StationMenu.new()
+	add_child_autofree(menu)
+	await get_tree().process_frame
+	var undock: Button = menu.undock_button()
+	assert_ne(undock, null, "Undock must exist")
+	assert_eq(undock.text, BalanceEconomy.STATION_UNDOCK_LABEL)
+	# Undock is a footer child of the panel layout, not buried in the trade list.
+	var parent: Node = undock.get_parent()
+	assert_false(parent is ScrollContainer, "Undock must not live inside the scroll body")
+	# Walk up: undock must not be a descendant of any ScrollContainer.
+	var walk: Node = undock
+	var in_scroll: bool = false
+	while walk != null and walk != menu:
+		if walk is ScrollContainer:
+			in_scroll = true
+			break
+		walk = walk.get_parent()
+	assert_false(in_scroll, "Undock footer must stay outside scroll so it is never cut off")
+
+
 func test_station_menu_shows_on_dock_and_undock_button_requests_leave() -> void:
 	var station: StringName = &"station_alpha_port"
 	var menu: StationMenu = StationMenu.new()
