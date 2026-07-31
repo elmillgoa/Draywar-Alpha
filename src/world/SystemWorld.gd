@@ -270,13 +270,35 @@ func _spawn_npc_traffic() -> void:
 	_npc_traffic.rebuild_for_system(system_id)
 
 
-## One combat hostile near the station when the system security allows pirates.
-## Patrolled government space stays safe on undock (no free kill at Alpha).
+## Ambient combat hostiles near the station when security allows pirates.
+## Patrolled government space stays safe on undock (count 0). Counts and offsets
+## come from BalanceCombat (E2.2). Profile: contested → skirmisher, lawless → gunboat.
+## Never exceeds MAX_CONCURRENT_HOSTILES. Positions are re-checked against every
+## station safe radius (multi-station systems can sit offset under the old pad).
 func _spawn_hostile() -> void:
 	if not system_allows_hostiles(system_id):
 		return
-	var pos: Vector3 = BalanceFlight.STATION_POSITION + BalanceCombat.SPAWN_OFFSET
-	HostileNpc.spawn_under(self, pos)
+	var wanted: int = ambient_hostile_count(system_id)
+	if wanted <= 0:
+		return
+	var profile: StringName = ambient_hostile_profile(system_id)
+	var i: int = 0
+	while i < wanted:
+		if not can_spawn_hostile():
+			return
+		var pos: Vector3 = _ambient_world_position(i)
+		HostileNpc.spawn_under(self, pos, profile)
+		i += 1
+
+
+## Balance offset from station anchor, pushed outside any station safe bubble.
+func _ambient_world_position(slot: int) -> Vector3:
+	var candidate: Vector3 = (
+		BalanceFlight.STATION_POSITION + BalanceCombat.ambient_spawn_offset(slot)
+	)
+	if not _is_inside_any_station_safe(candidate):
+		return candidate
+	return _position_outside_station_safe(candidate)
 
 
 ## Live combat hostiles under this world (GROUP_HOSTILE, valid, still alive).
@@ -296,15 +318,24 @@ func live_hostile_count() -> int:
 	return count
 
 
-## If this system allows hostiles and none are live, spawn one near `near`
-## outside every station safe radius. No-op in patrolled space or when prey exists.
+## True when another combat hostile may be placed under this world (under cap).
+func can_spawn_hostile() -> bool:
+	return live_hostile_count() < BalanceCombat.MAX_CONCURRENT_HOSTILES
+
+
+## If this system allows hostiles and none are live in lock range of `near`,
+## spawn one outside every station safe radius. No-op in patrolled space, when
+## prey already sits in range, or when live hostiles already hit the concurrent
+## cap. Bounty prey uses the softer skirmisher profile (Hauler-era completable).
 func ensure_hostile_near(near: Vector3) -> void:
 	if not system_allows_hostiles(system_id):
 		return
 	if live_hostile_within_range(near, BalanceCombat.TARGET_LOCK_RANGE):
 		return
+	if not can_spawn_hostile():
+		return
 	var pos: Vector3 = _position_outside_station_safe(near)
-	HostileNpc.spawn_under(self, pos)
+	HostileNpc.spawn_under(self, pos, BalanceCombat.BOUNTY_HOSTILE_PROFILE)
 
 
 ## True if a live hostile is within `range_m` of `near`.
@@ -345,9 +376,33 @@ static func system_allows_hostiles(for_system_id: StringName) -> bool:
 			return false
 
 
+## Ambient profile for a system (contested skirmisher / lawless gunboat).
+static func ambient_hostile_profile(for_system_id: StringName) -> StringName:
+	if not ContentLibrary.has_item(for_system_id):
+		return BalanceCombat.PROFILE_DEFAULT
+	var item: ContentItem = ContentLibrary.item(for_system_id)
+	if not (item is StarSystem):
+		return BalanceCombat.PROFILE_DEFAULT
+	var system: StarSystem = item as StarSystem
+	return BalanceCombat.ambient_profile_for_policing(system.policing)
+
+
+## Ambient combat hostile count for a system (E2.2). Patrolled = 0 from balance.
+static func ambient_hostile_count(for_system_id: StringName) -> int:
+	if not ContentLibrary.has_item(for_system_id):
+		return BalanceCombat.AMBIENT_HOSTILE_COUNT_PATROLLED
+	var item: ContentItem = ContentLibrary.item(for_system_id)
+	if not (item is StarSystem):
+		return BalanceCombat.AMBIENT_HOSTILE_COUNT_PATROLLED
+	var system: StarSystem = item as StarSystem
+	return BalanceCombat.ambient_count_for_policing(system.policing)
+
+
 ## Test / console helper: place a hostile under this world at an offset from station.
-func spawn_hostile_at(offset: Vector3) -> HostileNpc:
-	return HostileNpc.spawn_under(self, BalanceFlight.STATION_POSITION + offset)
+func spawn_hostile_at(
+	offset: Vector3, for_profile_id: StringName = BalanceCombat.PROFILE_DEFAULT
+) -> HostileNpc:
+	return HostileNpc.spawn_under(self, BalanceFlight.STATION_POSITION + offset, for_profile_id)
 
 
 func _on_mission_accepted_ensure_prey(

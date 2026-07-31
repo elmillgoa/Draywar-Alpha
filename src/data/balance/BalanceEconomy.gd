@@ -14,6 +14,10 @@ extends RefCounted
 ## Starting credits for a new session (enough for fees + one refuel).
 const STARTING_CREDITS: int = 500
 
+## One-time Fighter hull purchase at a station Services desk (E2.5 / D1).
+## Affordable after a few jobs (MISSION_PAY_DEFAULT 120) from the 500 start.
+const FIGHTER_PURCHASE_COST: int = 1000
+
 ## Fuel tank capacity (units). Full at boot.
 const FUEL_MAX: float = 100.0
 
@@ -131,7 +135,9 @@ const RECOVERY_STEP_PAY: int = 40
 ## Content category directory for commodities.
 const COMMODITY_CONTENT_CATEGORY: StringName = &"commodities"
 
-## Hold capacity in volume units (sum of unit_volume * qty).
+## Hold capacity fallback when no active hull is available (tests / pre-boot).
+## Live play prefers Hull.cargo_capacity from the active ShipService hull (E2.4).
+## Mirrors starter Hauler content (`hull_courier` cargo_capacity = 20).
 const CARGO_CAPACITY: int = 20
 
 ## Default trade button quantity.
@@ -234,14 +240,27 @@ const SAVE_SECTION_CARGO: StringName = &"cargo"
 
 # --- NPC traffic -----------------------------------------------------------
 
-## NPC ship count for patrolled systems.
-const NPC_COUNT_PATROLLED: int = 6
+## Scene-tree group for ambient orbit traffic (attribution witnesses).
+const GROUP_NPC_TRAFFIC: StringName = &"npc_traffic"
+
+## Performance budget: player + orbit traffic + combat hostiles in one system.
+## Target ~60 fps with this many live ships (E2.6 / Alpha performance bar).
+## Densest legal layout must stay ≤ this (asserted in tests).
+const PERF_BUDGET_SHIPS: int = 12
+
+## Always one player hull in space (no dual-ship Ops).
+const PERF_BUDGET_PLAYER_COUNT: int = 1
+
+## NPC ship count for patrolled systems (busy government lanes).
+## Raised E2.6 for multi-ship density; hostiles stay 0 here.
+const NPC_COUNT_PATROLLED: int = 8
 
 ## NPC ship count for contested systems.
-const NPC_COUNT_CONTESTED: int = 4
+## Densest legal layout: 1 player + this + MAX_CONCURRENT_HOSTILES ≤ PERF_BUDGET.
+const NPC_COUNT_CONTESTED: int = 8
 
-## NPC ship count for lawless systems.
-const NPC_COUNT_LAWLESS: int = 2
+## NPC ship count for lawless systems (thinnest freighter traffic).
+const NPC_COUNT_LAWLESS: int = 5
 
 ## Orbit radius range for NPC wander (metres from system origin).
 const NPC_ORBIT_MIN: float = 80.0
@@ -324,6 +343,15 @@ const NPC_FIN_LIGHTEN: float = 0.2
 const STATION_REFUEL_LABEL: String = "Refuel"
 const STATION_REFUEL_MARKUP_LABEL: String = "Refuel (standing markup)"
 const STATION_REPAIR_LABEL: String = "Repair ship"
+## E2.5 hull buy / switch (Services desk, docked only).
+const STATION_BUY_FIGHTER_FORMAT: String = "Buy Fighter (%d credits)"
+const STATION_BUY_FIGHTER_OWNED_LABEL: String = "Fighter owned"
+const STATION_SWITCH_HULL_FORMAT: String = "Switch to %s"
+const STATION_SWITCH_BLOCKED_CARGO: String = "Sell cargo down to switch hull"
+const STATION_BUY_FIGHTER_OK: String = "Fighter purchased."
+const STATION_BUY_FIGHTER_BROKE: String = "Not enough credits for Fighter."
+const STATION_SWITCH_OK_FORMAT: String = "Now flying %s."
+const STATION_SWITCH_FAILED: String = "Cannot switch hull here."
 ## Repair button when Hostile/Hated with controller (still docked via recovery).
 const STATION_REPAIR_DENIED_LABEL: String = "Repair refused — standing"
 ## Trade section banner when Hostile/Hated with controller.
@@ -493,3 +521,56 @@ static func _trade_mul_from(
 		var as_int: int = mul_raw
 		return float(as_int)
 	return TRADE_PRICE_MUL_DEFAULT
+
+
+# --- Performance densify (E2.6) --------------------------------------------
+
+
+## Ambient orbit traffic count for a policing tag (patrolled/contested/lawless).
+static func npc_count_for_policing(policing: StringName) -> int:
+	if policing == &"patrolled":
+		return NPC_COUNT_PATROLLED
+	if policing == &"contested":
+		return NPC_COUNT_CONTESTED
+	if policing == &"lawless":
+		return NPC_COUNT_LAWLESS
+	return NPC_COUNT_CONTESTED
+
+
+## Max combat hostiles that can legally exist under this policing.
+## Patrolled: 0 (no ambient, no bounty ensure). Contested/lawless: concurrent cap.
+static func max_hostiles_for_policing(policing: StringName) -> int:
+	if policing == &"patrolled":
+		return 0 if not BalanceCombat.SPAWN_IN_PATROLLED else BalanceCombat.MAX_CONCURRENT_HOSTILES
+	if policing == &"contested":
+		return BalanceCombat.MAX_CONCURRENT_HOSTILES if BalanceCombat.SPAWN_IN_CONTESTED else 0
+	if policing == &"lawless":
+		return BalanceCombat.MAX_CONCURRENT_HOSTILES if BalanceCombat.SPAWN_IN_LAWLESS else 0
+	return 0
+
+
+## Player + traffic + max hostiles for one policing tier (budget math).
+static func densest_ships_for_policing(policing: StringName) -> int:
+	return (
+		PERF_BUDGET_PLAYER_COUNT
+		+ npc_count_for_policing(policing)
+		+ max_hostiles_for_policing(policing)
+	)
+
+
+## Worst-case ship count across known policing tiers (must be ≤ PERF_BUDGET_SHIPS).
+static func densest_ships_layout() -> int:
+	var densest: int = densest_ships_for_policing(&"patrolled")
+	densest = maxi(densest, densest_ships_for_policing(&"contested"))
+	densest = maxi(densest, densest_ships_for_policing(&"lawless"))
+	return densest
+
+
+## Policing tag that produces densest_ships_layout() (ties prefer contested).
+static func densest_layout_policing() -> StringName:
+	var densest: int = densest_ships_layout()
+	if densest_ships_for_policing(&"contested") == densest:
+		return &"contested"
+	if densest_ships_for_policing(&"lawless") == densest:
+		return &"lawless"
+	return &"patrolled"

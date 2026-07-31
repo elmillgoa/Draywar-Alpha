@@ -9,6 +9,10 @@ extends CanvasLayer
 ## abandon / favor / betray, refuel and repair, buy/sell commodities.
 ## All actions go through EventBus.
 
+const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
+const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
+const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
+
 var _panel: PanelContainer = null
 var _title: Label = null
 var _flavor_label: Label = null
@@ -28,6 +32,8 @@ var _favor_btn: Button = null
 var _betray_btn: Button = null
 var _refuel_btn: Button = null
 var _repair_btn: Button = null
+var _buy_fighter_btn: Button = null
+var _switch_hull_btn: Button = null
 var _dock_fee_label: Label = null
 var _undock_btn: Button = null
 var _status_label: Label = null
@@ -61,6 +67,8 @@ func _ready() -> void:
 	EventBus.on_fuel_changed.connect(_on_fuel_changed)
 	EventBus.on_condition_changed.connect(_on_condition_changed)
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
+	EventBus.on_hull_purchased.connect(_on_hull_purchased)
+	EventBus.on_hull_changed.connect(_on_hull_changed)
 
 
 func _exit_tree() -> void:
@@ -82,6 +90,8 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_fuel_changed, _on_fuel_changed)
 	_disconnect(EventBus.on_condition_changed, _on_condition_changed)
 	_disconnect(EventBus.on_cargo_changed, _on_cargo_changed)
+	_disconnect(EventBus.on_hull_purchased, _on_hull_purchased)
+	_disconnect(EventBus.on_hull_changed, _on_hull_changed)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -195,6 +205,18 @@ func _build_ui() -> void:
 
 	_repair_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REPAIR_LABEL)
 	_repair_btn.pressed.connect(_on_repair_pressed)
+
+	_buy_fighter_btn = _make_button(
+		layout,
+		button_size,
+		BalanceEconomy.STATION_BUY_FIGHTER_FORMAT % BalanceEconomy.FIGHTER_PURCHASE_COST
+	)
+	_buy_fighter_btn.pressed.connect(_on_buy_fighter_pressed)
+	_buy_fighter_btn.visible = false
+
+	_switch_hull_btn = _make_button(layout, button_size, "Switch hull")
+	_switch_hull_btn.pressed.connect(_on_switch_hull_pressed)
+	_switch_hull_btn.visible = false
 
 	# --- Trade ---
 	_add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
@@ -471,6 +493,54 @@ func _on_repair_pressed() -> void:
 	EventBus.on_repair_requested.emit()
 
 
+func _on_buy_fighter_pressed() -> void:
+	var ships: Node = _ship_service()
+	if ships == null or StationHullUiScript.owns_fighter(ships):
+		return
+	if not StationHullUiScript.can_buy_fighter(ships):
+		_set_status(BalanceEconomy.STATION_BUY_FIGHTER_BROKE)
+		return
+	EventBus.on_buy_fighter_requested.emit()
+	# Deferred refresh — never rebuild mid-pressed (trap #11).
+	call_deferred(&"_after_buy_fighter")
+
+
+func _after_buy_fighter() -> void:
+	var ships: Node = _ship_service()
+	if StationHullUiScript.owns_fighter(ships):
+		_set_status(BalanceEconomy.STATION_BUY_FIGHTER_OK)
+	else:
+		_set_status(BalanceEconomy.STATION_BUY_FIGHTER_BROKE)
+	_refresh_services()
+
+
+func _on_switch_hull_pressed() -> void:
+	var ships: Node = _ship_service()
+	if ships == null:
+		return
+	var target: StringName = StationHullUiScript.switch_target_hull_id(ships)
+	if String(target).is_empty():
+		return
+	if not StationHullUiScript.can_switch_to(ships, target):
+		_set_status(BalanceEconomy.STATION_SWITCH_BLOCKED_CARGO)
+		call_deferred(&"_refresh_services")
+		return
+	EventBus.on_switch_hull_requested.emit(target)
+	call_deferred(&"_after_switch_hull", target)
+
+
+func _after_switch_hull(target: StringName) -> void:
+	var ships: Node = _ship_service()
+	if ships != null and ships.has_method(&"active_hull_id"):
+		var active: StringName = _variant_to_name(ships.call(&"active_hull_id"))
+		if active == target:
+			_set_status(BalanceEconomy.STATION_SWITCH_OK_FORMAT % _content_name(target))
+		else:
+			_set_status(BalanceEconomy.STATION_SWITCH_FAILED)
+	_refresh_services()
+	_refresh_trade()
+
+
 func _on_mission_accepted(_template_id: StringName, _entity_id: StringName) -> void:
 	# Defer: accept is often fired from a job button still inside pressed();
 	# rebuilding the jobs box must not free that button mid-signal.
@@ -551,6 +621,18 @@ func _on_condition_changed(_condition: float, _condition_max: float) -> void:
 func _on_cargo_changed() -> void:
 	if visible:
 		_refresh_trade()
+		_refresh_services()
+
+
+func _on_hull_purchased(_hull_id: StringName) -> void:
+	if visible:
+		call_deferred(&"_refresh_services")
+
+
+func _on_hull_changed(_old_hull_id: StringName, _new_hull_id: StringName) -> void:
+	if visible:
+		call_deferred(&"_refresh_services")
+		call_deferred(&"_refresh_trade")
 
 
 func _refresh_all() -> void:
@@ -579,69 +661,20 @@ func _refresh_job_buttons() -> void:
 
 
 func _clear_jobs_box() -> void:
-	if _jobs_box == null:
-		return
-	# remove + queue_free (never free() mid-pressed): accept job emits on the
-	# button, mission_accepted refreshes the board, and free() on a locked
-	# object crashes Godot ("Object is locked and can't be freed").
-	var doomed: Array[Node] = []
-	for child: Node in _jobs_box.get_children():
-		doomed.append(child)
-	for child: Node in doomed:
-		_jobs_box.remove_child(child)
-		child.queue_free()
+	# remove + queue_free (never free() mid-pressed): trap #11.
+	StationBoardUiScript.clear_box(_jobs_box)
 
 
 func _accept_job_label(template_id: StringName) -> String:
-	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
-		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
-	var item: ContentItem = ContentLibrary.item(template_id)
-	var kind: StringName = _variant_to_name(item.get("kind"))
-	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
-		var target_id: StringName = _variant_to_name(item.get("target_system_id"))
-		if String(target_id).is_empty():
-			return BalanceStanding.STATION_ACCEPT_BOUNTY_LABEL
-		return BalanceStanding.STATION_ACCEPT_BOUNTY_FORMAT % _content_name(target_id)
-	var dest_id: StringName = _variant_to_name(item.get("destination_station_id"))
-	if String(dest_id).is_empty():
-		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
-	return BalanceStanding.STATION_ACCEPT_JOB_TO_FORMAT % _content_name(dest_id)
+	return StationBoardUiScript.accept_job_label(template_id)
 
 
 func _refresh_contacts_list() -> void:
-	if _contacts_list == null:
-		return
-	_clear_contacts_list()
-	if not visible:
-		return
-	var controller: StringName = _dock_controller()
-	if String(controller).is_empty():
-		return
-	for person_id: StringName in ContentLibrary.ids_in(&"people"):
-		var item: ContentItem = ContentLibrary.item(person_id)
-		if item == null or not (item is Person):
-			continue
-		var person: Person = item as Person
-		if person.primary_entity_id != controller:
-			continue
-		var line: Label = Label.new()
-		line.text = (
-			BalanceEconomy.STATION_CONTACT_LINE_FORMAT % [person.display_name, String(person.rank)]
-		)
-		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_contacts_list.add_child(line)
+	StationBoardUiScript.refresh_contacts(_contacts_list, _dock_controller(), visible)
 
 
 func _clear_contacts_list() -> void:
-	if _contacts_list == null:
-		return
-	var doomed: Array[Node] = []
-	for child: Node in _contacts_list.get_children():
-		doomed.append(child)
-	for child: Node in doomed:
-		_contacts_list.remove_child(child)
-		child.queue_free()
+	StationBoardUiScript.clear_box(_contacts_list)
 
 
 func _refresh_recovery_buttons() -> void:
@@ -742,6 +775,7 @@ func _refresh_services() -> void:
 	_refuel_btn.visible = visible
 	_repair_btn.visible = visible
 	_refresh_dock_fee_line()
+	_refresh_hull_buttons()
 	if not visible:
 		_refuel_btn.text = BalanceEconomy.STATION_REFUEL_LABEL
 		_repair_btn.text = BalanceEconomy.STATION_REPAIR_LABEL
@@ -763,6 +797,12 @@ func _refresh_services() -> void:
 	else:
 		_repair_btn.text = BalanceEconomy.STATION_REPAIR_LABEL
 		_repair_btn.disabled = false
+
+
+func _refresh_hull_buttons() -> void:
+	StationHullUiScript.refresh_buttons(
+		_buy_fighter_btn, _switch_hull_btn, _ship_service(), visible
+	)
 
 
 func _refresh_dock_fee_line() -> void:
@@ -791,86 +831,19 @@ func _refresh_dock_fee_line() -> void:
 
 
 func _clear_trade_rows() -> void:
-	if _trade_box == null:
-		return
-	for child: Node in _trade_box.get_children():
-		child.queue_free()
+	StationTradeUiScript.clear_rows(_trade_box)
 
 
 func _refresh_trade() -> void:
-	if _trade_box == null:
-		return
-	_clear_trade_rows()
-	if _trade_denied_label != null:
-		_trade_denied_label.visible = false
-	if not visible:
-		return
-	var cargo: Node = _cargo_service()
-	var trade_ok: bool = true
-	if cargo != null and cargo.has_method(&"trade_allowed_at_dock"):
-		trade_ok = cargo.call(&"trade_allowed_at_dock") == true
-	if not trade_ok:
-		if _trade_denied_label != null:
-			_trade_denied_label.text = BalanceEconomy.STATION_TRADE_DENIED_MESSAGE
-			_trade_denied_label.visible = true
-		return
-	var system_id: StringName = _dock_system_id()
-	for commodity_id: StringName in ContentLibrary.ids_in(
-		BalanceEconomy.COMMODITY_CONTENT_CATEGORY
-	):
-		if not ContentLibrary.has_item(commodity_id):
-			continue
-		var item: ContentItem = ContentLibrary.item(commodity_id)
-		if not (item is Commodity):
-			continue
-		var commodity: Commodity = item as Commodity
-		var hold: int = 0
-		if cargo != null and cargo.has_method(&"quantity"):
-			hold = _variant_to_int(cargo.call(&"quantity", commodity_id))
-		var buy_price: int = BalanceEconomy.buy_price_at(commodity, system_id)
-		var sell_price: int = BalanceEconomy.sell_price_at(commodity, system_id)
-		var row: HBoxContainer = HBoxContainer.new()
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_trade_box.add_child(row)
-
-		var line: Label = Label.new()
-		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		line.text = (
-			BalanceEconomy.STATION_TRADE_LINE_FORMAT
-			% [
-				commodity.display_name,
-				buy_price,
-				sell_price,
-				hold,
-			]
-		)
-		row.add_child(line)
-
-		var buy_btn: Button = Button.new()
-		buy_btn.text = BalanceEconomy.STATION_TRADE_BUY_LABEL
-		buy_btn.custom_minimum_size = Vector2(
-			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
-		)
-		var can_buy: bool = false
-		if cargo != null and cargo.has_method(&"can_buy"):
-			can_buy = cargo.call(&"can_buy", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
-		buy_btn.disabled = not can_buy
-		buy_btn.pressed.connect(_on_trade_buy_pressed.bind(commodity_id))
-		row.add_child(buy_btn)
-
-		var sell_btn: Button = Button.new()
-		sell_btn.text = BalanceEconomy.STATION_TRADE_SELL_LABEL
-		sell_btn.custom_minimum_size = Vector2(
-			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
-		)
-		var can_sell: bool = false
-		if cargo != null and cargo.has_method(&"can_sell"):
-			can_sell = cargo.call(&"can_sell", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
-		sell_btn.disabled = not can_sell
-		sell_btn.pressed.connect(_on_trade_sell_pressed.bind(commodity_id))
-		row.add_child(sell_btn)
+	StationTradeUiScript.refresh(
+		_trade_box,
+		_trade_denied_label,
+		_dock_system_id(),
+		_cargo_service(),
+		visible,
+		_on_trade_buy_pressed,
+		_on_trade_sell_pressed
+	)
 
 
 func _on_trade_buy_pressed(commodity_id: StringName) -> void:
@@ -893,6 +866,13 @@ func _wallet_service() -> Node:
 	if tree == null:
 		return null
 	return tree.get_first_node_in_group(&"wallet_service")
+
+
+func _ship_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
 
 
 func _mission_is_active() -> bool:

@@ -237,3 +237,15 @@ signal on_player_crippled
 
 ## WalletService: repair restored condition after a cripple.
 signal on_player_repaired_from_cripple
+
+## UI: request one-time Fighter purchase at the docked station (E2.5).
+signal on_buy_fighter_requested
+
+## UI: request switch to this owned hull while docked (E2.5).
+signal on_switch_hull_requested(hull_id: StringName)
+
+## ShipService: Fighter (or other) hull purchased once; ownership updated.
+signal on_hull_purchased(hull_id: StringName)
+
+## ShipService: active flyable hull changed (switch, load, or set).
+signal on_hull_changed(old_hull_id: StringName, new_hull_id: StringName)

@@ -56,9 +56,24 @@ func used_volume() -> int:
 	return total
 
 
+## Hold capacity from the active hull when ShipService is present; otherwise
+## BalanceEconomy.CARGO_CAPACITY (tests / no-hull fallback).
+func capacity() -> int:
+	var ship: Node = _ship_service()
+	if ship != null and ship.has_method(&"active_cargo_capacity"):
+		var raw: Variant = ship.call(&"active_cargo_capacity")
+		if typeof(raw) == TYPE_INT:
+			var as_int: int = raw
+			return maxi(0, as_int)
+		if typeof(raw) == TYPE_FLOAT:
+			var as_float: float = raw
+			return maxi(0, int(as_float))
+	return BalanceEconomy.CARGO_CAPACITY
+
+
 ## Remaining free volume (capacity - used).
 func free_volume() -> int:
-	return maxi(0, BalanceEconomy.CARGO_CAPACITY - used_volume())
+	return maxi(0, capacity() - used_volume())
 
 
 ## True when qty of this commodity fits in free volume.
@@ -295,6 +310,13 @@ func _wallet() -> Node:
 	return tree.get_first_node_in_group(&"wallet_service")
 
 
+func _ship_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
+
+
 func _as_name(value: Variant) -> StringName:
 	if typeof(value) == TYPE_STRING_NAME:
 		var as_name: StringName = value
@@ -340,7 +362,7 @@ func _on_command_invoked(name_of_command: StringName, _args: PackedStringArray) 
 	if name_of_command != BalanceEconomy.CARGO_COMMAND:
 		return
 	var used: int = used_volume()
-	var cap: int = BalanceEconomy.CARGO_CAPACITY
+	var cap: int = capacity()
 	if _inventory.is_empty():
 		EventBus.on_console_output.emit(BalanceEconomy.CONSOLE_CARGO_EMPTY % [free_volume(), cap])
 		return

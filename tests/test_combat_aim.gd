@@ -127,8 +127,10 @@ func test_mouse_aim_plane_uses_lead_when_locked_target_moves() -> void:
 	ship.cycle_target_lock()
 	assert_eq(ship.locked_target(), hostile)
 
+	# Lead must use the active hull bolt speed (E2.4), not the bare balance default.
+	var shot_speed: float = ship.projectile_speed()
 	var lead: Vector3 = FlightMath.lead_point(
-		ship.global_position, target_pos, target_vel, BalanceCombat.PROJECTILE_SPEED
+		ship.global_position, target_pos, target_vel, shot_speed
 	)
 	assert_gt(lead.x, target_pos.x, "lead sits ahead of lateral motion")
 	assert_lt(lead.z, target_pos.z - 1.0, "lead depth differs from current target")

@@ -1,15 +1,22 @@
 [gd_resource type="Resource" script_class="Hull" load_steps=2 format=3]
 
-; Single A1 ship profile — courier freighter. Numbers mirror BalanceFlight.
+; Starter Hauler (content id kept as hull_courier — D3). Cargo/endurance ship;
+; cannot win a dogfight vs a fighter baseline. Numbers also mirror BalanceFlight
+; motion defaults and BalanceEconomy.CARGO_CAPACITY for the trade loop.
 [ext_resource type="Script" path="res://src/data/shapes/Hull.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
 id = &"hull_courier"
-display_name = "Courier"
+display_name = "Hauler"
 max_speed = 70.0
 acceleration = 28.0
 turn_rate = 1.35
 strafe_speed = 18.0
 afterburner_multiplier = 1.55
 drag = 2.2
+cargo_capacity = 20
+weapon_damage = 30.0
+weapon_cooldown = 0.35
+projectile_speed = 250.0
+role = &"hauler"

@@ -31,6 +31,11 @@ func test_hull_rejects_non_positive_profile() -> void:
 	hull.strafe_speed = BalanceFlight.SHIP_STRAFE_SPEED
 	hull.afterburner_multiplier = BalanceFlight.SHIP_AFTERBURNER_MULTIPLIER
 	hull.drag = BalanceFlight.SHIP_DRAG
+	hull.cargo_capacity = BalanceEconomy.CARGO_CAPACITY
+	hull.weapon_damage = BalanceCombat.PLAYER_WEAPON_DAMAGE
+	hull.weapon_cooldown = BalanceCombat.PLAYER_FIRE_COOLDOWN
+	hull.projectile_speed = BalanceCombat.PROJECTILE_SPEED
+	hull.role = Hull.ROLE_HAULER
 	assert_eq(hull.validation_errors().size(), 0)
 
 
@@ -44,5 +49,28 @@ func test_hull_rejects_afterburner_below_one() -> void:
 	hull.strafe_speed = 5.0
 	hull.afterburner_multiplier = 0.5
 	hull.drag = 1.0
+	hull.cargo_capacity = BalanceEconomy.CARGO_CAPACITY
+	hull.weapon_damage = BalanceCombat.PLAYER_WEAPON_DAMAGE
+	hull.weapon_cooldown = BalanceCombat.PLAYER_FIRE_COOLDOWN
+	hull.projectile_speed = BalanceCombat.PROJECTILE_SPEED
+	hull.role = Hull.ROLE_HAULER
 	var joined: String = "\n".join(hull.validation_errors())
 	assert_string_contains(joined, "afterburner_multiplier")
+
+
+func test_hull_fighter_role_may_have_zero_cargo() -> void:
+	var hull: Hull = Hull.new()
+	hull.id = &"fixture_fighter_shape"
+	hull.display_name = "Fixture Fighter"
+	hull.max_speed = BalanceFlight.SHIP_MAX_SPEED
+	hull.acceleration = BalanceFlight.SHIP_ACCELERATION
+	hull.turn_rate = BalanceFlight.SHIP_TURN_RATE
+	hull.strafe_speed = BalanceFlight.SHIP_STRAFE_SPEED
+	hull.afterburner_multiplier = BalanceFlight.SHIP_AFTERBURNER_MULTIPLIER
+	hull.drag = BalanceFlight.SHIP_DRAG
+	hull.cargo_capacity = 0
+	hull.weapon_damage = BalanceCombat.FIGHTER_BASELINE_WEAPON_DAMAGE
+	hull.weapon_cooldown = BalanceCombat.FIGHTER_BASELINE_WEAPON_COOLDOWN
+	hull.projectile_speed = BalanceCombat.FIGHTER_BASELINE_PROJECTILE_SPEED
+	hull.role = Hull.ROLE_FIGHTER
+	assert_eq(hull.validation_errors().size(), 0)

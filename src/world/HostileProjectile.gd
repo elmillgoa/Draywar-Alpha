@@ -24,11 +24,14 @@ func _ready() -> void:
 
 
 ## Launch along `direction` (normalized) from current global_position.
-func launch(direction: Vector3) -> void:
+## Optional `damage` overrides the default HOSTILE_DAMAGE (profile bolts).
+func launch(direction: Vector3, damage: float = -1.0) -> void:
 	if direction.length_squared() < BalanceFlight.DIRECTION_EPSILON:
 		_direction = Vector3(0.0, 0.0, -1.0)
 	else:
 		_direction = direction.normalized()
+	if damage > 0.0:
+		_damage = damage
 	look_at(global_position + _direction, Vector3.UP)
 
 

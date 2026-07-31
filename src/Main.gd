@@ -5,7 +5,7 @@ extends Node
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B2–B3
 ##
 ## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission /
-## Recovery / Wallet / Cargo services, boots play from the main menu, and
+## Recovery / Wallet / Cargo / Ship services, boots play from the main menu, and
 ## rebuilds the world on gate jumps.
 
 const BOOT_BANNER: String = "Draywar Alpha — boot OK"
@@ -20,6 +20,7 @@ var _docking: DockingService = null
 var _gate_travel: GateTravelService = null
 var _wallet: WalletService = null
 var _cargo: CargoService = null
+var _ship_service: ShipService = null
 var _hud: FlightHUD = null
 var _station_menu: StationMenu = null
 
@@ -294,6 +295,11 @@ func _boot_play_session() -> void:
 	_cargo.name = "CargoService"
 	add_child(_cargo)
 
+	_ship_service = ShipService.new()
+	_ship_service.name = "ShipService"
+	add_child(_ship_service)
+	_ship_service.reset()
+
 	_station_menu = StationMenu.new()
 	_station_menu.name = "StationMenu"
 	add_child(_station_menu)
@@ -307,7 +313,7 @@ func _boot_play_session() -> void:
 
 	_ship = PlayerShip.new()
 	_ship.name = "PlayerShip"
-	_ship.hull_id = BalanceFlight.PLAYER_HULL_ID
+	_ship.hull_id = _ship_service.active_hull_id()
 	_ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
 	_world.add_child(_ship)
 	_ship.global_position = _world.player_spawn_position()
@@ -353,6 +359,9 @@ func _tear_down_play_session() -> void:
 	if _cargo != null:
 		_cargo.queue_free()
 		_cargo = null
+	if _ship_service != null:
+		_ship_service.queue_free()
+		_ship_service = null
 	if _wallet != null:
 		_wallet.queue_free()
 		_wallet = null

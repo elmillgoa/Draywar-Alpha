@@ -212,6 +212,17 @@ const DOCKED_STATUS_FORMAT: String = "DOCKED — %s · %s — %s"
 const STATUS_KIND_SYSTEM: StringName = &"system"
 const STATUS_KIND_STATION: StringName = &"station"
 
+# --- Kill attribution HUD feedback (E2.3) ----------------------------------
+
+## Temporary toast after an attributed kill. Arg = local controller display name.
+const HUD_KILL_ATTRIBUTED_FORMAT: String = "Kill recorded — %s standing fell."
+
+## Temporary toast when the kill was not attributed (no standing change).
+const HUD_KILL_UNATTRIBUTED: String = "Kill not recorded — no standing change."
+
+## How long the kill toast stays on the HUD (seconds).
+const HUD_KILL_TOAST_SECONDS: float = 4.0
+
 # --- Save section keys -----------------------------------------------------
 
 const SAVE_SECTION_KEY: StringName = &"standing"
@@ -331,3 +342,16 @@ const CONSOLE_RECOVERY_LIST_OFFER: String = '  %s - "%s" available (id %s)'
 const CONSOLE_RECOVERY_LIST_GATED: String = "  %s - no offer yet (id %s)"
 const CONSOLE_RECOVERY_LIST_CLOSED: String = "  %s - CLOSED (id %s)"
 const CONSOLE_RECOVERY_LIST_DONE: String = "  %s - chain complete (id %s)"
+
+
+## Plain-language attributed-kill line for HUD / tests. Pure formatter.
+static func format_kill_attributed(entity_display_name: String) -> String:
+	var name: String = entity_display_name.strip_edges()
+	if name.is_empty():
+		name = STATUS_UNCONTROLLED_LABEL
+	return HUD_KILL_ATTRIBUTED_FORMAT % name
+
+
+## Plain-language unattributed-kill line for HUD / tests. Pure formatter.
+static func format_kill_unattributed() -> String:
+	return HUD_KILL_UNATTRIBUTED

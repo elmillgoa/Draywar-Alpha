@@ -28,6 +28,8 @@ func _ready() -> void:
 	EventBus.on_captain_sheet_close_requested.connect(_on_close_requested)
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
 	EventBus.on_credits_changed.connect(_on_credits_changed)
+	EventBus.on_hull_changed.connect(_on_hull_changed)
+	EventBus.on_hull_purchased.connect(_on_hull_purchased)
 
 
 func _exit_tree() -> void:
@@ -39,6 +41,10 @@ func _exit_tree() -> void:
 		EventBus.on_cargo_changed.disconnect(_on_cargo_changed)
 	if EventBus.on_credits_changed.is_connected(_on_credits_changed):
 		EventBus.on_credits_changed.disconnect(_on_credits_changed)
+	if EventBus.on_hull_changed.is_connected(_on_hull_changed):
+		EventBus.on_hull_changed.disconnect(_on_hull_changed)
+	if EventBus.on_hull_purchased.is_connected(_on_hull_purchased):
+		EventBus.on_hull_purchased.disconnect(_on_hull_purchased)
 
 
 func _on_open_requested() -> void:
@@ -58,6 +64,16 @@ func _on_cargo_changed() -> void:
 func _on_credits_changed(_credits: int) -> void:
 	if visible:
 		_refresh_wallet()
+
+
+func _on_hull_changed(_old_hull_id: StringName, _new_hull_id: StringName) -> void:
+	if visible:
+		_refresh()
+
+
+func _on_hull_purchased(_hull_id: StringName) -> void:
+	if visible:
+		_refresh()
 
 
 func _build_ui() -> void:
@@ -151,9 +167,21 @@ func _ship_display_name() -> String:
 	var hull_id: StringName = BalanceFlight.PLAYER_HULL_ID
 	var tree: SceneTree = get_tree()
 	if tree != null:
-		var ship: Node = tree.get_first_node_in_group(BalanceSession.GROUP_PLAYER_SHIP)
-		if ship != null and ship.get("hull_id") != null:
-			hull_id = StringName(str(ship.get("hull_id")))
+		var ships: Node = tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
+		if ships != null and ships.has_method(&"active_hull_id"):
+			var raw_id: Variant = ships.call(&"active_hull_id")
+			if typeof(raw_id) == TYPE_STRING_NAME:
+				var as_name: StringName = raw_id
+				if not String(as_name).is_empty():
+					hull_id = as_name
+			elif typeof(raw_id) == TYPE_STRING:
+				var as_text: String = raw_id
+				if not as_text.is_empty():
+					hull_id = StringName(as_text)
+		else:
+			var ship: Node = tree.get_first_node_in_group(BalanceSession.GROUP_PLAYER_SHIP)
+			if ship != null and ship.get("hull_id") != null:
+				hull_id = StringName(str(ship.get("hull_id")))
 	return _content_name(hull_id)
 
 
@@ -182,8 +210,11 @@ func _refresh_wallet() -> void:
 			var condition_max: float = _variant_to_float(wallet.call(&"condition_max"))
 			if condition_max > 0.0:
 				hull_pct = int(roundf((condition / condition_max) * BalanceEconomy.PERCENT_SCALE))
-	if cargo != null and cargo.has_method(&"used_volume"):
-		cargo_used = _variant_to_int(cargo.call(&"used_volume"))
+	if cargo != null:
+		if cargo.has_method(&"used_volume"):
+			cargo_used = _variant_to_int(cargo.call(&"used_volume"))
+		if cargo.has_method(&"capacity"):
+			cargo_cap = _variant_to_int(cargo.call(&"capacity"))
 	_credits_label.text = BalanceSession.SHEET_CREDITS_FORMAT % credits
 	_cargo_label.text = BalanceSession.SHEET_CARGO_FORMAT % [cargo_used, cargo_cap]
 	_fuel_label.text = BalanceSession.SHEET_FUEL_FORMAT % fuel_pct

@@ -14,8 +14,19 @@ extends RefCounted
 ## First playable system ContentLibrary id.
 const PLAYABLE_SYSTEM_ID: StringName = &"system_alpha"
 
-## Hull the player flies in A1.
+## Starter / default active hull id (content id kept as hull_courier; display Hauler).
 const PLAYER_HULL_ID: StringName = &"hull_courier"
+
+## Fighter hull content id (E2.5 buy-once combat hull).
+const FIGHTER_HULL_ID: StringName = &"hull_fighter"
+
+## Scene-tree group for the session ShipService (single writer for active hull).
+const GROUP_SHIP_SERVICE: StringName = &"ship_service"
+
+## Optional save section `ship` (schema v1, no envelope bump) — E2.5.
+const SAVE_SECTION_SHIP: StringName = &"ship"
+const SAVE_KEY_ACTIVE_HULL_ID: StringName = &"active_hull_id"
+const SAVE_KEY_OWNED_HULL_IDS: StringName = &"owned_hull_ids"
 
 # --- Ship motion (courier defaults; Hull.tres may override) ----------------
 
@@ -113,6 +124,11 @@ const COLOR_SHIP: Color = Color(0.95, 0.78, 0.22)
 const COLOR_SHIP_ENGINE: Color = Color(0.35, 0.75, 1.0)
 const COLOR_SHIP_CANOPY: Color = Color(0.45, 0.72, 0.95)
 const COLOR_SHIP_WING: Color = Color(0.78, 0.62, 0.28)
+## Fighter silhouette (steel/cool) — distinct from Hauler gold at a glance (E2.5).
+const COLOR_SHIP_FIGHTER: Color = Color(0.42, 0.58, 0.92)
+const COLOR_SHIP_FIGHTER_ENGINE: Color = Color(0.55, 0.95, 1.0)
+const COLOR_SHIP_FIGHTER_CANOPY: Color = Color(0.75, 0.9, 1.0)
+const COLOR_SHIP_FIGHTER_FIN: Color = Color(0.28, 0.38, 0.72)
 const COLOR_SPACE: Color = Color(0.015, 0.02, 0.04)
 const COLOR_AMBIENT: Color = Color(0.12, 0.14, 0.18)
 
@@ -199,6 +215,14 @@ const SHIP_CANOPY_SIZE: Vector3 = Vector3(1.05, 0.5, 1.7)
 const SHIP_CANOPY_OFFSET: Vector3 = Vector3(0.0, 0.72, -0.35)
 const SHIP_WING_SIZE: Vector3 = Vector3(3.6, 0.16, 1.5)
 const SHIP_WING_OFFSET: Vector3 = Vector3(0.0, -0.2, 0.45)
+## Fighter mesh (slimmer body, tall dorsal fin — silhouette vs Hauler wings).
+const SHIP_FIGHTER_PRISM_SIZE: Vector3 = Vector3(1.8, 0.95, 5.6)
+const SHIP_FIGHTER_ENGINE_SIZE: Vector3 = Vector3(0.85, 0.5, 1.2)
+const SHIP_FIGHTER_ENGINE_Z_FACTOR: float = 0.38
+const SHIP_FIGHTER_CANOPY_SIZE: Vector3 = Vector3(0.85, 0.42, 1.5)
+const SHIP_FIGHTER_CANOPY_OFFSET: Vector3 = Vector3(0.0, 0.55, -0.55)
+const SHIP_FIGHTER_FIN_SIZE: Vector3 = Vector3(0.18, 2.4, 1.6)
+const SHIP_FIGHTER_FIN_OFFSET: Vector3 = Vector3(0.0, 1.1, 0.55)
 const STARFIELD_Y_SPREAD: float = 0.55
 const STARFIELD_SPHERE_RADIUS_FACTOR: float = 0.5
 const STARFIELD_RADIAL_SEGMENTS: int = 4

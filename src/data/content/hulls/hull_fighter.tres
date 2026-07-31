@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="Hull" load_steps=2 format=3]
+
+; Combat Fighter (E2.5). High guns, negligible hold — Destination §6 interlock.
+; Weapon numbers mirror BalanceCombat.FIGHTER_BASELINE_*.
+; Flight is snappier than Hauler (hull_courier).
+[ext_resource type="Script" path="res://src/data/shapes/Hull.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hull_fighter"
+display_name = "Fighter"
+max_speed = 95.0
+acceleration = 42.0
+turn_rate = 2.4
+strafe_speed = 28.0
+afterburner_multiplier = 1.75
+drag = 2.0
+cargo_capacity = 1
+weapon_damage = 50.0
+weapon_cooldown = 0.22
+projectile_speed = 320.0
+role = &"fighter"

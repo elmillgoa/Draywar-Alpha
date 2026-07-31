@@ -1,18 +1,34 @@
 class_name HostileNpc
 extends CharacterBody3D
 
-## Thin combat hostile — Path C B4 + Combat Fairness.
+## Thin combat hostile — Path C B4 + Combat Fairness + E2.1 profiles.
 ##
-## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B4
+## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B4, docs/BETA_E2_COMBAT_HULL.md E2.1
 ##
-## One silhouette, jink engage AI, travel bolts at lead point, death reports
-## a kill through AttributionService. Parent under SystemWorld so jump teardown
-## frees it with clear_world.
+## Profile-driven stats (skirmisher / gunboat), jink engage AI, travel bolts at
+## lead point, death reports a kill through AttributionService. Parent under
+## SystemWorld so jump teardown frees it with clear_world.
 
 const HostileProjectileScript = preload("res://src/world/HostileProjectile.gd")
 
 var victim_entity_id: StringName = BalanceCombat.VICTIM_ENTITY_ID
+var profile_id: StringName = BalanceCombat.PROFILE_DEFAULT
+var max_hp: float = BalanceCombat.HOSTILE_HP
 var hp: float = BalanceCombat.HOSTILE_HP
+
+## Combat tunables copied from profile (instance so AI/fire use live values).
+var _weapon_damage: float = BalanceCombat.HOSTILE_DAMAGE
+var _fire_cooldown_max: float = BalanceCombat.HOSTILE_FIRE_COOLDOWN
+var _engage_range: float = BalanceCombat.ENGAGE_RANGE
+var _turn_rate: float = BalanceCombat.HOSTILE_TURN_RATE
+var _move_speed: float = BalanceCombat.HOSTILE_MOVE_SPEED
+var _hold_min: float = BalanceCombat.HOSTILE_HOLD_DISTANCE_MIN
+var _hold_max: float = BalanceCombat.HOSTILE_HOLD_DISTANCE_MAX
+var _jink_speed: float = BalanceCombat.HOSTILE_JINK_SPEED
+var _jink_freq: float = BalanceCombat.HOSTILE_JINK_FREQ
+var _color_body: Color = BalanceCombat.COLOR_HOSTILE
+var _color_accent: Color = BalanceCombat.COLOR_HOSTILE_ACCENT
+var _color_fin: Color = BalanceCombat.COLOR_HOSTILE_FIN
 
 var _fire_cooldown: float = 0.0
 var _dead: bool = false
@@ -31,6 +47,9 @@ func _ready() -> void:
 	add_to_group(BalanceCombat.GROUP_HOSTILE)
 	collision_layer = 1
 	collision_mask = 0
+	# Ensure stats are applied even if spawn_under was not used.
+	if max_hp <= 0.0 or hp <= 0.0:
+		apply_profile(profile_id)
 	_build_mesh()
 	TimeScale.set_combat_lock(true)
 	EventBus.on_docked.connect(_on_player_docked)
@@ -65,9 +84,64 @@ func remaining_hp() -> float:
 	return hp
 
 
+## Full hull for this profile (HUD percent denominator).
+func hull_max() -> float:
+	return max_hp
+
+
 ## True until death starts queue_free.
 func is_alive() -> bool:
 	return not _dead and hp > 0.0
+
+
+## Copy fight stats from a balance profile id. Safe before add_child.
+func apply_profile(id: StringName) -> void:
+	var resolved: StringName = id
+	if not BalanceCombat.has_hostile_profile(resolved):
+		resolved = BalanceCombat.PROFILE_DEFAULT
+	profile_id = resolved
+	max_hp = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_HP, BalanceCombat.HOSTILE_HP
+	)
+	hp = max_hp
+	_weapon_damage = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_DAMAGE, BalanceCombat.HOSTILE_DAMAGE
+	)
+	_fire_cooldown_max = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_FIRE_COOLDOWN, BalanceCombat.HOSTILE_FIRE_COOLDOWN
+	)
+	_engage_range = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_ENGAGE_RANGE, BalanceCombat.ENGAGE_RANGE
+	)
+	_turn_rate = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_TURN_RATE, BalanceCombat.HOSTILE_TURN_RATE
+	)
+	_move_speed = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_MOVE_SPEED, BalanceCombat.HOSTILE_MOVE_SPEED
+	)
+	_hold_min = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_HOLD_MIN, BalanceCombat.HOSTILE_HOLD_DISTANCE_MIN
+	)
+	_hold_max = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_HOLD_MAX, BalanceCombat.HOSTILE_HOLD_DISTANCE_MAX
+	)
+	_jink_speed = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_JINK_SPEED, BalanceCombat.HOSTILE_JINK_SPEED
+	)
+	_jink_freq = BalanceCombat.profile_float(
+		profile_id, BalanceCombat.PROFILE_KEY_JINK_FREQ, BalanceCombat.HOSTILE_JINK_FREQ
+	)
+	_color_body = BalanceCombat.profile_color(
+		profile_id, BalanceCombat.PROFILE_KEY_COLOR, BalanceCombat.COLOR_HOSTILE
+	)
+	_color_accent = BalanceCombat.profile_color(
+		profile_id, BalanceCombat.PROFILE_KEY_COLOR_ACCENT, BalanceCombat.COLOR_HOSTILE_ACCENT
+	)
+	_color_fin = BalanceCombat.profile_color(
+		profile_id, BalanceCombat.PROFILE_KEY_COLOR_FIN, BalanceCombat.COLOR_HOSTILE_FIN
+	)
+	if _body_mat != null:
+		_refresh_materials()
 
 
 ## Apply player (or test) damage. Emits bus; dies at 0 HP.
@@ -81,10 +155,15 @@ func take_damage(amount: float) -> void:
 		_die()
 
 
-## Place a hostile under `parent` at `world_position`. Returns the node.
-static func spawn_under(parent: Node3D, world_position: Vector3) -> HostileNpc:
+## Place a hostile under `parent` at `world_position`. Optional profile id.
+static func spawn_under(
+	parent: Node3D,
+	world_position: Vector3,
+	for_profile_id: StringName = BalanceCombat.PROFILE_DEFAULT
+) -> HostileNpc:
 	var hostile: HostileNpc = HostileNpc.new()
 	hostile.name = "HostileNpc"
+	hostile.apply_profile(for_profile_id)
 	parent.add_child(hostile)
 	hostile.global_position = world_position
 	return hostile
@@ -92,7 +171,7 @@ static func spawn_under(parent: Node3D, world_position: Vector3) -> HostileNpc:
 
 ## HUD / lock readout name (group-safe, no cross-layer type).
 func lock_display_name() -> String:
-	return BalanceCombat.TARGET_LOCK_DEFAULT_NAME
+	return BalanceCombat.profile_display_name(profile_id)
 
 
 ## World velocity for lead intercept (CharacterBody3D velocity).
@@ -135,7 +214,7 @@ func _physics_process(delta: float) -> void:
 
 	var to_player: Vector3 = player.global_position - global_position
 	var distance: float = to_player.length()
-	if distance > BalanceCombat.ENGAGE_RANGE or distance < BalanceFlight.DIRECTION_EPSILON:
+	if distance > _engage_range or distance < BalanceFlight.DIRECTION_EPSILON:
 		return
 
 	_jink_time += dt
@@ -206,7 +285,7 @@ func _face_toward(to_player: Vector3, dt: float) -> void:
 	if angle <= BalanceFlight.TURN_ANGLE_EPSILON:
 		to = to
 	else:
-		var max_step: float = BalanceCombat.HOSTILE_TURN_RATE * dt
+		var max_step: float = _turn_rate * dt
 		if angle > max_step:
 			var weight: float = max_step / angle
 			to = from.slerp(to, weight).normalized()
@@ -227,12 +306,12 @@ func _facing_player(to_player: Vector3) -> bool:
 
 func _close_distance(to_player: Vector3, distance: float, dt: float) -> void:
 	var dir: Vector3 = to_player.normalized()
-	if distance > BalanceCombat.HOSTILE_HOLD_DISTANCE_MAX:
+	if distance > _hold_max:
 		# Close in from outside the hold band.
-		velocity = dir * BalanceCombat.HOSTILE_MOVE_SPEED
-	elif distance < BalanceCombat.HOSTILE_HOLD_DISTANCE_MIN:
+		velocity = dir * _move_speed
+	elif distance < _hold_min:
 		# Back off when too close.
-		velocity = -dir * BalanceCombat.HOSTILE_MOVE_SPEED
+		velocity = -dir * _move_speed
 	else:
 		# Weave sideways inside the hold band so shots are dodgeable.
 		var lateral: Vector3 = dir.cross(Vector3.UP)
@@ -242,8 +321,8 @@ func _close_distance(to_player: Vector3, distance: float, dt: float) -> void:
 			velocity = Vector3.ZERO
 		else:
 			lateral = lateral.normalized()
-			var side: float = sin(_jink_time * BalanceCombat.HOSTILE_JINK_FREQ)
-			velocity = lateral * (BalanceCombat.HOSTILE_JINK_SPEED * side)
+			var side: float = sin(_jink_time * _jink_freq)
+			velocity = lateral * (_jink_speed * side)
 	global_position = global_position + velocity * dt
 
 
@@ -252,7 +331,7 @@ func _fire_at_player(player: Node3D) -> void:
 		return
 	if _player_in_station_safe_zone(player.global_position):
 		return
-	_fire_cooldown = BalanceCombat.HOSTILE_FIRE_COOLDOWN
+	_fire_cooldown = _fire_cooldown_max
 	EventBus.on_weapon_fired.emit()
 
 	var player_vel: Vector3 = _player_velocity(player)
@@ -283,7 +362,7 @@ func _spawn_projectile(direction: Vector3) -> void:
 			global_position + direction * BalanceCombat.HOSTILE_PROJECTILE_LENGTH
 		)
 	if bolt.has_method(&"launch"):
-		bolt.call(&"launch", direction)
+		bolt.call(&"launch", direction, _weapon_damage)
 
 
 func _player_velocity(player: Node3D) -> Vector3:
@@ -354,13 +433,28 @@ func _report_kill(system_id: StringName) -> void:
 	var attribution: Node = tree.get_first_node_in_group(&"attribution_service")
 	if attribution == null or not attribution.has_method(&"report_kill"):
 		return
+	# Contested needs live witnesses; patrolled ignores count; lawless needs evidence.
 	attribution.call(
 		&"report_kill",
 		system_id,
 		victim_entity_id,
-		BalanceCombat.KILL_WITNESSES,
+		_live_witness_count(),
 		BalanceCombat.KILL_EVIDENCE
 	)
+
+
+## Ambient orbit traffic in this system that would report a kill (not combat hostiles).
+func _live_witness_count() -> int:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return 0
+	var total: int = 0
+	for node: Node in tree.get_nodes_in_group(BalanceEconomy.GROUP_NPC_TRAFFIC):
+		if not is_instance_valid(node):
+			continue
+		if node is NpcTraffic:
+			total += (node as NpcTraffic).live_ship_count()
+	return total
 
 
 func _current_system_id() -> StringName:
@@ -420,21 +514,15 @@ func _refresh_materials() -> void:
 			_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_HIT_FLASH
 		return
 	if _lock_highlighted:
-		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE.lightened(
-			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
-		)
-		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT.lightened(
-			BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
-		)
+		_body_mat.albedo_color = _color_body.lightened(BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN)
+		_nose_mat.albedo_color = _color_accent.lightened(BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN)
 		if _fin_mat != null:
-			_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_FIN.lightened(
-				BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN
-			)
+			_fin_mat.albedo_color = _color_fin.lightened(BalanceCombat.LOCK_HIGHLIGHT_LIGHTEN)
 	else:
-		_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
-		_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
+		_body_mat.albedo_color = _color_body
+		_nose_mat.albedo_color = _color_accent
 		if _fin_mat != null:
-			_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_FIN
+			_fin_mat.albedo_color = _color_fin
 
 
 func _build_mesh() -> void:
@@ -447,7 +535,7 @@ func _build_mesh() -> void:
 	body.mesh = capsule
 	_body_mat = StandardMaterial3D.new()
 	_body_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_body_mat.albedo_color = BalanceCombat.COLOR_HOSTILE
+	_body_mat.albedo_color = _color_body
 	body.material_override = _body_mat
 	# Lay capsule along forward (-Z) so it reads as a ship, not a buoy.
 	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
@@ -459,7 +547,7 @@ func _build_mesh() -> void:
 	nose.mesh = nose_box
 	_nose_mat = StandardMaterial3D.new()
 	_nose_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_nose_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_ACCENT
+	_nose_mat.albedo_color = _color_accent
 	nose.material_override = _nose_mat
 	nose.position = Vector3(0.0, 0.0, BalanceCombat.HOSTILE_NOSE_Z)
 	add_child(nose)
@@ -471,7 +559,7 @@ func _build_mesh() -> void:
 	fins.mesh = fin_box
 	_fin_mat = StandardMaterial3D.new()
 	_fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_fin_mat.albedo_color = BalanceCombat.COLOR_HOSTILE_FIN
+	_fin_mat.albedo_color = _color_fin
 	fins.material_override = _fin_mat
 	fins.position = BalanceCombat.HOSTILE_FIN_OFFSET
 	add_child(fins)

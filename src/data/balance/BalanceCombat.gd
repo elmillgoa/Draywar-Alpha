@@ -32,6 +32,8 @@ const TARGET_LOCK_KEY: Key = KEY_TAB
 const TARGET_LOCK_RANGE: float = 400.0
 
 # --- Player weapon (bolts — no auto-hit on lock) ----------------------------
+# Defaults / no-hull fallback. Live play reads active Hull weapon fields (E2.4).
+# Hauler content is slightly softer than these so fighter baseline wins math.
 
 ## Seconds between player shots.
 const PLAYER_FIRE_COOLDOWN: float = 0.28
@@ -48,6 +50,22 @@ const HITSCAN_RANGE: float = 392.0
 ## Damage applied to a hostile on a successful bolt hit.
 const PLAYER_WEAPON_DAMAGE: float = 40.0
 
+# --- Fighter baseline (mirrored into hull_fighter.tres content — E2.5) ------
+# Pure balance numbers so Hauler vs hard profile TTK/DPS can be asserted without
+# spawning a Fighter scene. Content `hull_fighter` must match these weapons.
+
+## Fighter baseline bolt damage (higher than Hauler content).
+const FIGHTER_BASELINE_WEAPON_DAMAGE: float = 50.0
+
+## Fighter baseline seconds between shots (faster than Hauler content).
+const FIGHTER_BASELINE_WEAPON_COOLDOWN: float = 0.22
+
+## Fighter baseline bolt travel speed (m/s).
+const FIGHTER_BASELINE_PROJECTILE_SPEED: float = 320.0
+
+## Fighter baseline hold capacity (near-zero; grain routes refuse).
+const FIGHTER_BASELINE_CARGO_CAPACITY: int = 1
+
 ## Bolt visual size.
 const PROJECTILE_RADIUS: float = 0.45
 const PROJECTILE_LENGTH: float = 2.8
@@ -56,9 +74,79 @@ const COLOR_PROJECTILE: Color = Color(1.0, 0.85, 0.25)
 ## Lead intercept solver iterations (classic space-combat lead pip).
 const LEAD_SOLVE_ITERATIONS: int = 4
 
-# --- Hostile ---------------------------------------------------------------
+# --- Hostile profiles (E2.1) -----------------------------------------------
+## Two fight shapes: glass-cannon skirmisher vs hard gunboat. Legacy HOSTILE_*
+## constants match the default (skirmisher) so older tests keep working.
 
-## Hostile hull points (dies at 0). ~3 player hits.
+const PROFILE_SKIRMISHER: StringName = &"skirmisher"
+const PROFILE_GUNBOAT: StringName = &"gunboat"
+const PROFILE_DEFAULT: StringName = PROFILE_SKIRMISHER
+
+## Bounty ensure uses the softer profile so Hauler-era bounties stay completable.
+const BOUNTY_HOSTILE_PROFILE: StringName = PROFILE_SKIRMISHER
+
+## Ambient spawn by policing: contested → skirmisher, lawless → gunboat.
+## One session that visits both contested and lawless meets both shapes.
+const AMBIENT_PROFILE_CONTESTED: StringName = PROFILE_SKIRMISHER
+const AMBIENT_PROFILE_LAWLESS: StringName = PROFILE_GUNBOAT
+
+## Profile dictionary keys (String for Dictionary access).
+const PROFILE_KEY_DISPLAY_NAME: String = "display_name"
+const PROFILE_KEY_HP: String = "hp"
+const PROFILE_KEY_DAMAGE: String = "damage"
+const PROFILE_KEY_FIRE_COOLDOWN: String = "fire_cooldown"
+const PROFILE_KEY_ENGAGE_RANGE: String = "engage_range"
+const PROFILE_KEY_TURN_RATE: String = "turn_rate"
+const PROFILE_KEY_MOVE_SPEED: String = "move_speed"
+const PROFILE_KEY_HOLD_MIN: String = "hold_distance_min"
+const PROFILE_KEY_HOLD_MAX: String = "hold_distance_max"
+const PROFILE_KEY_JINK_SPEED: String = "jink_speed"
+const PROFILE_KEY_JINK_FREQ: String = "jink_freq"
+const PROFILE_KEY_COLOR: String = "color"
+const PROFILE_KEY_COLOR_ACCENT: String = "color_accent"
+const PROFILE_KEY_COLOR_FIN: String = "color_fin"
+
+## Full profile table. Numbers are the source of truth; HOSTILE_* mirror default.
+const HOSTILE_PROFILES: Dictionary = {
+	PROFILE_SKIRMISHER:
+	{
+		PROFILE_KEY_DISPLAY_NAME: "Skirmisher",
+		PROFILE_KEY_HP: 100.0,
+		PROFILE_KEY_DAMAGE: 8.0,
+		PROFILE_KEY_FIRE_COOLDOWN: 1.4,
+		PROFILE_KEY_ENGAGE_RANGE: 110.0,
+		PROFILE_KEY_TURN_RATE: 1.4,
+		PROFILE_KEY_MOVE_SPEED: 18.0,
+		PROFILE_KEY_HOLD_MIN: 35.0,
+		PROFILE_KEY_HOLD_MAX: 55.0,
+		PROFILE_KEY_JINK_SPEED: 12.0,
+		PROFILE_KEY_JINK_FREQ: 2.0,
+		PROFILE_KEY_COLOR: Color(0.92, 0.22, 0.18),
+		PROFILE_KEY_COLOR_ACCENT: Color(1.0, 0.45, 0.2),
+		PROFILE_KEY_COLOR_FIN: Color(0.75, 0.12, 0.1),
+	},
+	PROFILE_GUNBOAT:
+	{
+		PROFILE_KEY_DISPLAY_NAME: "Gunboat",
+		PROFILE_KEY_HP: 200.0,
+		PROFILE_KEY_DAMAGE: 14.0,
+		PROFILE_KEY_FIRE_COOLDOWN: 2.2,
+		PROFILE_KEY_ENGAGE_RANGE: 150.0,
+		PROFILE_KEY_TURN_RATE: 0.85,
+		PROFILE_KEY_MOVE_SPEED: 10.0,
+		PROFILE_KEY_HOLD_MIN: 50.0,
+		PROFILE_KEY_HOLD_MAX: 75.0,
+		PROFILE_KEY_JINK_SPEED: 7.0,
+		PROFILE_KEY_JINK_FREQ: 1.2,
+		PROFILE_KEY_COLOR: Color(0.72, 0.14, 0.2),
+		PROFILE_KEY_COLOR_ACCENT: Color(0.95, 0.35, 0.18),
+		PROFILE_KEY_COLOR_FIN: Color(0.55, 0.08, 0.12),
+	},
+}
+
+# --- Hostile (legacy aliases = skirmisher / PROFILE_DEFAULT) ---------------
+
+## Hostile hull points (dies at 0). ~3 player hits at PLAYER_WEAPON_DAMAGE.
 const HOSTILE_HP: float = 100.0
 
 ## Damage applied to player condition per hostile bolt hit.
@@ -109,7 +197,7 @@ const PLAYER_HURTBOX_RADIUS: float = 2.8
 ## Brief material / HUD flash after a hit (seconds).
 const HIT_FLASH_SECONDS: float = 0.12
 
-## Red-tinted capsule silhouette.
+## Red-tinted capsule silhouette (skirmisher / default).
 const COLOR_HOSTILE: Color = Color(0.92, 0.22, 0.18)
 const COLOR_HOSTILE_ACCENT: Color = Color(1.0, 0.45, 0.2)
 const COLOR_HOSTILE_HIT_FLASH: Color = Color(1.0, 0.85, 0.8)
@@ -142,11 +230,30 @@ const KILL_FLASH_RADIAL_SEGMENTS: int = 8
 const KILL_FLASH_RINGS: int = 4
 const COLOR_KILL_FLASH: Color = Color(1.0, 0.72, 0.35)
 
-# --- Spawn -----------------------------------------------------------------
+# --- Spawn / encounter rules (E2.2) ----------------------------------------
+
+## Hard ceiling on live combat hostiles in one system (E2 cap). Ambient spawn
+## and bounty ensure refuse new spawns at this count.
+const MAX_CONCURRENT_HOSTILES: int = 3
+
+## Ambient combat hostiles placed at system build by policing tier.
+## Patrolled stays zero; lawless is denser than contested.
+const AMBIENT_HOSTILE_COUNT_PATROLLED: int = 0
+const AMBIENT_HOSTILE_COUNT_CONTESTED: int = 1
+const AMBIENT_HOSTILE_COUNT_LAWLESS: int = 2
 
 ## World offset from station anchor — near the gate line, NOT the undock pad.
 ## Station is at origin; gate sits around GATE_POSITION — keep pirates there.
+## First ambient spawn uses this (legacy single-pirate path / tests).
 const SPAWN_OFFSET: Vector3 = Vector3(200.0, 14.0, -130.0)
+
+## Additional ambient offsets for denser systems (lawless count 2+). Each length
+## must exceed STATION_SAFE_RADIUS so pad ganking stays impossible.
+const SPAWN_OFFSET_SECONDARY: Vector3 = Vector3(-185.0, 16.0, -145.0)
+const SPAWN_OFFSET_TERTIARY: Vector3 = Vector3(160.0, 18.0, 175.0)
+
+## How many named ambient offsets exist (index wraps if count exceeds this).
+const AMBIENT_SPAWN_OFFSET_SLOT_COUNT: int = 3
 
 ## Offset from the player (or request point) when a bounty needs a live hostile
 ## and none remain. Length must exceed STATION_SAFE_RADIUS so undock airspace
@@ -164,7 +271,7 @@ const STATION_SAFE_RADIUS: float = 110.0
 const UNDOCK_GRACE_SECONDS: float = 5.0
 
 ## Patrolled / government systems do not spawn combat hostiles (safe undock).
-## Contested and lawless systems may place one thin pirate for B4 vetting.
+## Contested and lawless systems place ambient hostiles per count constants.
 const SPAWN_IN_PATROLLED: bool = false
 const SPAWN_IN_CONTESTED: bool = true
 const SPAWN_IN_LAWLESS: bool = true
@@ -182,8 +289,8 @@ const COLOR_HOSTILE_BEAM: Color = Color(1.0, 0.35, 0.25)
 
 # --- Attribution defaults for thin play kills ------------------------------
 
-## Patrolled systems attribute with zero witnesses; contested needs threshold.
-const KILL_WITNESSES: int = 1
+## Evidence trail for ambient combat kills (none by default — standing law §7).
+## Witness count is live ambient NpcTraffic ship count (not a fixed constant).
 const KILL_EVIDENCE: bool = false
 
 # --- HUD -------------------------------------------------------------------
@@ -246,13 +353,150 @@ static func format_target_lock_line(label: String, distance_m: float, hull_perce
 	)
 
 
-## Hull remaining as integer percent of HOSTILE_HP.
-static func hostile_hull_percent(remaining_hp: float) -> int:
-	if HOSTILE_HP <= 0.0:
+## Hull remaining as integer percent of max HP (default: legacy HOSTILE_HP).
+static func hostile_hull_percent(remaining_hp: float, max_hp: float = -1.0) -> int:
+	var cap: float = max_hp if max_hp > 0.0 else HOSTILE_HP
+	if cap <= 0.0:
 		return 0
 	return clampi(
-		int(roundf((remaining_hp / HOSTILE_HP) * float(HULL_PERCENT_FULL))), 0, HULL_PERCENT_FULL
+		int(roundf((remaining_hp / cap) * float(HULL_PERCENT_FULL))), 0, HULL_PERCENT_FULL
 	)
+
+
+## Resolved profile dict (falls back to default skirmisher if unknown id).
+static func hostile_profile(profile_id: StringName) -> Dictionary:
+	if HOSTILE_PROFILES.has(profile_id):
+		var raw: Variant = HOSTILE_PROFILES[profile_id]
+		if typeof(raw) == TYPE_DICTIONARY:
+			return raw
+	var fallback: Variant = HOSTILE_PROFILES[PROFILE_DEFAULT]
+	if typeof(fallback) == TYPE_DICTIONARY:
+		return fallback
+	return {}
+
+
+## True when `profile_id` is a registered hostile profile.
+static func has_hostile_profile(profile_id: StringName) -> bool:
+	return HOSTILE_PROFILES.has(profile_id)
+
+
+## Registered profile ids (for tests / pickers).
+static func hostile_profile_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for key: Variant in HOSTILE_PROFILES.keys():
+		if typeof(key) == TYPE_STRING_NAME:
+			var as_name: StringName = key
+			out.append(as_name)
+		elif typeof(key) == TYPE_STRING:
+			var as_text: String = key
+			out.append(StringName(as_text))
+	return out
+
+
+## Float stat from a profile (unknown key → `default_value`).
+static func profile_float(profile_id: StringName, key: String, default_value: float) -> float:
+	var profile: Dictionary = hostile_profile(profile_id)
+	if not profile.has(key):
+		return default_value
+	var raw: Variant = profile[key]
+	if typeof(raw) == TYPE_FLOAT:
+		var as_f: float = raw
+		return as_f
+	if typeof(raw) == TYPE_INT:
+		var as_i: int = raw
+		return float(as_i)
+	return default_value
+
+
+## Display name for lock HUD (unknown → TARGET_LOCK_DEFAULT_NAME).
+static func profile_display_name(profile_id: StringName) -> String:
+	var profile: Dictionary = hostile_profile(profile_id)
+	if profile.has(PROFILE_KEY_DISPLAY_NAME):
+		var raw: Variant = profile[PROFILE_KEY_DISPLAY_NAME]
+		if typeof(raw) == TYPE_STRING:
+			var as_text: String = raw
+			if not as_text.is_empty():
+				return as_text
+	return TARGET_LOCK_DEFAULT_NAME
+
+
+## Color from profile (unknown → `default_color`).
+static func profile_color(profile_id: StringName, key: String, default_color: Color) -> Color:
+	var profile: Dictionary = hostile_profile(profile_id)
+	if not profile.has(key):
+		return default_color
+	var raw: Variant = profile[key]
+	if typeof(raw) == TYPE_COLOR:
+		var as_color: Color = raw
+		return as_color
+	return default_color
+
+
+## Player bolt hits needed to kill this profile (ceil division).
+static func player_hits_to_kill(
+	profile_id: StringName, damage_per_hit: float = PLAYER_WEAPON_DAMAGE
+) -> int:
+	if damage_per_hit <= 0.0:
+		return 0
+	var hp: float = profile_float(profile_id, PROFILE_KEY_HP, HOSTILE_HP)
+	return int(ceili(hp / damage_per_hit))
+
+
+## Sustained damage per second for a weapon (damage / cooldown). Pure for tests.
+static func weapon_dps(damage_per_hit: float, fire_cooldown: float) -> float:
+	if damage_per_hit <= 0.0 or fire_cooldown <= 0.0:
+		return 0.0
+	return damage_per_hit / fire_cooldown
+
+
+## Ideal time-to-kill (seconds) at perfect hit rate: first shot at t=0, then
+## cooldown between remaining hits. Pure balance math for hull comparisons.
+static func time_to_kill(hp: float, damage_per_hit: float, fire_cooldown: float) -> float:
+	if hp <= 0.0:
+		return 0.0
+	if damage_per_hit <= 0.0 or fire_cooldown <= 0.0:
+		return 0.0
+	var hits: int = int(ceili(hp / damage_per_hit))
+	if hits <= 1:
+		return 0.0
+	return float(hits - 1) * fire_cooldown
+
+
+## Ambient hostile profile for a policing tag string (contested/lawless/other).
+## Uses bare StringNames so balance does not depend on StarSystem shapes.
+static func ambient_profile_for_policing(policing: StringName) -> StringName:
+	if policing == &"lawless":
+		return AMBIENT_PROFILE_LAWLESS
+	if policing == &"contested":
+		return AMBIENT_PROFILE_CONTESTED
+	return PROFILE_DEFAULT
+
+
+## Ambient hostile count for a policing tag (E2.2). Patrolled = 0; lawless denser.
+static func ambient_count_for_policing(policing: StringName) -> int:
+	if policing == &"lawless":
+		return AMBIENT_HOSTILE_COUNT_LAWLESS
+	if policing == &"contested":
+		return AMBIENT_HOSTILE_COUNT_CONTESTED
+	if policing == &"patrolled":
+		return AMBIENT_HOSTILE_COUNT_PATROLLED
+	return AMBIENT_HOSTILE_COUNT_PATROLLED
+
+
+## World offset from station for ambient slot `index` (wraps across named slots).
+static func ambient_spawn_offset(index: int) -> Vector3:
+	var slot: int = index
+	if AMBIENT_SPAWN_OFFSET_SLOT_COUNT > 0:
+		slot = posmod(index, AMBIENT_SPAWN_OFFSET_SLOT_COUNT)
+	match slot:
+		0:
+			return SPAWN_OFFSET
+		1:
+			return SPAWN_OFFSET_SECONDARY
+		2:
+			return SPAWN_OFFSET_TERTIARY
+		_:
+			return SPAWN_OFFSET
 
 
 ## Lead intercept so a bolt at `shot_speed` meets a moving target.

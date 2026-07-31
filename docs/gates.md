@@ -206,17 +206,56 @@ Not a re-open of Final Alpha. Refuse → iterate E1 list only. Sign → open roa
 
 ### Attempt log
 
-*(none yet — waiting on Elliot)*
+#### Attempt 1 — 2026-07-31
 
-### Play fixes (pre–formal Attempt) — 2026-07-31
-
-**Not a full E1 feel verdict.** Mid-gate play after E1 code. Combat/aim/job path fixed and accepted for this slice.
+**Verdict: signed — E1 feel passes.**
 
 **Elliot (verbatim):**
 
+> I've already signed off. Take the build through as many phases as you can. Only stop if I need to make a decision. I'll test systems when they are built.
+
+**Also (combat/aim slice earlier same day):**
+
 > Much better. We are good on this section
+
+**Notes:** Roadmap approved to open E2+. Formal mid-play script not re-run in this session; Elliot authorized phase drive and deferred testing to when systems land.
+
+### Play fixes (pre–formal Attempt) — 2026-07-31
+
+**Absorbed into Attempt 1.** Combat/aim/job path fixed before formal sign.
 
 **Fixes in that slice:** Accept-job crash (free mid-pressed); free-fire reticle (camera ray); bounty prey ensure (near player if none in lock range).
 
-**Still open:** Formal E1 feel Attempt (small game worth another phase?) — not signed yet.
+---
+
+## E2.7 — Combat & hull feel
+
+**Criteria:** Does combat + the two-hull interlock feel like **Destination combat identity** worth expanding (E3+)?  
+Not a re-open of E1 or Final Alpha. Refuse → iterate E2 list only. Sign → open roadmap E3.
+
+**What that means in play (plain):**
+
+- Two pirate fight shapes read differently (Skirmisher vs Gunboat).
+- Security-aware space: Alpha safe on undock; Beta/Gamma have hostiles; density differs.
+- Kill feedback tells you when standing moved vs when it did not.
+- Hauler vs Fighter trade-off is real (cargo vs guns); buy once, switch docked only, blocked when cargo too heavy.
+- Traffic feels busier (multi-ship systems) without the game falling apart.
+
+### Play script (cold, ~30–45 min)
+
+1. **New Game** — docked Alpha Port on the **Hauler**. Note captain sheet hull name.
+2. **Undock Alpha** — busy freighter traffic, **no pirates**. Fly, re-dock. Safe government space.
+3. **Jobs** — accept courier to Beta. Jump. Note denser/contested feel + skirmisher ambient.
+4. **Fight a Skirmisher** — Tab lock, lead pip, strafe bolts. Kill. Read HUD toast (attributed or not — witnesses matter in contested).
+5. **Bounty (optional)** — at Beta Spit or board with bounty: accept → ensure prey in lock range → kill → turn in.
+6. **Gamma** — jump lawless. **Two gunboats** (meaner). Traffic thinner freighters, harder fight. Kill one; note toast (lawless often “not recorded”).
+7. **Hull buy** — earn/save to **1000** credits. Dock Services: **Buy Fighter**. Switch to Fighter (empty hold or light cargo). Silhouette/combat feel should differ.
+8. **Cargo block** — switch back to Hauler, load grain past Fighter hold size, try Switch to Fighter — should refuse until you sell down.
+9. **Fighter fight** — undock Fighter in Beta/Gamma; one exchange should feel snappier than Hauler.
+10. **Save / Continue** once with Fighter owned.
+11. Judge: combat + hull law worth E3, or still not Destination identity?
+
+### Attempt log
+
+*(No attempts yet — E2 code complete 2026-07-31; awaiting Elliot play.)*
 

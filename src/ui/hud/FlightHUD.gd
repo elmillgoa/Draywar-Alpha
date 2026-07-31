@@ -21,6 +21,7 @@ var _fuel_label: Label = null
 var _condition_label: Label = null
 var _mission_label: Label = null
 var _target_label: Label = null
+var _kill_toast_label: Label = null
 var _nav_title_label: Label = null
 var _nav_here_label: Label = null
 var _nav_gates_label: Label = null
@@ -45,6 +46,7 @@ var _condition_base_color: Color = Color.WHITE
 var _dock_fade_left: float = 0.0
 var _dock_fade_peak: float = 0.0
 var _dock_fade_base: Color = Color.TRANSPARENT
+var _kill_toast_left: float = 0.0
 
 
 func _ready() -> void:
@@ -70,6 +72,8 @@ func _ready() -> void:
 	EventBus.on_player_crippled.connect(_on_player_crippled)
 	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
 	EventBus.on_hostile_killed.connect(_on_hostile_killed)
+	EventBus.on_kill_attributed.connect(_on_kill_attributed)
+	EventBus.on_kill_unattributed.connect(_on_kill_unattributed)
 	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
 	EventBus.on_hostile_damaged.connect(_on_hostile_damaged)
 	EventBus.on_player_damaged.connect(_on_player_damaged_flash)
@@ -97,6 +101,8 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_player_crippled, _on_player_crippled)
 	_disconnect(EventBus.on_player_repaired_from_cripple, _on_player_repaired_from_cripple)
 	_disconnect(EventBus.on_hostile_killed, _on_hostile_killed)
+	_disconnect(EventBus.on_kill_attributed, _on_kill_attributed)
+	_disconnect(EventBus.on_kill_unattributed, _on_kill_unattributed)
 	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
 	_disconnect(EventBus.on_hostile_damaged, _on_hostile_damaged)
 	_disconnect(EventBus.on_player_damaged, _on_player_damaged_flash)
@@ -227,6 +233,21 @@ func _build_labels() -> void:
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_prompt_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
 	_prompt_label.text = ""
+
+	# Temporary kill attribution toast (E2.3) — sits just above the prompt.
+	_kill_toast_label = _make_label(_root, BalanceFlight.HUD_PROMPT_FONT_SIZE)
+	_kill_toast_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_kill_toast_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_kill_toast_label.offset_bottom = (
+		-BalanceFlight.HUD_MARGIN * BalanceFlight.HUD_LINE_THROTTLE
+		- float(BalanceFlight.HUD_PROMPT_FONT_SIZE) * BalanceFlight.HUD_LINE_SPEED
+	)
+	_kill_toast_label.offset_top = (
+		_kill_toast_label.offset_bottom - float(BalanceFlight.HUD_PROMPT_FONT_SIZE)
+	)
+	_kill_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_kill_toast_label.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
+	_kill_toast_label.text = ""
 
 	# Full-screen dock/undock flash (visual only — does not block input).
 	_dock_fade = ColorRect.new()
@@ -596,8 +617,35 @@ func _on_hostile_killed(_system_id: StringName, _victim_entity_id: StringName) -
 	_refresh_mission_line()
 
 
+func _on_kill_attributed(
+	_system_id: StringName, entity_id: StringName, _delta: float, _reason: StringName
+) -> void:
+	var display: String = _content_name(entity_id)
+	if display.is_empty():
+		display = String(entity_id)
+	_show_kill_toast(BalanceStanding.format_kill_attributed(display))
+
+
+func _on_kill_unattributed(_system_id: StringName, _victim_entity_id: StringName) -> void:
+	_show_kill_toast(BalanceStanding.format_kill_unattributed())
+
+
+func _show_kill_toast(line: String) -> void:
+	if _kill_toast_label == null:
+		return
+	_kill_toast_label.text = line
+	_kill_toast_left = BalanceStanding.HUD_KILL_TOAST_SECONDS
+
+
+## Current kill-feedback toast text (tests / external readers).
+func kill_toast_text() -> String:
+	if _kill_toast_label == null:
+		return ""
+	return _kill_toast_label.text
+
+
 func _process(delta: float) -> void:
-	if _condition_hit_flash_left <= 0.0 and _dock_fade_left <= 0.0:
+	if _condition_hit_flash_left <= 0.0 and _dock_fade_left <= 0.0 and _kill_toast_left <= 0.0:
 		return
 	var dt: float = TimeScale.scaled_delta(delta)
 	if _condition_hit_flash_left > 0.0:
@@ -613,6 +661,10 @@ func _process(delta: float) -> void:
 		if _dock_fade_left <= 0.0:
 			_dock_fade.visible = false
 			_dock_fade.color = Color(_dock_fade_base.r, _dock_fade_base.g, _dock_fade_base.b, 0.0)
+	if _kill_toast_left > 0.0:
+		_kill_toast_left = maxf(0.0, _kill_toast_left - dt)
+		if _kill_toast_left <= 0.0 and _kill_toast_label != null:
+			_kill_toast_label.text = ""
 
 
 func _on_target_lock_changed(locked: bool, label: String, distance: float) -> void:
@@ -626,10 +678,11 @@ func _on_target_lock_changed(locked: bool, label: String, distance: float) -> vo
 	_refresh_target_line()
 
 
-func _on_hostile_damaged(remaining_hp: float) -> void:
+func _on_hostile_damaged(_remaining_hp: float) -> void:
 	if not _target_locked:
 		return
-	_target_hull_percent = BalanceCombat.hostile_hull_percent(remaining_hp)
+	# Re-read locked target so profile max_hp is the percent denominator.
+	_target_hull_percent = _read_locked_hull_percent()
 	_refresh_target_line()
 
 
@@ -663,7 +716,15 @@ func _read_locked_hull_percent() -> int:
 		hp = float(hp_i)
 	else:
 		return full
-	return BalanceCombat.hostile_hull_percent(hp)
+	var max_hp: float = BalanceCombat.HOSTILE_HP
+	if target.has_method(&"hull_max"):
+		var max_raw: Variant = target.call(&"hull_max")
+		if typeof(max_raw) == TYPE_FLOAT:
+			max_hp = max_raw
+		elif typeof(max_raw) == TYPE_INT:
+			var max_i: int = max_raw
+			max_hp = float(max_i)
+	return BalanceCombat.hostile_hull_percent(hp, max_hp)
 
 
 func _refresh_target_line() -> void:

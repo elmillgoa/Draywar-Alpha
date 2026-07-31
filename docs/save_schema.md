@@ -15,13 +15,14 @@ what is inside a section.
 
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
-**`standing`** (A2), **`wallet`** (A5), **`cargo`** (B3), **`world`** (B2), and
-**`mission`** (B2) maps. Missing `standing` means all-neutral content defaults.
-Missing `wallet` means starting credits/fuel/condition. Missing `cargo` means
-empty hold. Missing `world` keeps the boot system/spawn. Missing `mission`
-means no active job. Tests may still use a hostile probe fixture. New required
-career fields later bump the version with a migration step in
-`SaveMigrations.gd`.
+**`standing`** (A2), **`wallet`** (A5), **`cargo`** (B3), **`ship`** (E2.5),
+**`world`** (B2), and **`mission`** (B2) maps. Missing `standing` means
+all-neutral content defaults. Missing `wallet` means starting credits/fuel/
+condition. Missing `cargo` means empty hold. Missing `ship` means Hauler only
+(starter owned, active Hauler). Missing `world` keeps the boot system/spawn.
+Missing `mission` means no active job. Tests may still use a hostile probe
+fixture. New required career fields later bump the version with a migration
+step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -66,6 +67,21 @@ cargo service is present (B3). The section body is the inventory map itself
 
 Missing section → empty hold. Empty dictionary → empty hold.
 No envelope version bump — optional inside schema v1.
+
+### Optional section: `ship` (schema v1)
+
+Written by `ShipService.to_section()` / applied by `apply_section()` when a
+ship service is present (E2.5). Gathered by `CareerSave` with other meta
+sections. No envelope version bump.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `active_hull_id` | `String` | Content id of the hull currently flown. |
+| `owned_hull_ids` | `Array` of `String` | Hull content ids the career owns. Always includes starter `hull_courier`. |
+
+Missing section → Hauler only (owned `hull_courier`, active Hauler).
+Unknown / unowned active id falls back to Hauler. Starter ownership is always
+restored if omitted from the array.
 
 ### Optional section: `world` (schema v1)
 

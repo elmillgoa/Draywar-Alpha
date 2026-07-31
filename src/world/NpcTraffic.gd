@@ -7,12 +7,26 @@ extends Node3D
 ##
 ## Spawns simple orbiting ships; count and colour come from system.policing.
 ## Display only — no combat AI. Parent under SystemWorld after build.
+## Live ship count feeds combat kill witness_count (E2.3).
 
 var _ships: Array[Node3D] = []
 var _angles: Array[float] = []
 var _radii: Array[float] = []
 var _heights: Array[float] = []
 var _omegas: Array[float] = []
+
+
+func _enter_tree() -> void:
+	add_to_group(BalanceEconomy.GROUP_NPC_TRAFFIC)
+
+
+## How many ambient traffic ships are currently alive (attribution witnesses).
+func live_ship_count() -> int:
+	var count: int = 0
+	for ship: Node3D in _ships:
+		if ship != null and is_instance_valid(ship):
+			count += 1
+	return count
 
 
 ## Clear previous traffic and spawn for this system.
@@ -84,15 +98,8 @@ func _load_system(id: StringName) -> StarSystem:
 
 
 func _count_for_policing(policing: StringName) -> int:
-	match policing:
-		StarSystem.POLICED_BY_PATROLS:
-			return BalanceEconomy.NPC_COUNT_PATROLLED
-		StarSystem.POLICED_BY_CONTESTED:
-			return BalanceEconomy.NPC_COUNT_CONTESTED
-		StarSystem.POLICED_BY_NOBODY:
-			return BalanceEconomy.NPC_COUNT_LAWLESS
-		_:
-			return BalanceEconomy.NPC_COUNT_CONTESTED
+	# BalanceEconomy.npc_count_for_policing is the single source for density.
+	return BalanceEconomy.npc_count_for_policing(policing)
 
 
 func _color_for_policing(policing: StringName) -> Color:

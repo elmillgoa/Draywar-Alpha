@@ -5,7 +5,7 @@ extends RefCounted
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B2
 ##
-## Collects optional sections (standing + recovery, wallet, cargo, world,
+## Collects optional sections (standing + recovery, wallet, cargo, ship, world,
 ## mission) and applies meta sections after load. World placement is applied
 ## by Main.
 
@@ -24,6 +24,7 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
 
 	_merge_cargo_section(tree, sections)
+	_merge_ship_section(tree, sections)
 
 	var world_section: Dictionary = _world_section(tree)
 	if not world_section.is_empty():
@@ -36,11 +37,15 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	return sections
 
 
-## Apply standing (+ recovery), wallet, cargo, and mission. Not world (Main owns that).
+## Apply standing (+ recovery), wallet, cargo, ship, and mission. Not world (Main owns that).
 static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_standing_from_sections(tree, sections)
 	_apply_wallet_from_sections(tree, sections)
+	# Ship before cargo so capacity path matches restored active hull.
+	_apply_ship_from_sections(tree, sections)
 	_apply_cargo_from_sections(tree, sections)
+	# D2: cargo applied after ship — re-clamp if hold is overweight for active.
+	_clamp_ship_to_cargo_fit(tree)
 	_apply_mission_from_sections(tree, sections)
 
 
@@ -126,6 +131,33 @@ static func _apply_cargo_from_sections(tree: SceneTree, sections: Dictionary) ->
 		cargo.call(&"apply_section", sections[BalanceEconomy.SAVE_SECTION_CARGO])
 	elif cargo.has_method(&"reset"):
 		cargo.call(&"reset")
+
+
+static func _merge_ship_section(tree: SceneTree, sections: Dictionary) -> void:
+	var ships: Node = _node_in_group(tree, BalanceFlight.GROUP_SHIP_SERVICE)
+	if ships == null or not ships.has_method(&"to_section"):
+		return
+	var section: Variant = ships.call(&"to_section")
+	if typeof(section) != TYPE_DICTIONARY:
+		return
+	sections[BalanceFlight.SAVE_SECTION_SHIP] = section
+
+
+static func _apply_ship_from_sections(tree: SceneTree, sections: Dictionary) -> void:
+	var ships: Node = _node_in_group(tree, BalanceFlight.GROUP_SHIP_SERVICE)
+	if ships == null:
+		return
+	if sections.has(BalanceFlight.SAVE_SECTION_SHIP) and ships.has_method(&"apply_section"):
+		ships.call(&"apply_section", sections[BalanceFlight.SAVE_SECTION_SHIP])
+	elif ships.has_method(&"reset"):
+		ships.call(&"reset")
+
+
+static func _clamp_ship_to_cargo_fit(tree: SceneTree) -> void:
+	var ships: Node = _node_in_group(tree, BalanceFlight.GROUP_SHIP_SERVICE)
+	if ships == null or not ships.has_method(&"clamp_active_to_cargo_fit"):
+		return
+	ships.call(&"clamp_active_to_cargo_fit")
 
 
 static func _mission_section(tree: SceneTree) -> Dictionary:

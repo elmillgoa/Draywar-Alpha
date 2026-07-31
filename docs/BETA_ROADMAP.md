@@ -1,6 +1,6 @@
 # Draywar — Post-Alpha roadmap (frozen after E1)
 
-**Status:** E1.6 freeze — awaiting Elliot approval after E1 feel gate  
+**Status:** **Approved** — E1 feel signed 2026-07-31; E2+ active  
 **Date:** 2026-07-31  
 **Authority:** Destination filters (Fidelity / Tone) + standing law + this queue.
 
@@ -35,19 +35,21 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 | E1.4 Trade contrast | **code complete** |
 | E1.5 Enforcement lite | **code complete** |
 | E1.6 Roadmap freeze | **this doc** |
-| **[GATE] E1 feel** | open until Elliot plays |
+| **[GATE] E1 feel** | **signed** 2026-07-31 |
 
 **E1 job:** demo → small game (presentation, places, second job kind, trade routes, standing teeth).
+
+**E2 plan:** `docs/BETA_E2_COMBAT_HULL.md` (thin two-hull interlock required by Destination §6).
 
 ---
 
 ## Recommended next phases (order)
 
-### E2 — Combat & hull law
+### E2 — Combat & hull law — **ACTIVE**
 **Job:** Prove Destination combat identity without full mid-game.
 
-- Second player-facing combat depth (hostile profiles / encounter rules)
-- Start **two-hull interlock** path if Dest requires (or thin proof that freighter-only is intentional until Operation)
+- Hostile profiles + security-aware encounters
+- **Two-hull interlock thin proof** (Hauler + Fighter; Dest §6 locked)
 - Attribution feedback polish
 - Performance budget with denser traffic
 
@@ -115,7 +117,8 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 
 | Field | Value |
 |-------|--------|
-| E1 code | complete pending E1 feel gate |
-| This roadmap | draft until Elliot signs after gate |
-| Elliot | |
-| Date | |
+| E1 code | complete |
+| E1 feel gate | signed 2026-07-31 |
+| This roadmap | **approved** |
+| Elliot | "I've already signed off… Take the build through as many phases as you can…" |
+| Date | 2026-07-31 |

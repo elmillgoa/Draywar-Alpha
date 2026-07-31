@@ -300,7 +300,7 @@ A kill was reported for attribution (before the security decision).
 | `evidence` | `bool` | Player left an evidence trail. |
 
 **Emitted by** `src/systems/attribution/AttributionService.gd`.
-**Listened to by** tests / future UI.
+**Listened to by** tests; witness_count is live ambient `NpcTraffic` ship count from HostileNpc.
 
 ### `on_kill_attributed(system_id: StringName, entity_id: StringName, delta: float, reason: StringName)`
 
@@ -314,6 +314,7 @@ Kill was attributed; StandingService already applied the delta (and any ripple).
 | `reason` | `StringName` | Mutation tag (e.g. `&"combat_kill"`). |
 
 **Emitted by** `src/systems/attribution/AttributionService.gd`.
+**Listened to by** `FlightHUD` (temporary kill toast naming the entity) and tests.
 
 ### `on_kill_unattributed(system_id: StringName, victim_entity_id: StringName)`
 
@@ -325,6 +326,7 @@ Kill was not attributed; no standing change from this report.
 | `victim_entity_id` | `StringName` | Victim's primary Entity (may be empty). |
 
 **Emitted by** `src/systems/attribution/AttributionService.gd`.
+**Listened to by** `FlightHUD` (temporary “not recorded” toast) and tests.
 
 ### `on_mission_accept_requested(template_id: StringName)`
 
@@ -841,3 +843,48 @@ A legal buy or sell finished; credits and cargo already updated.
 
 **Emitted by** `CargoService`.
 **Listened to by** (debug / future sheet money event; optional).
+
+## Hull ownership / switch (E2.5)
+
+### `on_buy_fighter_requested()`
+
+UI asked to buy the Fighter hull once at the docked station Services desk.
+
+No parameters.
+
+**Emitted by** `StationMenu`.
+**Listened to by** `ShipService`.
+
+### `on_switch_hull_requested(hull_id: StringName)`
+
+UI asked to switch the active player hull while docked.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `hull_id` | `StringName` | Target owned hull content id. |
+
+**Emitted by** `StationMenu`.
+**Listened to by** `ShipService`.
+
+### `on_hull_purchased(hull_id: StringName)`
+
+A hull was purchased once; ownership updated (active hull unchanged).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `hull_id` | `StringName` | Hull content id now owned (e.g. `&"hull_fighter"`). |
+
+**Emitted by** `ShipService`.
+**Listened to by** `StationMenu`, `CaptainSheet` (refresh when open).
+
+### `on_hull_changed(old_hull_id: StringName, new_hull_id: StringName)`
+
+Active flyable hull changed (station switch, load, or direct set).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `old_hull_id` | `StringName` | Previous active hull content id. |
+| `new_hull_id` | `StringName` | New active hull content id. |
+
+**Emitted by** `ShipService`.
+**Listened to by** `PlayerShip` (flight/weapon/silhouette), `StationMenu`, `CaptainSheet`.

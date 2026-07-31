@@ -109,6 +109,10 @@ func test_shipped_station_and_hull_exist_and_are_valid() -> void:
 	var hull: Hull = hull_item as Hull
 	assert_eq(hull.validation_errors().size(), 0)
 	assert_gt(hull.max_speed, 0.0)
+	assert_eq(hull.display_name, "Hauler")
+	assert_eq(hull.role, Hull.ROLE_HAULER)
+	assert_gte(hull.cargo_capacity, BalanceEconomy.CARGO_CAPACITY)
+	assert_gt(hull.weapon_damage, 0.0)
 
 
 func test_every_content_file_on_disk_is_discovered_and_nothing_extra_is() -> void:

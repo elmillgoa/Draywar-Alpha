@@ -56,11 +56,19 @@ func _draw_lock_and_lead(cam: Camera3D) -> void:
 	if not _screen_point_ok(cam, body.global_position):
 		return
 	_draw_lock_brackets(cam.unproject_position(body.global_position))
+	var shot_speed: float = BalanceCombat.PROJECTILE_SPEED
+	if ship.has_method(&"projectile_speed"):
+		var raw_speed: Variant = ship.call(&"projectile_speed")
+		if typeof(raw_speed) == TYPE_FLOAT:
+			var as_float: float = raw_speed
+			if as_float > 0.0:
+				shot_speed = as_float
+		elif typeof(raw_speed) == TYPE_INT:
+			var as_int: int = raw_speed
+			if as_int > 0:
+				shot_speed = float(as_int)
 	var lead: Vector3 = lead_point(
-		ship.global_position,
-		body.global_position,
-		_target_velocity(lock),
-		BalanceCombat.PROJECTILE_SPEED
+		ship.global_position, body.global_position, _target_velocity(lock), shot_speed
 	)
 	if _screen_point_ok(cam, lead):
 		_draw_lead_pip(cam.unproject_position(lead))

@@ -19,6 +19,9 @@ var _turn_rate: float = BalanceFlight.SHIP_TURN_RATE
 var _strafe_speed: float = BalanceFlight.SHIP_STRAFE_SPEED
 var _afterburner_multiplier: float = BalanceFlight.SHIP_AFTERBURNER_MULTIPLIER
 var _drag: float = BalanceFlight.SHIP_DRAG
+var _weapon_damage: float = BalanceCombat.PLAYER_WEAPON_DAMAGE
+var _weapon_cooldown: float = BalanceCombat.PLAYER_FIRE_COOLDOWN
+var _projectile_speed: float = BalanceCombat.PROJECTILE_SPEED
 
 var _throttle: float = 0.0
 var _flight_enabled: bool = true
@@ -36,6 +39,7 @@ func _ready() -> void:
 	FlightInput.ensure_actions()
 	collision_layer = 1
 	collision_mask = 0
+	_sync_hull_id_from_service()
 	_apply_hull_from_library(hull_id)
 	_build_mesh()
 	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
@@ -43,6 +47,7 @@ func _ready() -> void:
 	EventBus.on_player_crippled.connect(_on_player_crippled)
 	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
 	EventBus.on_hostile_killed.connect(_on_hostile_killed_clear_lock)
+	EventBus.on_hull_changed.connect(_on_hull_changed)
 	# Seed HUD listeners that connect before the first physics tick.
 	EventBus.on_player_throttle_changed.emit(_throttle)
 	EventBus.on_player_speed_changed.emit(0.0)
@@ -61,6 +66,8 @@ func _exit_tree() -> void:
 		EventBus.on_player_repaired_from_cripple.disconnect(_on_player_repaired_from_cripple)
 	if EventBus.on_hostile_killed.is_connected(_on_hostile_killed_clear_lock):
 		EventBus.on_hostile_killed.disconnect(_on_hostile_killed_clear_lock)
+	if EventBus.on_hull_changed.is_connected(_on_hull_changed):
+		EventBus.on_hull_changed.disconnect(_on_hull_changed)
 
 
 ## Wire the chase camera used for mouse-aim raycasts.
@@ -101,7 +108,7 @@ func set_throttle(value: float) -> void:
 	EventBus.on_player_throttle_changed.emit(_throttle)
 
 
-## Load profile numbers from a Hull content id (falls back to BalanceFlight).
+## Load profile numbers from a Hull content id (falls back to Balance* defaults).
 func _apply_hull_from_library(id: StringName) -> void:
 	if not ContentLibrary.has_item(id):
 		return
@@ -115,6 +122,66 @@ func _apply_hull_from_library(id: StringName) -> void:
 	_strafe_speed = hull.strafe_speed
 	_afterburner_multiplier = hull.afterburner_multiplier
 	_drag = hull.drag
+	if hull.weapon_damage > 0.0:
+		_weapon_damage = hull.weapon_damage
+	if hull.weapon_cooldown > 0.0:
+		_weapon_cooldown = hull.weapon_cooldown
+	if hull.projectile_speed > 0.0:
+		_projectile_speed = hull.projectile_speed
+
+
+## Active bolt travel speed (lead pip / aim plane). Exposed for CombatReticle.
+func projectile_speed() -> float:
+	return _projectile_speed
+
+
+## Active weapon damage per hit.
+func weapon_damage() -> float:
+	return _weapon_damage
+
+
+## Active fire cooldown (seconds between shots).
+func weapon_cooldown() -> float:
+	return _weapon_cooldown
+
+
+## Re-apply numbers + silhouette from `hull_id` (station switch / load).
+func reapply_active_hull() -> void:
+	_apply_hull_from_library(hull_id)
+	_rebuild_mesh()
+
+
+## Role tag for the active mesh path (hauler gold wings vs fighter steel fin).
+## Used by tests and any UI that needs a stable silhouette marker.
+func role_silhouette() -> StringName:
+	if _is_fighter_hull():
+		return Hull.ROLE_FIGHTER
+	return Hull.ROLE_HAULER
+
+
+func _on_hull_changed(_old_hull_id: StringName, new_hull_id: StringName) -> void:
+	if String(new_hull_id).is_empty():
+		return
+	hull_id = new_hull_id
+	reapply_active_hull()
+
+
+func _sync_hull_id_from_service() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	var ships: Node = tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
+	if ships == null or not ships.has_method(&"active_hull_id"):
+		return
+	var raw: Variant = ships.call(&"active_hull_id")
+	if typeof(raw) == TYPE_STRING_NAME:
+		var as_name: StringName = raw
+		if not String(as_name).is_empty():
+			hull_id = as_name
+	elif typeof(raw) == TYPE_STRING:
+		var as_text: String = raw
+		if not as_text.is_empty():
+			hull_id = StringName(as_text)
 
 
 func _physics_process(delta: float) -> void:
@@ -206,7 +273,7 @@ func try_fire() -> bool:
 		return false
 	if _fire_cooldown > 0.0:
 		return false
-	_fire_cooldown = BalanceCombat.PLAYER_FIRE_COOLDOWN
+	_fire_cooldown = _weapon_cooldown
 	EventBus.on_weapon_fired.emit()
 
 	var origin: Vector3 = global_position
@@ -226,7 +293,7 @@ func try_fire() -> bool:
 		var bolt_3d: Node3D = bolt as Node3D
 		bolt_3d.global_position = origin + aim_dir * BalanceCombat.PROJECTILE_LENGTH
 	if bolt.has_method(&"launch"):
-		bolt.call(&"launch", aim_dir)
+		bolt.call(&"launch", aim_dir, _weapon_damage, _projectile_speed)
 	return true
 
 
@@ -377,7 +444,7 @@ func _mouse_aim_point() -> Vector3:
 	var target_pos: Vector3 = lock_body.global_position
 	var target_vel: Vector3 = _lock_combat_velocity(lock)
 	var plane_point: Vector3 = FlightMath.lead_point(
-		global_position, target_pos, target_vel, BalanceCombat.PROJECTILE_SPEED
+		global_position, target_pos, target_vel, _projectile_speed
 	)
 	var plane_normal: Vector3 = _camera.global_transform.basis.z
 	var denom: float = direction.dot(plane_normal)
@@ -403,18 +470,64 @@ func _lock_combat_velocity(target: Node) -> Vector3:
 
 
 func _build_mesh() -> void:
-	# Pointed freighter: prism hull, engine, canopy, wings — not a candy box.
-	var hull: MeshInstance3D = MeshInstance3D.new()
+	_rebuild_visual_mesh()
+	# Sphere hurtbox so hostile travel bolts can score hits fairly.
+	var collision: CollisionShape3D = CollisionShape3D.new()
+	collision.name = "Hurtbox"
+	var shape: SphereShape3D = SphereShape3D.new()
+	shape.radius = BalanceCombat.PLAYER_HURTBOX_RADIUS
+	collision.shape = shape
+	add_child(collision)
+
+
+## Drop mesh children and rebuild for the active hull role (keep hurtbox).
+func _rebuild_mesh() -> void:
+	_clear_visual_meshes()
+	_rebuild_visual_mesh()
+
+
+func _clear_visual_meshes() -> void:
+	var doomed: Array[Node] = []
+	for child: Node in get_children():
+		if child is MeshInstance3D:
+			doomed.append(child)
+	for child: Node in doomed:
+		remove_child(child)
+		child.queue_free()
+
+
+func _rebuild_visual_mesh() -> void:
+	var fighter: bool = _is_fighter_hull()
+	if fighter:
+		_build_fighter_mesh()
+	else:
+		_build_hauler_mesh()
+
+
+func _is_fighter_hull() -> bool:
+	if hull_id == BalanceFlight.FIGHTER_HULL_ID:
+		return true
+	if ContentLibrary.has_item(hull_id):
+		var item: ContentItem = ContentLibrary.item(hull_id)
+		if item is Hull:
+			var hull: Hull = item as Hull
+			return hull.role == Hull.ROLE_FIGHTER
+	return false
+
+
+func _build_hauler_mesh() -> void:
+	# Pointed freighter: prism hull, engine, canopy, wings — gold Hauler.
+	var body: MeshInstance3D = MeshInstance3D.new()
 	var prism: PrismMesh = PrismMesh.new()
 	prism.size = BalanceFlight.SHIP_PRISM_SIZE
-	hull.mesh = prism
+	body.mesh = prism
 	var hull_mat: StandardMaterial3D = StandardMaterial3D.new()
 	hull_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	hull_mat.albedo_color = BalanceFlight.COLOR_SHIP
-	hull.material_override = hull_mat
+	body.material_override = hull_mat
 	# Prism default points +Y; lay it so the point faces ship forward (-Z).
-	hull.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
-	add_child(hull)
+	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
+	add_child(body)
 
 	var engine: MeshInstance3D = MeshInstance3D.new()
 	var engine_box: BoxMesh = BoxMesh.new()
@@ -451,12 +564,56 @@ func _build_mesh() -> void:
 	wings.position = BalanceFlight.SHIP_WING_OFFSET
 	add_child(wings)
 
-	# Sphere hurtbox so hostile travel bolts can score hits fairly.
-	var collision: CollisionShape3D = CollisionShape3D.new()
-	var shape: SphereShape3D = SphereShape3D.new()
-	shape.radius = BalanceCombat.PLAYER_HURTBOX_RADIUS
-	collision.shape = shape
-	add_child(collision)
+
+func _build_fighter_mesh() -> void:
+	# Slim steel body + tall dorsal fin — reads different from Hauler wings.
+	var body: MeshInstance3D = MeshInstance3D.new()
+	var prism: PrismMesh = PrismMesh.new()
+	prism.size = BalanceFlight.SHIP_FIGHTER_PRISM_SIZE
+	body.mesh = prism
+	var hull_mat: StandardMaterial3D = StandardMaterial3D.new()
+	hull_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	hull_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER
+	body.material_override = hull_mat
+	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
+	add_child(body)
+
+	var engine: MeshInstance3D = MeshInstance3D.new()
+	var engine_box: BoxMesh = BoxMesh.new()
+	engine_box.size = BalanceFlight.SHIP_FIGHTER_ENGINE_SIZE
+	engine.mesh = engine_box
+	var engine_mat: StandardMaterial3D = StandardMaterial3D.new()
+	engine_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	engine_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER_ENGINE
+	engine.material_override = engine_mat
+	engine.position = Vector3(
+		0.0,
+		0.0,
+		BalanceFlight.SHIP_FIGHTER_PRISM_SIZE.z * BalanceFlight.SHIP_FIGHTER_ENGINE_Z_FACTOR
+	)
+	add_child(engine)
+
+	var canopy: MeshInstance3D = MeshInstance3D.new()
+	var canopy_box: BoxMesh = BoxMesh.new()
+	canopy_box.size = BalanceFlight.SHIP_FIGHTER_CANOPY_SIZE
+	canopy.mesh = canopy_box
+	var canopy_mat: StandardMaterial3D = StandardMaterial3D.new()
+	canopy_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	canopy_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER_CANOPY
+	canopy.material_override = canopy_mat
+	canopy.position = BalanceFlight.SHIP_FIGHTER_CANOPY_OFFSET
+	add_child(canopy)
+
+	var fin: MeshInstance3D = MeshInstance3D.new()
+	var fin_box: BoxMesh = BoxMesh.new()
+	fin_box.size = BalanceFlight.SHIP_FIGHTER_FIN_SIZE
+	fin.mesh = fin_box
+	var fin_mat: StandardMaterial3D = StandardMaterial3D.new()
+	fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fin_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER_FIN
+	fin.material_override = fin_mat
+	fin.position = BalanceFlight.SHIP_FIGHTER_FIN_OFFSET
+	add_child(fin)
 
 
 func _on_console_visibility_changed(open: bool) -> void:
