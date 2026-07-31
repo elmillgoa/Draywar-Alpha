@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_bs_korr"
+display_name = "Boss Korr"
+primary_entity_id = &"entity_beta_syndicate"
+rank = &"high"
+network_person_ids = Array[StringName]([&"person_bs_rim"])
+default_player_standing = 0.0

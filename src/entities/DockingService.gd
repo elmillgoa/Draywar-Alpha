@@ -51,17 +51,22 @@ func _physics_process(_delta: float) -> void:
 	var distance: float = _distance_to(station_id, _ship.global_position)
 	_controller.update_range(station_id, distance, BalanceFlight.DOCK_INTERACT_RADIUS)
 
-	var can_dock: bool = _controller.can_dock()
+	var range_ok: bool = _controller.can_dock()
 	var prompt_id: StringName = &""
-	if can_dock:
+	if range_ok:
 		prompt_id = _controller.prompt_station_id()
 	elif station_id != &"" and distance <= BalanceFlight.DOCK_APPROACH_RADIUS:
 		prompt_id = station_id
+
+	var standing_ok: bool = true
+	if prompt_id != &"":
+		standing_ok = StandingService.can_dock_at_station(prompt_id)
+	var can_dock: bool = range_ok and standing_ok
 	_emit_prompt_if_changed(prompt_id, can_dock)
 
 	if _console_open:
 		return
-	if Input.is_action_just_pressed(FlightInput.ACTION_DOCK) and _controller.can_dock():
+	if Input.is_action_just_pressed(FlightInput.ACTION_DOCK) and range_ok:
 		EventBus.on_dock_requested.emit(_controller.prompt_station_id())
 
 
@@ -106,6 +111,10 @@ func _on_dock_requested(station_id: StringName) -> void:
 		if _controller.prompt_station_id() != station_id:
 			return
 
+	if not StandingService.can_dock_at_station(station_id):
+		_emit_dock_refused(station_id)
+		return
+
 	var docked_id: StringName = _controller.request_dock()
 	if docked_id == &"":
 		return
@@ -114,6 +123,14 @@ func _on_dock_requested(station_id: StringName) -> void:
 	_ship.visible = false
 	_emit_prompt_if_changed(&"", false)
 	EventBus.on_docked.emit(docked_id)
+
+
+func _emit_dock_refused(station_id: StringName) -> void:
+	var status: Dictionary = StandingService.status_for_station(station_id)
+	var entity_id: StringName = status[StandingService.STATUS_KEY_ENTITY_ID]
+	var standing: float = status[StandingService.STATUS_KEY_STANDING]
+	var tier: StringName = status[StandingService.STATUS_KEY_TIER]
+	EventBus.on_dock_refused.emit(station_id, entity_id, standing, tier)
 
 
 func _on_undock_requested(station_id: StringName) -> void:

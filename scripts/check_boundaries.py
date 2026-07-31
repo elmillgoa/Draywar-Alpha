@@ -129,7 +129,11 @@ SCANNED_SUFFIXES = (".gd", ".tscn", ".tres")
 
 RES_PATH_RE = re.compile(r"res://src/[A-Za-z0-9_./-]+")
 CLASS_NAME_RE = re.compile(r"^\s*class_name\s+([A-Za-z_][A-Za-z0-9_]*)", re.MULTILINE)
-SIGNAL_RE = re.compile(r"^signal\s+([A-Za-z_][A-Za-z0-9_]*)\s*(\((.*)\))?\s*$", re.MULTILINE)
+# Multi-line parameter lists are legal GDScript (gdformat wraps long signals).
+SIGNAL_RE = re.compile(
+    r"^signal\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\((.*?)\))?",
+    re.MULTILINE | re.DOTALL,
+)
 # A catalog entry is a level-3 heading holding nothing but a code-spanned
 # signature: ### `on_demo_probe_sent(sequence: int, sender: StringName)`
 CATALOG_ENTRY_RE = re.compile(r"^###\s+`([^`]+)`\s*$", re.MULTILINE)
@@ -378,7 +382,10 @@ def bus_signals(bus_text: str) -> list[tuple[str, str, list[str]]]:
     out: list[tuple[str, str, list[str]]] = []
     for match in SIGNAL_RE.finditer(code):
         name = match.group(1)
-        params = split_parameters(match.group(3) or "")
+        raw_params = match.group(2) or ""
+        # Collapse whitespace so multi-line signals match the catalog line.
+        raw_params = " ".join(raw_params.split())
+        params = split_parameters(raw_params)
         out.append((name, "%s(%s)" % (name, ", ".join(params)), params))
     return out
 

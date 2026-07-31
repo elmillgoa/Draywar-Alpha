@@ -148,7 +148,7 @@ The player is now in this system. Session-only for A1 (no save section).
 | `system_id` | `StringName` | Content id of the system that was built. |
 
 **Emitted by** `src/world/SystemWorld.gd` after gray-box build.
-**Listened to by** `FlightHUD` (system name).
+**Listened to by** `FlightHUD` (system name), `StandingService` (status moment).
 
 ### `on_dock_requested(station_id: StringName)`
 
@@ -227,3 +227,61 @@ Player throttle setting changed (0..1). Session-only HUD traffic.
 
 **Emitted by** `src/entities/PlayerShip.gd`.
 **Listened to by** `FlightHUD`.
+
+## Standing (A2)
+
+### `on_entity_standing_changed(entity_id: StringName, old_value: float, new_value: float, tier: StringName)`
+
+Player standing with an Entity changed (after clamp).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `entity_id` | `StringName` | Entity content id. |
+| `old_value` | `float` | Standing before the write. |
+| `new_value` | `float` | Standing after clamp. |
+| `tier` | `StringName` | Display tier for `new_value` (e.g. `&"hostile"`). |
+
+**Emitted by** `src/systems/standing/StandingService.gd` only.
+**Listened to by** `FlightHUD` (refresh status line).
+
+### `on_person_standing_changed(person_id: StringName, old_value: float, new_value: float, tier: StringName)`
+
+Player standing with a Person changed (after clamp).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `person_id` | `StringName` | Person content id. |
+| `old_value` | `float` | Standing before the write. |
+| `new_value` | `float` | Standing after clamp. |
+| `tier` | `StringName` | Display tier for `new_value`. |
+
+**Emitted by** `src/systems/standing/StandingService.gd` only.
+
+### `on_status_moment(kind: StringName, place_id: StringName, entity_id: StringName, standing: float, tier: StringName)`
+
+Protected status moment: what the player *is here* with the local controller only.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `kind` | `StringName` | `&"system"` or `&"station"`. |
+| `place_id` | `StringName` | System or station content id entered. |
+| `entity_id` | `StringName` | Controlling Entity id, or `&"nobody"`. |
+| `standing` | `float` | Player standing with that controller. |
+| `tier` | `StringName` | Display tier id. |
+
+**Emitted by** `StandingService` on `on_system_entered` and successful `on_docked`.
+**Listened to by** `FlightHUD`.
+
+### `on_dock_refused(station_id: StringName, entity_id: StringName, standing: float, tier: StringName)`
+
+Dock blocked because standing is at or below the controller's refusal threshold.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station that refused the dock. |
+| `entity_id` | `StringName` | Controlling Entity (or nobody). |
+| `standing` | `float` | Current standing with that Entity. |
+| `tier` | `StringName` | Display tier id. |
+
+**Emitted by** `src/entities/DockingService.gd` when a dock request fails standing.
+**Listened to by** `FlightHUD` (refusal prompt).

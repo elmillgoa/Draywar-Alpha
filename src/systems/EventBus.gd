@@ -49,3 +49,23 @@ signal on_player_speed_changed(speed: float)
 
 ## PlayerShip: throttle 0..1 changed (session HUD).
 signal on_player_throttle_changed(throttle: float)
+
+## StandingService: player standing with an Entity changed.
+signal on_entity_standing_changed(
+	entity_id: StringName, old_value: float, new_value: float, tier: StringName
+)
+
+## StandingService: player standing with a Person changed.
+signal on_person_standing_changed(
+	person_id: StringName, old_value: float, new_value: float, tier: StringName
+)
+
+## StandingService: protected status moment (system or station entry).
+signal on_status_moment(
+	kind: StringName, place_id: StringName, entity_id: StringName, standing: float, tier: StringName
+)
+
+## DockingService: dock blocked by standing with the station controller.
+signal on_dock_refused(
+	station_id: StringName, entity_id: StringName, standing: float, tier: StringName
+)

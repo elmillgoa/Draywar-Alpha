@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_ra_hale"
+display_name = "Cmdr Hale"
+primary_entity_id = &"entity_reach_authority"
+rank = &"high"
+network_person_ids = Array[StringName]([&"person_ra_voss"])
+default_player_standing = 0.0

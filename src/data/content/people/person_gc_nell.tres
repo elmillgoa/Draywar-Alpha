@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_gc_nell"
+display_name = "Broker Nell"
+primary_entity_id = &"entity_gamma_collective"
+rank = &"mid"
+network_person_ids = Array[StringName]([&"person_gc_orin", &"person_gc_tavi"])
+default_player_standing = 0.0

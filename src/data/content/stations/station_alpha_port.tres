@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
 
-; First playable dock — Alpha A1. Controller empty until A2 standing.
+; First playable dock — Alpha A2. Controlled by Reach Authority.
 [ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
 
 [resource]
@@ -8,5 +8,5 @@ script = ExtResource("1")
 id = &"station_alpha_port"
 display_name = "Alpha Port"
 system_id = &"system_alpha"
-controller_entity_id = &"nobody"
+controller_entity_id = &"entity_reach_authority"
 position_offset = Vector3(0, 0, 0)

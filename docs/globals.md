@@ -54,3 +54,9 @@ exists; it holds content references, not career state.
 
 How fast game time runs. Every clock must ask the same number; two authorities
 would run two games; it holds only the rate and combat lock, not world state.
+
+### `StandingService` -> `res://src/systems/standing/StandingService.gd`
+
+Player standing ledger for Entities and People. Everyone that needs standing
+queries this service; two writers would split truth; it holds only the standing
+maps (and console registration), not world layout or combat state.

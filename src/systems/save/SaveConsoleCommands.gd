@@ -51,7 +51,10 @@ func _run_save(args: PackedStringArray) -> void:
 		return
 
 	var path: String = SaveService.path_for(file_name)
-	var written: SaveResult = _service.save_to(path, SaveService.envelope({}, file_name))
+	var sections: Dictionary = {
+		BalanceStanding.SAVE_SECTION_KEY: StandingService.to_section(),
+	}
+	var written: SaveResult = _service.save_to(path, SaveService.envelope(sections, file_name))
 	if not written.ok():
 		_say("Save failed: %s" % written.summary())
 		return
@@ -68,7 +71,23 @@ func _run_load(args: PackedStringArray) -> void:
 	if not loaded.ok():
 		_say("Load failed: %s" % loaded.summary())
 		return
+	_apply_standing_section(loaded.envelope)
 	_say("Loaded '%s'." % path)
+
+
+func _apply_standing_section(envelope: Dictionary) -> void:
+	if not envelope.has(SaveService.KEY_SECTIONS):
+		StandingService.reset_to_defaults()
+		return
+	var sections_raw: Variant = envelope[SaveService.KEY_SECTIONS]
+	if typeof(sections_raw) != TYPE_DICTIONARY:
+		StandingService.reset_to_defaults()
+		return
+	var sections: Dictionary = sections_raw
+	if sections.has(BalanceStanding.SAVE_SECTION_KEY):
+		StandingService.apply_section(sections[BalanceStanding.SAVE_SECTION_KEY])
+	else:
+		StandingService.reset_to_defaults()
 
 
 func _file_name(args: PackedStringArray, usage: String) -> String:

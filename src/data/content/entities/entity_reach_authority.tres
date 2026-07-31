@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Entity" load_steps=4 format=3]
+
+; Controls Alpha Reach / Alpha Port — patrolled freight corridor authority.
+[ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
+
+[sub_resource type="Resource" id="Link_rival_beta"]
+script = ExtResource("2")
+target_id = &"entity_beta_syndicate"
+relation_type = &"rival"
+
+[resource]
+script = ExtResource("1")
+id = &"entity_reach_authority"
+display_name = "Reach Authority"
+relationship_links = Array[ExtResource("2")]([SubResource("Link_rival_beta")])
+reach_system_ids = Array[StringName]([&"system_alpha"])
+reach_station_ids = Array[StringName]([&"station_alpha_port"])
+default_player_standing = 0.0
+dock_refusal_threshold = -50.0

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="Entity" load_steps=4 format=3]
+
+; Holds Gamma Fringe — loose collective of freeports and scrap crews.
+[ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
+
+[sub_resource type="Resource" id="Link_allied_haulers"]
+script = ExtResource("2")
+target_id = &"entity_free_haulers"
+relation_type = &"allied"
+
+[resource]
+script = ExtResource("1")
+id = &"entity_gamma_collective"
+display_name = "Fringe Collective"
+relationship_links = Array[ExtResource("2")]([SubResource("Link_allied_haulers")])
+reach_system_ids = Array[StringName]([&"system_gamma"])
+reach_station_ids = Array[StringName]([])
+default_player_standing = 0.0
+dock_refusal_threshold = -50.0

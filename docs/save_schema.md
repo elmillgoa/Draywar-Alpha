@@ -13,10 +13,22 @@ A save is a **versioned envelope** wrapped around a dictionary of **sections**,
 one per game system. The envelope is defined exactly and has no opinion about
 what is inside a section.
 
-**Version 1 stores the envelope only.** There is no captain, ship or wallet in
-the game yet. Debug `save`/`load` write an empty `sections` (or tests use a
-hostile probe fixture). Later contracts add real sections and bump the version
+**Version 1 stores the envelope only** (no schema bump for optional sections).
+Debug `save`/`load` write `sections` that may include an optional **`standing`**
+map (A2). Missing `standing` means all-neutral content defaults. Tests may still
+use a hostile probe fixture. New required career fields later bump the version
 with a migration step in `SaveMigrations.gd`.
+
+### Optional section: `standing` (schema v1)
+
+Written by `StandingService.to_section()` / applied by `apply_section()`.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `entities` | `Dictionary` | Entity id → float standing overrides. |
+| `people` | `Dictionary` | Person id → float standing overrides. |
+
+Ids not listed use content `default_player_standing` (else 0).
 
 Saving is deterministic to the byte: the same state always produces the same
 file, and loading a file and saving it again reproduces it exactly.
