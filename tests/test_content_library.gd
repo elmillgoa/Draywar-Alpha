@@ -39,12 +39,32 @@ func test_the_content_shipped_in_the_project_is_valid() -> void:
 	)
 
 
-func test_shipped_systems_are_empty_gray_boxes_and_named() -> void:
-	# A0 acceptance: empty systems can load. Load is proven elsewhere; this
-	# proves the three shipped ones are the empty gray boxes the plan means.
-	var expected: Array[StringName] = [&"system_alpha", &"system_beta", &"system_gamma"]
-	assert_eq(ContentLibrary.ids_in(&"star_systems").size(), expected.size())
-	for system_id: StringName in expected:
+func test_playable_system_alpha_has_station_and_gate() -> void:
+	# A1: system_alpha is the playable gray box with a dock and a gate marker.
+	assert_true(ContentLibrary.has_item(&"system_alpha"))
+	var item: ContentItem = ContentLibrary.item(&"system_alpha")
+	assert_true(item is StarSystem)
+	var system: StarSystem = item as StarSystem
+	assert_gte(system.station_ids.size(), 1, "system_alpha must list at least one station for A1")
+	assert_gte(
+		system.gate_destination_ids.size(),
+		1,
+		"system_alpha must list at least one gate destination for A1"
+	)
+	assert_true(
+		system.station_ids.has(&"station_alpha_port"),
+		"system_alpha should include station_alpha_port"
+	)
+	assert_true(
+		system.gate_destination_ids.has(&"system_beta"),
+		"system_alpha gate should point at system_beta"
+	)
+
+
+func test_non_playable_systems_remain_empty_gray_boxes() -> void:
+	# Beta/gamma stay empty attachment points until later phases fill them.
+	var empty_ids: Array[StringName] = [&"system_beta", &"system_gamma"]
+	for system_id: StringName in empty_ids:
 		assert_true(ContentLibrary.has_item(system_id), "missing shipped system '%s'" % system_id)
 		var item: ContentItem = ContentLibrary.item(system_id)
 		assert_true(item is StarSystem, "'%s' must load as a StarSystem" % system_id)
@@ -59,6 +79,21 @@ func test_shipped_systems_are_empty_gray_boxes_and_named() -> void:
 			0,
 			"'%s' must ship with no gates (empty gray box)" % system_id
 		)
+
+
+func test_shipped_station_and_hull_exist_and_are_valid() -> void:
+	assert_true(ContentLibrary.has_item(&"station_alpha_port"), "station_alpha_port missing")
+	assert_true(ContentLibrary.has_item(&"hull_courier"), "hull_courier missing")
+	var station_item: ContentItem = ContentLibrary.item(&"station_alpha_port")
+	assert_true(station_item is Station)
+	var station: Station = station_item as Station
+	assert_eq(station.system_id, &"system_alpha")
+	assert_eq(station.validation_errors().size(), 0)
+	var hull_item: ContentItem = ContentLibrary.item(&"hull_courier")
+	assert_true(hull_item is Hull)
+	var hull: Hull = hull_item as Hull
+	assert_eq(hull.validation_errors().size(), 0)
+	assert_gt(hull.max_speed, 0.0)
 
 
 func test_every_content_file_on_disk_is_discovered_and_nothing_extra_is() -> void:

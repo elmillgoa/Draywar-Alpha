@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Hull" load_steps=2 format=3]
+
+; Single A1 ship profile — courier freighter. Numbers mirror BalanceFlight.
+[ext_resource type="Script" path="res://src/data/shapes/Hull.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hull_courier"
+display_name = "Courier"
+max_speed = 80.0
+acceleration = 45.0
+turn_rate = 2.2
+strafe_speed = 28.0
+afterburner_multiplier = 1.75
+drag = 1.8

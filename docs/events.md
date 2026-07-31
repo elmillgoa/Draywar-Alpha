@@ -134,4 +134,96 @@ The debug console prompt opened or closed.
 | `open` | `bool` | True when the prompt is visible and focused. |
 
 **Emitted by** `src/ui/console/DebugConsole.gd`.
-**Listened to by** systems that must not treat typed keys as flight input.
+**Listened to by** systems that must not treat typed keys as flight input
+(`PlayerShip`, `DockingService`).
+
+## Flight / system (A1)
+
+### `on_system_entered(system_id: StringName)`
+
+The player is now in this system. Session-only for A1 (no save section).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `system_id` | `StringName` | Content id of the system that was built. |
+
+**Emitted by** `src/world/SystemWorld.gd` after gray-box build.
+**Listened to by** `FlightHUD` (system name).
+
+### `on_dock_requested(station_id: StringName)`
+
+Intent to dock at this station. DockingService decides and may refuse.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station content id. |
+
+**Emitted by** `src/entities/DockingService.gd` when the dock action fires in range.
+**Listened to by** `DockingService` (owner applies the transition).
+
+### `on_docked(station_id: StringName)`
+
+The ship is now docked at this station.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station content id. |
+
+**Emitted by** `src/entities/DockingService.gd` after a successful dock.
+**Listened to by** `FlightHUD`, `StationMenu`.
+
+### `on_undock_requested(station_id: StringName)`
+
+Intent to leave this station. DockingService decides.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station content id being left. |
+
+**Emitted by** `src/ui/station/StationMenu.gd` (Undock / Launch).
+**Listened to by** `src/entities/DockingService.gd`.
+
+### `on_undocked(station_id: StringName)`
+
+The ship has left this station and is free-flying again.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station content id that was left. |
+
+**Emitted by** `src/entities/DockingService.gd` after a successful undock.
+**Listened to by** `FlightHUD`, `StationMenu`.
+
+### `on_dock_prompt_changed(station_id: StringName, can_dock: bool)`
+
+Dock proximity prompt for the HUD. Empty `station_id` clears the prompt.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Nearest approach/interact station, or empty. |
+| `can_dock` | `bool` | True when the dock action will be accepted. |
+
+**Emitted by** `src/entities/DockingService.gd`.
+**Listened to by** `FlightHUD`.
+
+### `on_player_speed_changed(speed: float)`
+
+Player ship speed magnitude changed. Session-only HUD traffic.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `speed` | `float` | Speed in metres per second. |
+
+**Emitted by** `src/entities/PlayerShip.gd`.
+**Listened to by** `FlightHUD`.
+
+### `on_player_throttle_changed(throttle: float)`
+
+Player throttle setting changed (0..1). Session-only HUD traffic.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `throttle` | `float` | Throttle fraction. |
+
+**Emitted by** `src/entities/PlayerShip.gd`.
+**Listened to by** `FlightHUD`.

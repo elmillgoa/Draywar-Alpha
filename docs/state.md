@@ -2,32 +2,43 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **A0 — Foundation complete.**
+**Current position:** **A1 — Flight & One System built. Awaiting [GATE: ELLIOT] flight feel.**
 
 - Project skeleton ✓
 - Strict typing ✓
-- EventBus ✓ (A0 signals catalogued)
-- Data pipeline ✓ — ContentItem, StarSystem (full-sized), ContentLibrary, 3 empty gray-box systems
-- Save schema v1 ✓ — envelope + binary codec + empty migrations + SaveService
-- Debug console ✓ — ConsoleService + DebugConsole (backtick)
-- Basic time control ✓ — TimeScale autoload, combat lock, load reset
-- Acceptance: empty systems load, console sets time, save/load byte-exact round-trip
+- EventBus ✓ (A0 + A1 flight/dock signals catalogued)
+- Data pipeline ✓ — ContentItem, StarSystem, Station, Hull; ContentLibrary; 3 systems (alpha playable)
+- Save schema v1 ✓ — envelope only; flight state is session-only (no schema change)
+- Debug console ✓
+- Basic time control ✓
+- **A1 flight:** mouse-aim courier, chase camera, throttle/strafe/afterburner
+- **A1 world:** Alpha Reach gray-box with station (Alpha Port) + gate mesh (visual only)
+- **A1 dock loop:** approach prompt → F dock → station menu Undock/Launch → free flight
+- **A1 HUD:** system name, speed, throttle, dock prompt / docked status
 
-**Next contract:** **A1 — Flight & One System** (per `Alpha/ALPHA_PHASE_PLAN.md`)
+**Next:** Human flight-feel gate, then A2 once signed.
 
-## Proof (A0 acceptance)
+## Proof (A1 acceptance — mechanical)
 
 | Criterion | Evidence |
 |-----------|----------|
-| Empty systems can load | 3 `.tres` under `src/data/content/star_systems/`; `test_content_library.gd` (shipped valid + discovery); boot loads ContentLibrary without error |
-| Console can set values | `time 4` / `time 16` via ConsoleService → TimeScale; `test_time_scale.gd::test_console_time_command_sets_the_scale` |
-| Save/load round-trips trivial state | Hostile fixture in `scripts/save_fixture.gd`; `test_save_roundtrip.gd` byte-exact; schema v1 |
+| Mouse-aim flight, one ship profile | `PlayerShip` + `hull_courier.tres`; `FlightMath` tests; throttle bus test |
+| One system with station + gate | `system_alpha.tres` station + gate dest; `SystemWorld.build` places station; content tests |
+| Fly → dock → undock loop | `test_a1_play_loop.gd`: range scan + F dock + menu Launch undock; `DockingController` SM |
+| Chase camera + readable HUD | `ChaseCamera`; `FlightHUD` system name test; HUD listens to bus |
+| No combat | Not implemented |
+| Controllable / not nauseating | **[GATE: ELLIOT] open** — human only |
 
-**Gates:** `scripts/lint.ps1` exit 0. GUT 93/93 pass (adversary tightened empty-systems + twin-encode + near-miss tests).
+## Gates
+
+- `scripts/lint.ps1` exit 0
+- GUT **117/117** pass
+- Adversary: weak bus-echo tests replaced by producer loop tests; HUD boot-order fixed (UI before `build()`)
+- **Open:** Elliot confirms basic flight is not nauseating and is controllable
 
 ## Open decisions
 
-- None blocking A1.
+- None blocking the flight-feel gate.
 
 ## Standing decisions that bind upcoming work
 
@@ -44,11 +55,12 @@
 
 ## Next session starts here
 
-1. `/start` — orient; current position is **A0 complete**, next is **A1**.
-2. If he says go on A1 / Phase 1: finish **entire A1** (mouse-aim flight, one system with station+gate, dock→undock loop, chase camera, readable HUD). Subagents build. No combat.
-3. Report A1 done with proof; run **[GATE: ELLIOT] flight feel** before claiming A1 closed.
+1. **[GATE: ELLIOT] flight feel** — play fly → dock → undock; confirm controllable and not nauseating.
+2. If gate fails: retune `BalanceFlight` (turn rate, camera lag, speeds) and re-gate.
+3. If gate passes: record in `docs/gates.md` + journal; mark A1 closed; wrap; next is **A2 — Standing Core**.
 
 ## Session history
 
 - **2026-07-30** — Setup: greenfield project, tooling, skills, memory system.
 - **2026-07-30** — A0 Foundation complete and pushed (`74d99f8`): data pipeline, save v1, console, time. GUT 93/93.
+- **2026-07-30** — A1 Flight & One System implemented (mechanical). Awaiting flight-feel gate. GUT 117/117.

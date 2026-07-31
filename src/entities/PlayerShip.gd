@@ -1,0 +1,187 @@
+class_name PlayerShip
+extends CharacterBody3D
+
+## Mouse-aim freighter flight — Alpha A1.
+##
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1
+##
+## Freelancer-style: ship turns toward the mouse aim point, W/S throttle,
+## A/D strafe, Shift afterburner. Not six-axis Newtonian. Flight state is
+## session-only (no save). Ignores input while the debug console is open or
+## while docked.
+
+var hull_id: StringName = BalanceFlight.PLAYER_HULL_ID
+var _max_speed: float = BalanceFlight.SHIP_MAX_SPEED
+var _acceleration: float = BalanceFlight.SHIP_ACCELERATION
+var _turn_rate: float = BalanceFlight.SHIP_TURN_RATE
+var _strafe_speed: float = BalanceFlight.SHIP_STRAFE_SPEED
+var _afterburner_multiplier: float = BalanceFlight.SHIP_AFTERBURNER_MULTIPLIER
+var _drag: float = BalanceFlight.SHIP_DRAG
+
+var _throttle: float = 0.0
+var _flight_enabled: bool = true
+var _console_open: bool = false
+var _camera: Camera3D = null
+var _last_reported_speed: float = -1.0
+
+
+func _ready() -> void:
+	FlightInput.ensure_actions()
+	_apply_hull_from_library(hull_id)
+	_build_mesh()
+	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
+	# Seed HUD listeners that connect before the first physics tick.
+	EventBus.on_player_throttle_changed.emit(_throttle)
+	EventBus.on_player_speed_changed.emit(0.0)
+
+
+func _exit_tree() -> void:
+	if EventBus.on_console_visibility_changed.is_connected(_on_console_visibility_changed):
+		EventBus.on_console_visibility_changed.disconnect(_on_console_visibility_changed)
+
+
+## Wire the chase camera used for mouse-aim raycasts.
+func set_aim_camera(camera: Camera3D) -> void:
+	_camera = camera
+
+
+## Enable or disable pilot control (docked ships are frozen).
+func set_flight_enabled(enabled: bool) -> void:
+	_flight_enabled = enabled
+	if not enabled:
+		velocity = Vector3.ZERO
+
+
+## Current throttle 0..1.
+func throttle() -> float:
+	return _throttle
+
+
+## Force throttle (e.g. soft start after undock).
+func set_throttle(value: float) -> void:
+	_throttle = FlightMath.clamp_throttle(value)
+	EventBus.on_player_throttle_changed.emit(_throttle)
+
+
+## Load profile numbers from a Hull content id (falls back to BalanceFlight).
+func _apply_hull_from_library(id: StringName) -> void:
+	if not ContentLibrary.has_item(id):
+		return
+	var item: ContentItem = ContentLibrary.item(id)
+	var hull: Hull = item as Hull
+	if hull == null:
+		return
+	_max_speed = hull.max_speed
+	_acceleration = hull.acceleration
+	_turn_rate = hull.turn_rate
+	_strafe_speed = hull.strafe_speed
+	_afterburner_multiplier = hull.afterburner_multiplier
+	_drag = hull.drag
+
+
+func _physics_process(delta: float) -> void:
+	if not _flight_enabled or _console_open:
+		return
+
+	var dt: float = TimeScale.scaled_delta(delta)
+	_update_throttle(dt)
+	_update_facing(dt)
+
+	var strafe_axis: float = 0.0
+	if Input.is_action_pressed(FlightInput.ACTION_STRAFE_RIGHT):
+		strafe_axis += 1.0
+	if Input.is_action_pressed(FlightInput.ACTION_STRAFE_LEFT):
+		strafe_axis -= 1.0
+
+	var afterburning: bool = Input.is_action_pressed(FlightInput.ACTION_AFTERBURNER)
+	# Godot forward is -Z.
+	var forward: Vector3 = -global_transform.basis.z
+	var right: Vector3 = global_transform.basis.x
+	var desired: Vector3 = FlightMath.desired_velocity(
+		forward,
+		right,
+		_throttle,
+		strafe_axis,
+		_max_speed,
+		_strafe_speed,
+		_afterburner_multiplier,
+		afterburning
+	)
+	velocity = FlightMath.integrate_velocity(velocity, desired, _acceleration, _drag, dt)
+	move_and_slide()
+
+	var speed: float = velocity.length()
+	if speed != _last_reported_speed:
+		_last_reported_speed = speed
+		EventBus.on_player_speed_changed.emit(speed)
+
+
+func _update_throttle(dt: float) -> void:
+	var before: float = _throttle
+	if Input.is_action_pressed(FlightInput.ACTION_THROTTLE_UP):
+		_throttle += BalanceFlight.SHIP_THROTTLE_RATE * dt
+	if Input.is_action_pressed(FlightInput.ACTION_THROTTLE_DOWN):
+		_throttle -= BalanceFlight.SHIP_THROTTLE_RATE * dt
+	_throttle = FlightMath.clamp_throttle(_throttle)
+	if _throttle != before:
+		EventBus.on_player_throttle_changed.emit(_throttle)
+
+
+func _update_facing(dt: float) -> void:
+	var aim_point: Vector3 = _mouse_aim_point()
+	var to_aim: Vector3 = aim_point - global_position
+	if to_aim.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		return
+	var current_forward: Vector3 = -global_transform.basis.z
+	var new_forward: Vector3 = FlightMath.turn_toward(current_forward, to_aim, _turn_rate, dt)
+	if new_forward.length_squared() < BalanceFlight.DIRECTION_EPSILON:
+		return
+	# Keep a stable up; bank lightly by reconstructing basis.
+	var up: Vector3 = Vector3.UP
+	if absf(new_forward.dot(up)) > BalanceFlight.AIM_UP_FLIP_DOT:
+		up = global_transform.basis.y
+	look_at(global_position + new_forward, up)
+
+
+func _mouse_aim_point() -> Vector3:
+	if _camera == null:
+		return (
+			global_position
+			+ (-global_transform.basis.z * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE)
+		)
+
+	var viewport: Viewport = get_viewport()
+	var mouse: Vector2 = viewport.get_mouse_position()
+	var origin: Vector3 = _camera.project_ray_origin(mouse)
+	var direction: Vector3 = _camera.project_ray_normal(mouse)
+	# Intersect a plane through the ship, facing the camera (stable aim depth).
+	var plane_normal: Vector3 = _camera.global_transform.basis.z
+	var denom: float = direction.dot(plane_normal)
+	if absf(denom) < BalanceFlight.DIRECTION_EPSILON:
+		return origin + direction * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE
+	var t: float = (global_position - origin).dot(plane_normal) / denom
+	if t < 0.0:
+		return origin + direction * BalanceFlight.MOUSE_AIM_FALLBACK_DISTANCE
+	return origin + direction * t
+
+
+func _build_mesh() -> void:
+	var mesh_instance: MeshInstance3D = MeshInstance3D.new()
+	var box: BoxMesh = BoxMesh.new()
+	box.size = BalanceFlight.SHIP_MESH_SIZE
+	mesh_instance.mesh = box
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = BalanceFlight.COLOR_SHIP
+	mesh_instance.material_override = material
+	add_child(mesh_instance)
+
+	var collision: CollisionShape3D = CollisionShape3D.new()
+	var shape: BoxShape3D = BoxShape3D.new()
+	shape.size = BalanceFlight.SHIP_MESH_SIZE
+	collision.shape = shape
+	add_child(collision)
+
+
+func _on_console_visibility_changed(open: bool) -> void:
+	_console_open = open
