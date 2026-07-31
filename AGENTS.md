@@ -29,6 +29,10 @@ Ambiguity: resolve with Destination **Fidelity** + **Tone** filters. If those fa
 - **Talk plain.** No jargon. Few words. Blunt is fine.
 - **Build with subagents.** Main chat orchestrates and verifies. Agents implement.
   Keep this chat thin.
+- **Full phase per go.** When Elliot says go on a phase (e.g. "go on Phase 0" /
+  A0), finish **the whole phase** before stopping. Ask every blocking question
+  **before** building. Same rule for every phase. Human feel **gates** still
+  wait for him when the phase plan marks a gate — that is not a mid-phase stop.
 - Fix obvious bugs without asking.
 - Gate anything irreversible.
 - Never drive design reviews — options and findings; he decides.

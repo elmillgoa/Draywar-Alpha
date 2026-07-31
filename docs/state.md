@@ -17,7 +17,7 @@
 
 ## Open decisions
 
-- None for tooling. Build plan freeze after first successful `/start`.
+- None blocking A0. Ready for "go on A0" / "go on Phase 0".
 
 ## Standing decisions that bind upcoming work
 
@@ -28,12 +28,13 @@
 - **MCP Pro proprietary** — `addons/godot_mcp/` gitignored.
 - **Talk plain / short / blunt to Elliot.** Subagents build; main chat verifies.
 - **Memory system on disk** — state + journal + traps + eras + compact hooks. Files beat chat memory.
+- **Full phase per go.** "Go on Phase N / A0" means finish the whole phase, then stop. Ask all blockers **before** build. Applies to every phase. Plan-marked human gates still need his play/sign-off.
 
 ## Next session starts here
 
-1. Run `/start` (or ask to start session).
-2. Confirm toolchain: checkin, lint, headless boot.
-3. Begin **A0 Foundation** remaining pieces: data pipeline, save schema v1, debug console, time control, first headless tests — unless Elliot redirects.
+1. `/start` (or he says go).
+2. If he says go on A0: finish **entire A0** (data pipeline, save v1, debug console, time control, tests proving acceptance). Subagents build. Do not stop mid-phase for a status check unless blocked or room dies (then wrap).
+3. Report A0 done with proof; wait for next phase go.
 
 ## Session history
 
