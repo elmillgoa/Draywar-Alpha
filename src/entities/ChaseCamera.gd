@@ -9,6 +9,8 @@ extends Camera3D
 ## TimeScale.scaled_delta so camera ease matches game time.
 
 var _target: Node3D = null
+var _look_smoothed: Vector3 = Vector3.ZERO
+var _has_look: bool = false
 
 
 func _ready() -> void:
@@ -19,9 +21,12 @@ func _ready() -> void:
 ## Ship (or any Node3D) to follow.
 func set_target(target: Node3D) -> void:
 	_target = target
+	_has_look = false
 	if _target != null:
 		global_position = _ideal_position()
-		look_at(_look_point(), Vector3.UP)
+		_look_smoothed = _look_point()
+		_has_look = true
+		look_at(_look_smoothed, Vector3.UP)
 
 
 func _process(delta: float) -> void:
@@ -29,9 +34,17 @@ func _process(delta: float) -> void:
 		return
 	var dt: float = TimeScale.scaled_delta(delta)
 	var ideal: Vector3 = _ideal_position()
-	var weight: float = clampf(BalanceFlight.CAMERA_FOLLOW_SPEED * dt, 0.0, 1.0)
-	global_position = global_position.lerp(ideal, weight)
-	look_at(_look_point(), Vector3.UP)
+	var pos_weight: float = clampf(BalanceFlight.CAMERA_FOLLOW_SPEED * dt, 0.0, 1.0)
+	global_position = global_position.lerp(ideal, pos_weight)
+
+	var ideal_look: Vector3 = _look_point()
+	if not _has_look:
+		_look_smoothed = ideal_look
+		_has_look = true
+	else:
+		var look_weight: float = clampf(BalanceFlight.CAMERA_LOOK_SPEED * dt, 0.0, 1.0)
+		_look_smoothed = _look_smoothed.lerp(ideal_look, look_weight)
+	look_at(_look_smoothed, Vector3.UP)
 
 
 func _ideal_position() -> Vector3:

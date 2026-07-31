@@ -20,25 +20,28 @@ const PLAYER_HULL_ID: StringName = &"hull_courier"
 # --- Ship motion (courier defaults; Hull.tres may override) ----------------
 
 ## Maximum forward speed at full throttle without afterburner (m/s).
-const SHIP_MAX_SPEED: float = 80.0
+## Softened after A1 flight gate: was 80; still readable, less whip.
+const SHIP_MAX_SPEED: float = 70.0
 
 ## How fast the ship closes on its desired velocity (m/s^2).
-const SHIP_ACCELERATION: float = 45.0
+## Softened after A1 flight gate: was 45 (too snappy).
+const SHIP_ACCELERATION: float = 28.0
 
 ## Maximum turn rate while aiming (radians per second).
-const SHIP_TURN_RATE: float = 2.2
+## Softened after A1 flight gate: was 2.2 (too responsive / nauseating).
+const SHIP_TURN_RATE: float = 1.35
 
 ## Lateral strafe speed at full strafe input (m/s).
-const SHIP_STRAFE_SPEED: float = 28.0
+const SHIP_STRAFE_SPEED: float = 18.0
 
 ## Multiplier applied to max speed while afterburner is held.
-const SHIP_AFTERBURNER_MULTIPLIER: float = 1.75
+const SHIP_AFTERBURNER_MULTIPLIER: float = 1.55
 
 ## Exponential velocity bleed when desired velocity is lower (1/s).
-const SHIP_DRAG: float = 1.8
+const SHIP_DRAG: float = 2.2
 
 ## Throttle units gained or lost per second while W/S held.
-const SHIP_THROTTLE_RATE: float = 0.85
+const SHIP_THROTTLE_RATE: float = 0.5
 
 ## Throttle range (inclusive).
 const THROTTLE_MIN: float = 0.0
@@ -67,19 +70,24 @@ const UNDOCK_THROTTLE: float = 0.15
 # --- Chase camera ----------------------------------------------------------
 
 ## Distance behind the ship along its reverse-forward axis.
-const CAMERA_DISTANCE: float = 28.0
+## Softened after A1 flight gate: farther reduces nausea.
+const CAMERA_DISTANCE: float = 36.0
 
 ## Height above the ship.
-const CAMERA_HEIGHT: float = 9.0
+const CAMERA_HEIGHT: float = 12.0
 
 ## How fast the camera eases toward the ideal pose (higher = snappier).
-const CAMERA_FOLLOW_SPEED: float = 6.5
+## Softened after A1 flight gate: was 6.5 (too locked to ship turns).
+const CAMERA_FOLLOW_SPEED: float = 3.2
+
+## How fast the look target eases (separate from position lag).
+const CAMERA_LOOK_SPEED: float = 4.0
 
 ## Camera field of view in degrees.
-const CAMERA_FOV: float = 70.0
+const CAMERA_FOV: float = 65.0
 
 ## How far ahead of the ship the camera looks (metres along forward).
-const CAMERA_LOOK_AHEAD: float = 12.0
+const CAMERA_LOOK_AHEAD: float = 8.0
 
 # --- World layout (system_alpha gray box) ----------------------------------
 

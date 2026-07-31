@@ -2,7 +2,7 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **A1 — Flight & One System built. Awaiting [GATE: ELLIOT] flight feel.**
+**Current position:** **A1 — Flight built. Gate attempt 1 not signed (too responsive / a little nauseating). Softened; re-gate.**
 
 - Project skeleton ✓
 - Strict typing ✓
@@ -34,7 +34,7 @@
 - `scripts/lint.ps1` exit 0
 - GUT **117/117** pass
 - Adversary: weak bus-echo tests replaced by producer loop tests; HUD boot-order fixed (UI before `build()`)
-- **Open:** Elliot confirms basic flight is not nauseating and is controllable
+- **Open:** A1 flight feel re-gate after soft pass (attempt 1: controllable but too responsive / a little nauseating)
 
 ## Open decisions
 
@@ -55,8 +55,8 @@
 
 ## Next session starts here
 
-1. **[GATE: ELLIOT] flight feel** — play fly → dock → undock; confirm controllable and not nauseating.
-2. If gate fails: retune `BalanceFlight` (turn rate, camera lag, speeds) and re-gate.
+1. **[GATE: ELLIOT] flight feel attempt 2** — re-play after soft pass; confirm controllable and not nauseating.
+2. If still off: say what (turn, camera, speed); retune again.
 3. If gate passes: record in `docs/gates.md` + journal; mark A1 closed; wrap; next is **A2 — Standing Core**.
 
 ## Session history
