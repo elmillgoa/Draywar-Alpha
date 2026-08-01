@@ -72,13 +72,15 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 - Plan: `docs/BETA_E4_OPENING_CAST.md`
 - **[GATE] E4.7 Opening feel** — **signed** 2026-07-31; next build **E5**
 
-### E5 — Content scale toward Beta
+### E5 — Content scale toward Beta — **PLAN LOCKED** (build next)
 **Job:** Sector large enough for multi-hour vetting.
 
-- Toward 5–8 systems (lift caps deliberately)
-- Multi-station logistics feel
-- Map / NAV upgrade
-- Still no Holding endgame until early/mid fantasy solid
+- Plan: `docs/BETA_E5_CONTENT_SCALE.md` (locked 2026-07-31)
+- Ship **6 systems** (budget 8); stations **~10**; branched gate graph
+- Multi-station logistics (long hauls + secondary docks + trade contrast)
+- Map / NAV sector chart (functional)
+- Caps lift first (**E5.1**), then pack → graph → logistics ∥ map → integration → **[GATE] E5.7**
+- Still no Holding / Ops
 
 ### Later (after E2–E5 prove)
 - **Operations** (hired ships, charters, warehouses)

@@ -362,3 +362,37 @@ Not a re-open of E2/E3. Refuse â†’ iterate E4 list only. Sign â†’ E4 closed; roa
 
 **Notes:** Code-complete E4 suite green before sign. Formal cold script not re-run in-session; Elliot authorized clearing open feel gates after phase drive. Refuse later if play finds a fix list. E4 phase closed.
 
+
+---
+
+## E5.7 — Content scale feel
+
+**Criteria:** After a long session, does the sector feel big enough to keep playing — routes, places, and map — without needing Ops or Holding yet?
+
+Not a re-open of E2–E4. Refuse ? iterate E5.1–E5.6 only. Sign ? E5 closed; post-E5 roadmap (Ops later).
+
+**What that means in play (plain):**
+
+- Six systems on a **branched** map (not a longer dead line).
+- You can open a **sector chart** and see where you are and where gates go.
+- Jobs and/or trade pull you across **multiple hops** and sometimes to **secondary docks**, not only the three old hubs.
+- Status moment still reads local controller on each system enter.
+- Opening cast (E4) still works; Continue still skips create/annexation.
+- Broke / debt / combat laws from E2–E3 still hold — scale did not delete teeth.
+
+### Play script (cold, ~60–90 min)
+
+1. **New Game** — create path (any solid path), annexation, tip, docked Alpha Port. Note standing.
+2. **Open map / NAV chart** — confirm all six systems and gate links; current = Alpha.
+3. **Short loop** — undock, gate to Beta, dock Hub or Spit. Status moment on enter. Re-check map current = Beta.
+4. **Branch** — from Beta take a gate toward **Delta or Epsilon** (not only Gamma). Dock a **new** system. Read flavor + status.
+5. **Logistics** — accept a job that is either multi-hop or ends/starts at a secondary/new dock. Complete or deliberately abandon after cargo loads (both teach the graph).
+6. **Far spur** — reach **Zeta** (or deepest new system) at least once. Trade or board once there if stocked.
+7. **Law contrast** — if path allows: touch a patrolled new Reach dock and a lawless spur; ambient/hostiles still match policing.
+8. **Save / Quit / Continue** — land in a non-Alpha system if possible; Continue restores place and does not re-show opening.
+9. **Optional pressure** — one E3 money beat (upkeep, loan, or contraband) so scale did not make economy optional.
+10. Judge: multi-hour sector worth keeping, or still a thin corridor with extra names?
+
+### Attempt log
+
+_(none yet — gate opens after E5.1–E5.6 code complete)_
