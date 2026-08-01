@@ -33,7 +33,7 @@ Prove Destination combat identity without Operations/Holding: two hostile fight 
 | E2.4 | Hauler hull law data | **done** |
 | E2.5 | Fighter + station switch | **done** |
 | E2.6 | Performance densify | **done** |
-| E2.7 | **[GATE] Combat & hull feel** | open (code complete) |
+| E2.7 | **[GATE] Combat & hull feel** | **signed** 2026-07-31 |
 
 ### E2.1 Hostile profiles
 
@@ -142,7 +142,7 @@ hostiles still combat-group only. Witness count remains live traffic ships.
 
 ### E2.7 Gate — Combat & hull feel
 
-**Status:** open (E2 code complete). Play script in `docs/gates.md`. Sign → E3. Refuse → iterate E2 list only.
+**Status:** **signed** 2026-07-31. Play script in `docs/gates.md`.
 
 ## Explicitly OUT
 

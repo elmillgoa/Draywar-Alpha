@@ -45,7 +45,7 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 
 ## Recommended next phases (order)
 
-### E2 — Combat & hull law — **ACTIVE**
+### E2 — Combat & hull law — **CLOSED** (gate signed 2026-07-31)
 **Job:** Prove Destination combat identity without full mid-game.
 
 - Hostile profiles + security-aware encounters
@@ -55,7 +55,7 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 
 **Not:** Operations, Holding.
 
-### E3 — Economy pressure — **code complete** (gate open)
+### E3 — Economy pressure — **CLOSED** (gate signed 2026-07-31)
 **Job:** Money stops being optional.
 
 - Upkeep / fuel as career pressure (time or jump-based) — **done**
@@ -63,14 +63,14 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 - Contraband / jurisdiction goods if standing law hooks land — **done**
 - Job variety: smuggle as third kind — **done**
 - Integration / balance pass — **done**
-- **[GATE] E3.6 economy feel** — open (`docs/gates.md`); sign → E4
+- **[GATE] E3.6 economy feel** — **signed** 2026-07-31
 
-### E4 — Opening & cast — **CODE COMPLETE** (gate E4.7 open)
+### E4 — Opening & cast — **CLOSED** (gate signed 2026-07-31)
 **Job:** Career starts as a story, not mid-dock.
 
 - Life-path 3×3 + create UI + annexation + Jax recovery — **done**
 - Plan: `docs/BETA_E4_OPENING_CAST.md`
-- **[GATE] E4.7 Opening feel** — open (`docs/gates.md`); sign → E5
+- **[GATE] E4.7 Opening feel** — **signed** 2026-07-31; next build **E5**
 
 ### E5 — Content scale toward Beta
 **Job:** Sector large enough for multi-hour vetting.

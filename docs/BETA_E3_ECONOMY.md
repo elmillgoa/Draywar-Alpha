@@ -1,9 +1,9 @@
 # Beta E3 — Economy pressure
 
-**Status:** Code-complete — **[GATE] E3.6** open for Elliot play  
+**Status:** **Closed** — code complete; **[GATE] E3.6 signed** 2026-07-31  
 **Date:** 2026-07-31  
 **Authority:** Destination §6–7 + `docs/BETA_ROADMAP.md` E3 + standing law  
-**Gate E2.7:** open for Elliot play later; E3 code complete (E3.6 feel gate next).
+**Gates:** E2.7 and E3.6 both signed 2026-07-31.
 
 ## Job
 
@@ -34,7 +34,7 @@ Stay at 3 systems / 6 stations / 4 entities. Job kinds ≤3. Contract templates 
 | E3.3 | Contraband jurisdiction | **done** |
 | E3.4 | Smuggle job kind | **done** |
 | E3.5 | Integration / balance pass | **done** |
-| E3.6 | **[GATE] Economy pressure feel** | **open** |
+| E3.6 | **[GATE] Economy pressure feel** | **signed** 2026-07-31 |
 
 ### E3.1 Career pressure
 

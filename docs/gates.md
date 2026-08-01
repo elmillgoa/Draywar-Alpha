@@ -257,7 +257,19 @@ Not a re-open of E1 or Final Alpha. Refuse → iterate E2 list only. Sign → op
 
 ### Attempt log
 
-*(No attempts yet — E2 code complete 2026-07-31; awaiting Elliot play.)*
+#### Attempt 1 — 2026-07-31
+
+**Verdict: signed — E2.7 combat & hull feel passes.**
+
+**Elliot (verbatim):**
+
+> Sign all three now
+
+**Also (same session, drive-past order):**
+
+> I've already signed off. Take the build through as many phases as you can. Only stop if I need to make a decision. I'll test systems when they are built.
+
+**Notes:** Code-complete E2 suite green before sign. Formal cold script not re-run in-session; Elliot authorized clearing open feel gates after phase drive. Refuse later if play finds a fix list.
 
 ---
 
@@ -290,7 +302,19 @@ Not a re-open of E2. Refuse → iterate E3 list only. Sign → open roadmap E4.
 
 ### Attempt log
 
-*(No attempts yet — E3 code complete 2026-07-31; awaiting Elliot play.)*
+#### Attempt 1 — 2026-07-31
+
+**Verdict: signed — E3.6 economy pressure feel passes.**
+
+**Elliot (verbatim):**
+
+> Sign all three now
+
+**Also (same session, drive-past order):**
+
+> I've already signed off. Take the build through as many phases as you can. Only stop if I need to make a decision. I'll test systems when they are built.
+
+**Notes:** Code-complete E3 suite green before sign. Formal cold script not re-run in-session; Elliot authorized clearing open feel gates after phase drive. Refuse later if play finds a fix list.
 
 ---
 
@@ -324,5 +348,17 @@ Not a re-open of E2/E3. Refuse → iterate E4 list only. Sign → E4 closed; roa
 
 ### Attempt log
 
-*(No attempts yet — E4 code complete 2026-07-31; awaiting Elliot play.)*
+#### Attempt 1 — 2026-07-31
+
+**Verdict: signed — E4.7 opening feel passes.**
+
+**Elliot (verbatim):**
+
+> Sign all three now
+
+**Also (same session, drive-past order):**
+
+> I've already signed off. Take the build through as many phases as you can. Only stop if I need to make a decision. I'll test systems when they are built.
+
+**Notes:** Code-complete E4 suite green before sign. Formal cold script not re-run in-session; Elliot authorized clearing open feel gates after phase drive. Refuse later if play finds a fix list. E4 phase closed.
 

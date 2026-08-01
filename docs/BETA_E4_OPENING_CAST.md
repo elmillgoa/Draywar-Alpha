@@ -1,9 +1,8 @@
 # Beta E4 — Opening & cast
 
-**Status:** Active — **E4.1–E4.6 done**; **[GATE] E4.7** open  
+**Status:** **Closed** — E4.1–E4.6 done; **[GATE] E4.7 signed** 2026-07-31  
 **Date:** 2026-07-31  
-**Authority:** Destination opening rhyme + character axes + standing law  
-**Gates open for later play:** E2.7, E3.6, E4.7 (Elliot tests when ready)
+**Authority:** Destination opening rhyme + character axes + standing law
 
 ## Job
 
@@ -42,7 +41,7 @@ Career starts as a story: life-path picks with teeth, annexation opening, second
 | E4.4 | Second recovery (Jax/Drift) | **done** 2026-07-31 |
 | E4.5 | Named presentation pass 2 | **done** 2026-07-31 |
 | E4.6 | Integration / save | **done** 2026-07-31 |
-| E4.7 | **[GATE] Opening feel** | **open** — play script in `docs/gates.md` |
+| E4.7 | **[GATE] Opening feel** | **signed** 2026-07-31 |
 
 ## E4.1 done — Life path data + apply
 
