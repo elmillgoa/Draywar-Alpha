@@ -254,6 +254,9 @@ func _physics_process(delta: float) -> void:
 func cycle_target_lock() -> void:
 	if _input_blocked or _is_docked():
 		return
+	# Drop a freed/dead lock before ranking so highlight clear cannot see a freed node.
+	if locked_target() == null and _locked_target != null:
+		_clear_target_lock(false)
 	var ranked: Array[Node] = _hostiles_ranked_by_distance()
 	if ranked.is_empty():
 		_clear_target_lock(true)
@@ -268,11 +271,13 @@ func cycle_target_lock() -> void:
 
 ## Current locked combat target, or null.
 func locked_target() -> Node:
-	if _locked_target != null and is_instance_valid(_locked_target):
-		if _locked_target.has_method(&"is_alive") and _locked_target.call(&"is_alive") != true:
-			return null
-		return _locked_target
-	return null
+	if _locked_target == null:
+		return null
+	if not is_instance_valid(_locked_target):
+		return null
+	if _locked_target.has_method(&"is_alive") and _locked_target.call(&"is_alive") != true:
+		return null
+	return _locked_target
 
 
 ## Fire a bolt along the mouse aim. No auto-hit on lock (beginner freighter).
@@ -307,12 +312,13 @@ func try_fire() -> bool:
 
 
 func _hostiles_ranked_by_distance() -> Array[Node]:
+	# Name kept for call sites; ranks all lockable ships (hostiles + traffic).
 	var ranked: Array[Node] = []
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return ranked
 	var entries: Array[Dictionary] = []
-	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE):
+	for node: Node in tree.get_nodes_in_group(BalanceCombat.GROUP_LOCKABLE):
 		if not is_instance_valid(node):
 			continue
 		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
@@ -338,7 +344,7 @@ func _sort_hostiles_near_to_far(a: Dictionary, b: Dictionary) -> bool:
 
 
 func _set_target_lock(target: Node) -> void:
-	if _locked_target == target and is_instance_valid(target):
+	if _locked_target == target and target != null and is_instance_valid(target):
 		_emit_lock_hud()
 		return
 	_apply_lock_highlight(_locked_target, false)
@@ -354,11 +360,18 @@ func _clear_target_lock(emit_bus: bool) -> void:
 		EventBus.on_target_lock_changed.emit(false, "", 0.0)
 
 
-func _apply_lock_highlight(target: Node, on: bool) -> void:
-	if target == null or not is_instance_valid(target):
+## Variant arg: locked ref may be freed; typed Node rejects freed objects.
+func _apply_lock_highlight(target: Variant, on: bool) -> void:
+	if target == null:
 		return
-	if target.has_method(&"set_lock_highlight"):
-		target.call(&"set_lock_highlight", on)
+	if not is_instance_valid(target):
+		return
+	if typeof(target) != TYPE_OBJECT:
+		return
+	var obj: Object = target
+	if not obj.has_method(&"set_lock_highlight"):
+		return
+	obj.call(&"set_lock_highlight", on)
 
 
 func _emit_lock_hud() -> void:
@@ -393,12 +406,7 @@ func _refresh_lock_hud_if_needed() -> void:
 
 func _on_hostile_killed_clear_lock(_system_id: StringName, _victim_entity_id: StringName) -> void:
 	# Death frees the node next frame; drop lock if it is gone or dead.
-	if _locked_target == null:
-		return
-	if not is_instance_valid(_locked_target):
-		_clear_target_lock(true)
-		return
-	if _locked_target.has_method(&"is_alive") and _locked_target.call(&"is_alive") != true:
+	if locked_target() == null and _locked_target != null:
 		_clear_target_lock(true)
 
 
@@ -806,9 +814,9 @@ func _try_impact_damage(mass_class: StringName, closing_speed: float, collider: 
 	var wallet: Node = _wallet_node()
 	if wallet != null and wallet.has_method(&"apply_damage"):
 		wallet.call(&"apply_damage", damage)
-	# Mutual: damageable hostiles also take impact (D3). Traffic kill is E6.3.
+	# Mutual: lockable ships (hostiles + traffic) take impact (D3 / E6.3).
 	if collider is Node:
-		var target: Node = _hostile_from_collider(collider as Node)
+		var target: Node = _lockable_from_collider(collider as Node)
 		if target != null and target.has_method(&"take_damage"):
 			var other_dmg: float = BalanceCombat.impact_damage(
 				BalanceCombat.IMPACT_PLAYER_AS_MASS_CLASS, closing_speed
@@ -817,10 +825,12 @@ func _try_impact_damage(mass_class: StringName, closing_speed: float, collider: 
 				target.call(&"take_damage", other_dmg)
 
 
-func _hostile_from_collider(node: Node) -> Node:
+func _lockable_from_collider(node: Node) -> Node:
 	var walk: Node = node
 	while walk != null:
-		if walk.is_in_group(BalanceCombat.GROUP_HOSTILE):
+		if walk.is_in_group(BalanceCombat.GROUP_LOCKABLE):
+			if walk.has_method(&"is_alive") and walk.call(&"is_alive") != true:
+				return null
 			return walk
 		walk = walk.get_parent()
 	return null

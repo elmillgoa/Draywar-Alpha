@@ -2,7 +2,7 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **E6.2 Package C complete** (celestial sky: sun disc, planets, moons, belt rocks). Next: **E6.3 Package B** (every ship a target — lock/fire traffic) unless told otherwise.
+**Current position:** **E6.3 Package B complete** (every ship lockable/killable; roles; standing via existing law). Next: **E6.4 Package D** (density toward 20 ships) unless told otherwise.
 
 | Doc | Role |
 |-----|------|
@@ -20,25 +20,27 @@
 | E3 Economy pressure | **closed** (gate signed 2026-07-31) |
 | E4 Opening & cast | **closed** (gate signed 2026-07-31) |
 | E5 Content scale | **closed** (E5.7 signed 2026-08-02) |
-| E6 Lived-in space | **E6.2 done** — next E6.3 lock/kill traffic |
+| E6 Lived-in space | **E6.3 done** — next E6.4 density |
 
 ## What the game can do now
 
-- Full E4–E5 slice plus **solid space** (E6.1) and **lived-in sky** (E6.2).
+- Full E4–E5 slice plus solid space (E6.1), lived-in sky (E6.2), and **attackable traffic** (E6.3).
 - Soft bump + impact damage by mass class; layout pad→gate ≥ 1200 m.
-- Every system has a sun cue + at least one planet-scale body; layouts differ (Alpha twin ice + moon, Epsilon belt rocks, Zeta single ash world, etc.).
-- Belt rocks (Gamma sparse / Epsilon dense) use mass class `rock` and static colliders; far from pad/gate.
-- Ship budget still **12**. Traffic not lock/kill yet (E6.3). Density 20 is E6.4.
+- Every system has a sun cue + at least one planet-scale body; layouts differ.
+- **Tab locks any live ship in range** (traffic + pirates). Bolts and rams damage traffic to 0 hull → despawn.
+- Lock line shows role: **Civilian / Patrol / Pirate**. Patrol boats spawn in patrolled/contested mixes; lawless is civilian-only traffic (hostiles separate).
+- Traffic kills use **AttributionService** only (same law as combat): patrolled always hits controller; lawless quiet without evidence. No bounty signal on traffic death.
+- Ship budget still **12**. Density 20 is E6.4.
 
 ## Evidence
 
-- Lint green. GUT **541/541** after E6.2 (+6 sky tests).
-- New: `src/world/CelestialSky.gd`, `tests/test_e6_sky.gd`; celestial tables in `BalanceFlight`.
+- Lint green. GUT **554/554** after E6.3 (+13 traffic-target tests).
+- New: `src/world/TrafficShip.gd`, `tests/test_e6_traffic_targets.gd`; `GROUP_LOCKABLE` + role constants in `BalanceCombat`.
 
 ## Next session starts here
 
-1. `/start` — confirm green; position = **E6.2 complete**, next **E6.3**.
-2. Build **E6.3** (Package B — every ship a target) only unless told to continue the phase.
+1. `/start` — confirm green; position = **E6.3 complete**, next **E6.4**.
+2. Build **E6.4** (Package D — density under ship cap 20) only unless told to continue.
 3. Package order locked: **A → C → B → D** → E6.5 → E6.6 gate.
 4. No Ops/Holding. No invented standing rules.
 
@@ -47,10 +49,11 @@
 - Final Alpha signed. Destination filters govern.
 - E1–E5 feel gates all signed (E5.7 on 2026-08-02).
 - E6 locks: soft bump; damage scales by obstacle mass class; order A→C→B→D; perf cap 20 ships; celestials are backdrop not landing; every ship attackable after Package B.
-- Ramming kills use existing attribution when B is live.
+- Ramming kills use existing attribution (live as of E6.3).
 
 ## Session history
 
+- **2026-08-02 (E6.3)** — Every ship a target: TrafficShip HP/roles, GROUP_LOCKABLE, attribution on traffic kill.
 - **2026-08-02 (E6.2)** — Lived-in sky: sun disc, per-system planets/moons, belt rocks.
 - **2026-08-02 (E6.1)** — Solid space: colliders, soft bump, impact damage, layout stretch, ecology.
 - **2026-08-02 (E6 plan)** — E5.7 signed; E6 Lived-in space plan locked (A→C→B→D).

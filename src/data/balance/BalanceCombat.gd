@@ -11,7 +11,12 @@ extends RefCounted
 # --- Groups / identity -----------------------------------------------------
 
 ## Scene-tree group for combat hostiles (not ambient NpcTraffic).
+## Bounty, combat AI, combat lock prompt. Pirates only.
 const GROUP_HOSTILE: StringName = &"hostile_npc"
+
+## Scene-tree group for lockable/damageable ships (hostiles + traffic).
+## Tab lock, player bolts, and mutual impact use this — not GROUP_HOSTILE alone.
+const GROUP_LOCKABLE: StringName = &"lockable_ship"
 
 ## Scene-tree group for collidable impact bodies (station/gate/traffic/hostile).
 const GROUP_IMPACT_BODY: StringName = &"impact_body"
@@ -22,6 +27,35 @@ const META_MASS_CLASS: StringName = &"mass_class"
 ## Victim Entity tag on kill reports (attribution target is still the
 ## local system controller when one holds the system — Reach in alpha).
 const VICTIM_ENTITY_ID: StringName = &"entity_free_haulers"
+
+# --- Ship roles (E6.3 lock/HUD — civilian / patrol / pirate) ----------------
+
+const ROLE_CIVILIAN: StringName = &"civilian"
+const ROLE_PATROL: StringName = &"patrol"
+const ROLE_PIRATE: StringName = &"pirate"
+
+## Lock HUD display strings (source of truth for role legibility).
+const ROLE_DISPLAY_CIVILIAN: String = "Civilian"
+const ROLE_DISPLAY_PATROL: String = "Patrol"
+const ROLE_DISPLAY_PIRATE: String = "Pirate"
+
+## Ambient traffic hull HP by role (player bolts ~40; light freighter dies faster).
+const TRAFFIC_HULL_HP_CIVILIAN: float = 80.0
+const TRAFFIC_HULL_HP_PATROL: float = 120.0
+
+## Legacy alias — civilian freighter default.
+const TRAFFIC_HULL_HP: float = TRAFFIC_HULL_HP_CIVILIAN
+
+## Fraction of ambient traffic that spawns as non-hostile patrol boats.
+## Patrolled: mixed patrol + civilian. Contested: mostly civilian. Lawless: none.
+const TRAFFIC_PATROL_SHARE_PATROLLED: float = 0.375
+const TRAFFIC_PATROL_SHARE_CONTESTED: float = 0.125
+const TRAFFIC_PATROL_SHARE_LAWLESS: float = 0.0
+
+## Unshaded colours for traffic roles (patrol reads as authority, civilian soft).
+const COLOR_TRAFFIC_CIVILIAN: Color = Color(0.55, 0.52, 0.48)
+const COLOR_TRAFFIC_PATROL: Color = Color(0.28, 0.48, 0.82)
+const COLOR_TRAFFIC_HIT_FLASH: Color = Color(1.0, 0.9, 0.75)
 
 # --- Impact mass classes / damage (E6.1 Package A) -------------------------
 
@@ -405,6 +439,45 @@ static func format_target_lock_line(label: String, distance_m: float, hull_perce
 		HUD_TARGET_LOCK_FORMAT
 		% [label, int(roundf(distance_m)), clampi(hull_percent, 0, HULL_PERCENT_FULL)]
 	)
+
+
+## Lock HUD role string (civilian / patrol / pirate). Unknown → empty.
+static func role_display_name(role_id: StringName) -> String:
+	if role_id == ROLE_CIVILIAN:
+		return ROLE_DISPLAY_CIVILIAN
+	if role_id == ROLE_PATROL:
+		return ROLE_DISPLAY_PATROL
+	if role_id == ROLE_PIRATE:
+		return ROLE_DISPLAY_PIRATE
+	return ""
+
+
+## Traffic hull max for a role (unknown → civilian).
+static func traffic_hull_hp_for_role(role_id: StringName) -> float:
+	if role_id == ROLE_PATROL:
+		return TRAFFIC_HULL_HP_PATROL
+	return TRAFFIC_HULL_HP_CIVILIAN
+
+
+## Patrol share of ambient traffic for a policing tag (0..1).
+static func traffic_patrol_share_for_policing(policing: StringName) -> float:
+	if policing == &"patrolled":
+		return TRAFFIC_PATROL_SHARE_PATROLLED
+	if policing == &"contested":
+		return TRAFFIC_PATROL_SHARE_CONTESTED
+	if policing == &"lawless":
+		return TRAFFIC_PATROL_SHARE_LAWLESS
+	return TRAFFIC_PATROL_SHARE_CONTESTED
+
+
+## How many of `total` ambient slots should be patrol boats (rounded).
+static func traffic_patrol_count(total: int, policing: StringName) -> int:
+	if total <= 0:
+		return 0
+	var share: float = traffic_patrol_share_for_policing(policing)
+	if share <= 0.0:
+		return 0
+	return clampi(int(roundf(float(total) * share)), 0, total)
 
 
 ## Hull remaining as integer percent of max HP (default: legacy HOSTILE_HP).

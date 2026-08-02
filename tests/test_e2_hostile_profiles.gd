@@ -146,7 +146,8 @@ func test_gunboat_survives_skirmisher_kill_count_then_dies_later() -> void:
 	await get_tree().process_frame
 
 
-func test_lock_display_name_distinct_per_profile() -> void:
+func test_lock_display_name_is_pirate_role() -> void:
+	# E6.3: hostiles read as pirate role on lock; profile names stay for combat identity.
 	var host: Node3D = Node3D.new()
 	add_child_autofree(host)
 	var sk: HostileNpc = HostileNpc.spawn_under(
@@ -155,13 +156,14 @@ func test_lock_display_name_distinct_per_profile() -> void:
 	var gb: HostileNpc = HostileNpc.spawn_under(
 		host, Vector3(10.0, 0.0, 0.0), BalanceCombat.PROFILE_GUNBOAT
 	)
-	var name_sk: String = sk.lock_display_name()
-	var name_gb: String = gb.lock_display_name()
-	assert_false(name_sk.is_empty(), "skirmisher lock name")
-	assert_false(name_gb.is_empty(), "gunboat lock name")
-	assert_ne(name_sk, name_gb, "lock HUD names must differ per profile")
-	assert_eq(name_sk, BalanceCombat.profile_display_name(BalanceCombat.PROFILE_SKIRMISHER))
-	assert_eq(name_gb, BalanceCombat.profile_display_name(BalanceCombat.PROFILE_GUNBOAT))
+	var pirate: String = BalanceCombat.role_display_name(BalanceCombat.ROLE_PIRATE)
+	assert_eq(sk.lock_display_name(), pirate, "skirmisher lock shows pirate role")
+	assert_eq(gb.lock_display_name(), pirate, "gunboat lock shows pirate role")
+	assert_ne(
+		BalanceCombat.profile_display_name(BalanceCombat.PROFILE_SKIRMISHER),
+		BalanceCombat.profile_display_name(BalanceCombat.PROFILE_GUNBOAT),
+		"profile display names remain distinct"
+	)
 
 
 func test_contested_and_lawless_ambient_profiles_cover_both_shapes() -> void:

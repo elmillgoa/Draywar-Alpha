@@ -155,7 +155,7 @@ damage = IMPACT_BASE * mass_class_factor(obstacle) * speed_factor(closing_speed)
 
 ### E6.3 Package B — Every ship a target
 
-**Status:** pending  
+**Status:** complete (2026-08-02)  
 
 **Shape:** Traffic ships are **lockable** (Tab cycle includes them), **damageable** by player bolts and impact, and **can die**. On death: AttributionService with witnesses (live traffic/patrol count). HUD/lock shows **role** (civilian / patrol / pirate). Hostiles remain pirate-role. Patrolled systems may spawn **non-hostile patrol** traffic (not free kills without standing cost).
 

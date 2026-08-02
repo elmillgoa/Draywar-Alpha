@@ -1,13 +1,13 @@
 class_name NpcTraffic
 extends Node3D
 
-## Gray-box NPC traffic that reflects local policing — Alpha A5.
+## Gray-box NPC traffic that reflects local policing — Alpha A5 + E6.3.
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A5
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A5, docs/BETA_E6_LIVED_IN_SPACE.md E6.3
 ##
-## Spawns simple orbiting ships; count and colour come from system.policing.
-## Display only — no combat AI. Parent under SystemWorld after build.
-## Live ship count feeds combat kill witness_count (E2.3).
+## Spawns orbiting TrafficShip hulls; count from system.policing; mix of
+## civilian freighters and non-hostile patrol boats. Display + damageable.
+## Live ship count feeds combat kill witness_count (E2.3 / E6.3).
 
 var _ships: Array[Node3D] = []
 var _angles: Array[float] = []
@@ -24,9 +24,30 @@ func _enter_tree() -> void:
 func live_ship_count() -> int:
 	var count: int = 0
 	for ship: Node3D in _ships:
-		if ship != null and is_instance_valid(ship):
-			count += 1
+		if ship == null or not is_instance_valid(ship):
+			continue
+		if ship.has_method(&"is_alive") and ship.call(&"is_alive") != true:
+			continue
+		count += 1
 	return count
+
+
+## Drop a destroyed ship from the orbit lists (called from TrafficShip._die).
+func unregister_ship(ship: Node3D) -> void:
+	if ship == null:
+		return
+	var idx: int = _ships.find(ship)
+	if idx < 0:
+		return
+	_ships.remove_at(idx)
+	if idx < _angles.size():
+		_angles.remove_at(idx)
+	if idx < _radii.size():
+		_radii.remove_at(idx)
+	if idx < _heights.size():
+		_heights.remove_at(idx)
+	if idx < _omegas.size():
+		_omegas.remove_at(idx)
 
 
 ## Clear previous traffic and spawn for this system.
@@ -36,9 +57,13 @@ func rebuild_for_system(system_id: StringName) -> void:
 	if system == null:
 		return
 	var count: int = _count_for_policing(system.policing)
-	var color: Color = _color_for_policing(system.policing)
+	var patrol_count: int = BalanceCombat.traffic_patrol_count(count, system.policing)
 	for i: int in count:
-		var ship: Node3D = _make_npc(color)
+		var role: StringName = BalanceCombat.ROLE_CIVILIAN
+		if i < patrol_count:
+			role = BalanceCombat.ROLE_PATROL
+		var color: Color = _color_for_role(role, system.policing)
+		var ship: Node3D = _make_npc(role, color)
 		var t: float = float(i) / float(maxi(count, 1))
 		var angle: float = t * TAU
 		var radius: float = lerpf(BalanceEconomy.NPC_ORBIT_MIN, BalanceEconomy.NPC_ORBIT_MAX, t)
@@ -62,6 +87,8 @@ func rebuild_for_system(system_id: StringName) -> void:
 func _process(delta: float) -> void:
 	var dt: float = TimeScale.scaled_delta(delta)
 	for i: int in _ships.size():
+		if i >= _angles.size() or i >= _radii.size() or i >= _heights.size() or i >= _omegas.size():
+			continue
 		_angles[i] = _angles[i] + _omegas[i] * dt
 		var angle: float = _angles[i]
 		var radius: float = _radii[i]
@@ -102,7 +129,10 @@ func _count_for_policing(policing: StringName) -> int:
 	return BalanceEconomy.npc_count_for_policing(policing)
 
 
-func _color_for_policing(policing: StringName) -> Color:
+func _color_for_role(role: StringName, policing: StringName) -> Color:
+	if role == BalanceCombat.ROLE_PATROL:
+		return BalanceCombat.COLOR_TRAFFIC_PATROL
+	# Civilians tint by policing so systems still read differently at a glance.
 	match policing:
 		StarSystem.POLICED_BY_PATROLS:
 			return BalanceEconomy.NPC_COLOR_PATROLLED
@@ -111,49 +141,12 @@ func _color_for_policing(policing: StringName) -> Color:
 		StarSystem.POLICED_BY_NOBODY:
 			return BalanceEconomy.NPC_COLOR_LAWLESS
 		_:
-			return BalanceEconomy.NPC_COLOR_DEFAULT
+			return BalanceCombat.COLOR_TRAFFIC_CIVILIAN
 
 
-func _make_npc(color: Color) -> Node3D:
-	# Capsule hull + small dorsal fin — traffic, not combat fighter.
-	# AnimatableBody3D so orbiting ships are solid bumps (E6.1); lock/kill is E6.3.
-	var root: AnimatableBody3D = AnimatableBody3D.new()
-	root.collision_layer = BalanceFlight.PHYSICS_LAYER_SHIPS
-	root.collision_mask = 0
-	root.set_meta(BalanceCombat.META_MASS_CLASS, BalanceCombat.MASS_CLASS_TRAFFIC_LIGHT)
-	root.add_to_group(BalanceCombat.GROUP_IMPACT_BODY)
-
-	var hull: MeshInstance3D = MeshInstance3D.new()
-	var capsule: CapsuleMesh = CapsuleMesh.new()
-	capsule.radius = BalanceEconomy.NPC_MESH_SIZE.x * BalanceEconomy.NPC_CAPSULE_RADIUS_FACTOR
-	capsule.height = BalanceEconomy.NPC_MESH_SIZE.z
-	capsule.radial_segments = BalanceEconomy.NPC_CAPSULE_RADIAL_SEGMENTS
-	hull.mesh = capsule
-	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = color
-	hull.material_override = material
-	# Capsule long axis is Y; lay along flight forward.
-	hull.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
-	root.add_child(hull)
-
-	var fin: MeshInstance3D = MeshInstance3D.new()
-	var fin_box: BoxMesh = BoxMesh.new()
-	fin_box.size = BalanceEconomy.NPC_FIN_SIZE
-	fin.mesh = fin_box
-	var fin_mat: StandardMaterial3D = StandardMaterial3D.new()
-	fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fin_mat.albedo_color = color.lightened(BalanceEconomy.NPC_FIN_LIGHTEN)
-	fin.material_override = fin_mat
-	fin.position = BalanceEconomy.NPC_FIN_OFFSET
-	root.add_child(fin)
-
-	var collision: CollisionShape3D = CollisionShape3D.new()
-	collision.name = "TrafficCollider"
-	var shape: CapsuleShape3D = CapsuleShape3D.new()
-	shape.radius = BalanceEconomy.NPC_MESH_SIZE.x * BalanceEconomy.NPC_CAPSULE_RADIUS_FACTOR
-	shape.height = BalanceEconomy.NPC_MESH_SIZE.z
-	collision.shape = shape
-	collision.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
-	root.add_child(collision)
-	return root
+func _make_npc(role: StringName, color: Color) -> Node3D:
+	var ship: TrafficShip = TrafficShip.new()
+	ship.name = "TrafficShip"
+	ship.apply_role(role)
+	ship.build_visual(color)
+	return ship

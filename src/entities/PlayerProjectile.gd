@@ -70,11 +70,11 @@ func _on_area_entered(area: Area3D) -> void:
 	try_hit(area)
 
 
-## Apply damage if `node` (or a parent) is a live hostile. Tests may call this.
+## Apply damage if `node` (or a parent) is a live lockable ship. Tests may call this.
 func try_hit(node: Node) -> void:
 	if _spent or node == null:
 		return
-	var target: Node = _hostile_from(node)
+	var target: Node = _lockable_from(node)
 	if target == null:
 		return
 	_spent = true
@@ -83,10 +83,10 @@ func try_hit(node: Node) -> void:
 	queue_free()
 
 
-func _hostile_from(node: Node) -> Node:
+func _lockable_from(node: Node) -> Node:
 	var walk: Node = node
 	while walk != null:
-		if walk.is_in_group(BalanceCombat.GROUP_HOSTILE):
+		if walk.is_in_group(BalanceCombat.GROUP_LOCKABLE):
 			if walk.has_method(&"is_alive") and walk.call(&"is_alive") != true:
 				return null
 			return walk

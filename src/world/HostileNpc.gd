@@ -47,6 +47,7 @@ var _impact_cooldown: Dictionary = {}
 
 func _ready() -> void:
 	add_to_group(BalanceCombat.GROUP_HOSTILE)
+	add_to_group(BalanceCombat.GROUP_LOCKABLE)
 	add_to_group(BalanceCombat.GROUP_IMPACT_BODY)
 	collision_layer = BalanceFlight.PHYSICS_LAYER_SHIPS
 	collision_mask = BalanceFlight.PHYSICS_MASK_SHIPS_AND_STATICS
@@ -174,9 +175,9 @@ static func spawn_under(
 	return hostile
 
 
-## HUD / lock readout name (group-safe, no cross-layer type).
+## HUD / lock readout name — pirate role (E6.3); profile still distinct for combat.
 func lock_display_name() -> String:
-	return BalanceCombat.profile_display_name(profile_id)
+	return BalanceCombat.role_display_name(BalanceCombat.ROLE_PIRATE)
 
 
 ## World velocity for lead intercept (CharacterBody3D velocity).
