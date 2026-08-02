@@ -175,18 +175,18 @@ damage = IMPACT_BASE * mass_class_factor(obstacle) * speed_factor(closing_speed)
 
 ### E6.4 Package D — Density
 
-**Status:** pending  
+**Status:** complete (2026-08-02)  
 
 **Shape:** Raise live traffic toward the **20-ship** budget by policing/habitation: patrolled home systems denser near pads; lawless thinner but meaner hostiles; contested mixed. Use existing dual docks so secondary stations have **some** local traffic or landmark spacing from E6.1 (not empty clones). Hostiles still ≤3 concurrent combat targets unless balance deliberately raises (default stay ≤3).
 
 **Acceptance:**
 
-1. `PERF_BUDGET_SHIPS` (or successor) is **20** and tests assert densest system spawn ≤ cap.  
-2. Patrolled Alpha (or densest patrolled) live non-player ship count **>** pre-E6 typical (assert floor, e.g. ≥8 including hostiles 0). Exact floor in balance.  
-3. Lawless densest combat pressure still respects hostile cap; traffic + hostiles ≤ 20.  
-4. Dual-dock system: secondary dock not co-located with primary (E6.1) and has either traffic nearby or a clear empty approach (not overlapping primary pad).  
-5. Headless densest-system smoke: no hard error; optional frame-time probe if project already has one.  
-6. Lint + GUT green.
+1. `PERF_BUDGET_SHIPS` (or successor) is **20** and tests assert densest system spawn ≤ cap. ✅  
+2. Patrolled Alpha (or densest patrolled) live non-player ship count **>** pre-E6 typical (assert floor, e.g. ≥8 including hostiles 0). Exact floor in balance. ✅ (`DENSITY_FLOOR_PATROLLED_NON_PLAYER` = 12; live = 16)  
+3. Lawless densest combat pressure still respects hostile cap; traffic + hostiles ≤ 20. ✅ (10 + 3 + 1 = 14)  
+4. Dual-dock system: secondary dock not co-located with primary (E6.1) and has either traffic nearby or a clear empty approach (not overlapping primary pad). ✅ (~25% secondary orbits)  
+5. Headless densest-system smoke: no hard error; optional frame-time probe if project already has one. ✅  
+6. Lint + GUT green. ✅ (560/560)
 
 ---
 

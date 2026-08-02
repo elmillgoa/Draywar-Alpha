@@ -100,7 +100,8 @@ func test_default_path_reaches_board_and_gate() -> void:
 	assert_gte(alpha.gate_destination_ids.size(), 1, "Alpha has a gate out")
 
 
-func test_perf_budget_ships_unchanged() -> void:
-	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS, 12)
+func test_perf_budget_ships_respected() -> void:
+	## E6.4 raised bar to 20; densest legal layout must still fit the cap.
+	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS, 20)
 	var densest: int = BalanceEconomy.densest_ships_layout()
 	assert_lte(densest, BalanceEconomy.PERF_BUDGET_SHIPS)

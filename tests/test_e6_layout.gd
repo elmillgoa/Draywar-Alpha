@@ -23,7 +23,7 @@ func test_layout_constants_exceed_pre_e6_scale() -> void:
 		BalanceFlight.LAYOUT_MIN_STATION_GATE_SEPARATION,
 		"GATE_POSITION length must meet min station-gate separation"
 	)
-	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS, 12, "E6.1 keeps ship budget at 12 (E6.4 raises)")
+	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS, 20, "E6.4 ship budget is 20")
 
 
 func test_alpha_station_to_nearest_gate_meets_min() -> void:

@@ -365,26 +365,43 @@ const SAVE_SECTION_CARGO: StringName = &"cargo"
 const GROUP_NPC_TRAFFIC: StringName = &"npc_traffic"
 
 ## Performance budget: player + orbit traffic + combat hostiles in one system.
-## Target ~60 fps with this many live ships (E2.6 / Alpha performance bar).
-## Densest legal layout must stay ≤ this (asserted in tests).
-const PERF_BUDGET_SHIPS: int = 12
+## E6.4 target: 20 concurrent ships (60 fps goal on dev machine).
+## Densest legal layout must stay ≤ this (asserted in tests). Do not silently drop.
+const PERF_BUDGET_SHIPS: int = 20
+
+## Pre-E6 / E5 densify bar (kept for regression asserts — density must exceed this).
+const PERF_BUDGET_SHIPS_E5_BASELINE: int = 12
 
 ## Always one player hull in space (no dual-ship Ops).
 const PERF_BUDGET_PLAYER_COUNT: int = 1
 
 ## NPC ship count for patrolled systems (busy government lanes).
-## Raised E2.6 for multi-ship density; hostiles stay 0 here.
-const NPC_COUNT_PATROLLED: int = 8
+## E6.4: densest patrolled → 1 player + this + 0 hostiles ≤ PERF_BUDGET.
+const NPC_COUNT_PATROLLED: int = 16
 
 ## NPC ship count for contested systems.
 ## Densest legal layout: 1 player + this + MAX_CONCURRENT_HOSTILES ≤ PERF_BUDGET.
-const NPC_COUNT_CONTESTED: int = 8
+const NPC_COUNT_CONTESTED: int = 16
 
-## NPC ship count for lawless systems (thinnest freighter traffic).
-const NPC_COUNT_LAWLESS: int = 5
+## NPC ship count for lawless systems (thinnest freighter traffic; hostiles meaner).
+const NPC_COUNT_LAWLESS: int = 10
 
-## Orbit radius range for NPC wander (metres from system origin).
-## Raised E6.1 so traffic uses stretched space (colliders live; density is E6.4).
+## Min live non-player ships in densest patrolled system (traffic; hostiles 0).
+## Must exceed pre-E6 typical (8) so space reads busier after E6.4.
+const DENSITY_FLOOR_PATROLLED_NON_PLAYER: int = 12
+
+## Share of ambient traffic that orbits a secondary dock when multi-dock exists.
+const NPC_SECONDARY_DOCK_TRAFFIC_SHARE: float = 0.25
+
+## Local orbit radius around a secondary dock (metres from that pad).
+const NPC_SECONDARY_ORBIT_MIN: float = 50.0
+const NPC_SECONDARY_ORBIT_MAX: float = 140.0
+
+## Test/feel: traffic "near" secondary if within this of the pad centre.
+const NPC_SECONDARY_NEAR_RADIUS: float = 200.0
+
+## Orbit radius range for NPC wander (metres from primary/system origin).
+## Raised E6.1 so traffic uses stretched space; count raised E6.4.
 const NPC_ORBIT_MIN: float = 120.0
 const NPC_ORBIT_MAX: float = 600.0
 
@@ -666,7 +683,7 @@ static func _trade_mul_from(
 	return TRADE_PRICE_MUL_DEFAULT
 
 
-# --- Performance densify (E2.6) --------------------------------------------
+# --- Performance densify (E2.6 / E6.4) -------------------------------------
 
 
 ## Ambient orbit traffic count for a policing tag (patrolled/contested/lawless).
@@ -717,3 +734,12 @@ static func densest_layout_policing() -> StringName:
 	if densest_ships_for_policing(&"lawless") == densest:
 		return &"lawless"
 	return &"patrolled"
+
+
+## How many of `total` traffic slots orbit secondary docks (multi-dock systems).
+## Always leaves at least one primary-orbit ship when total ≥ 2.
+static func secondary_dock_traffic_slots(total: int) -> int:
+	if total <= 1:
+		return 0
+	var slots: int = int(roundf(float(total) * NPC_SECONDARY_DOCK_TRAFFIC_SHARE))
+	return clampi(slots, 0, total - 1)

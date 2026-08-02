@@ -1,8 +1,8 @@
 extends GutTest
 
-## E2.6 — performance densify: traffic raised within 12-ship budget.
+## E2.6 / E6.4 — performance densify: traffic within PERF_BUDGET_SHIPS.
 ##
-## Implements: docs/BETA_E2_COMBAT_HULL.md E2.6
+## Implements: docs/BETA_E2_COMBAT_HULL.md E2.6, docs/BETA_E6_LIVED_IN_SPACE.md E6.4
 
 const SYSTEM_ALPHA: StringName = &"system_alpha"
 const SYSTEM_BETA: StringName = &"system_beta"
@@ -16,14 +16,15 @@ func after_each() -> void:
 
 
 func test_perf_budget_constant_and_densest_math() -> void:
-	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS, 12, "performance bar is 12 ships")
+	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS, 20, "E6.4 performance bar is 20 ships")
+	assert_eq(BalanceEconomy.PERF_BUDGET_SHIPS_E5_BASELINE, 12)
 	assert_eq(BalanceEconomy.PERF_BUDGET_PLAYER_COUNT, 1)
 	assert_eq(BalanceCombat.MAX_CONCURRENT_HOSTILES, 3)
 
-	# Raised vs pre-E2.6 (6/4/2) so patrolled + contested feel multi-ship.
-	assert_gte(BalanceEconomy.NPC_COUNT_PATROLLED, 6)
-	assert_gte(BalanceEconomy.NPC_COUNT_CONTESTED, 6)
-	assert_gte(BalanceEconomy.NPC_COUNT_LAWLESS, 4)
+	# E6.4 raised vs E5 densify (8/8/5) and pre-E2.6 (6/4/2).
+	assert_gte(BalanceEconomy.NPC_COUNT_PATROLLED, 12)
+	assert_gte(BalanceEconomy.NPC_COUNT_CONTESTED, 12)
+	assert_gte(BalanceEconomy.NPC_COUNT_LAWLESS, 8)
 
 	# Security gradient: freighter traffic thinnest in lawless.
 	assert_lt(
