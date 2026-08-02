@@ -1,9 +1,9 @@
 # Beta E5 — Content scale toward Beta
 
-**Status:** **Code complete** (E5.1–E5.6) — **E5.7 gate open**  
-**Date:** 2026-07-31 (plan); E5.1–E5.6 built 2026-08-02  
+**Status:** **CLOSED** — E5.1–E5.6 code complete; **E5.7 signed** 2026-08-02  
+**Date:** 2026-07-31 (plan); E5.1–E5.6 built 2026-08-02; gate signed 2026-08-02  
 **Authority:** Destination §1 Fidelity (hand-built universe / trade lanes) + §10 v1 budget + `docs/BETA_ROADMAP.md` E5 + standing law  
-**Gates:** E1–E4 feel all signed; this phase ends at **[GATE] E5.7**
+**Gates:** E1–E4 feel all signed; **E5.7 signed** — next phase **E6 Lived-in space**
 
 ## Job
 
@@ -92,7 +92,7 @@ Alpha —— Beta —— Gamma
 | E5.4 | Multi-station logistics | **complete** |
 | E5.5 | Map / NAV upgrade | **complete** |
 | E5.6 | Integration / balance / perf | **complete** |
-| E5.7 | **[GATE] Content scale feel** | open |
+| E5.7 | **[GATE] Content scale feel** | **signed** 2026-08-02 |
 
 ### Sequencing
 

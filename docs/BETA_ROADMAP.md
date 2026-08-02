@@ -72,21 +72,29 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 - Plan: `docs/BETA_E4_OPENING_CAST.md`
 - **[GATE] E4.7 Opening feel** — **signed** 2026-07-31; next build **E5**
 
-### E5 — Content scale toward Beta — **PLAN LOCKED** (build next)
+### E5 — Content scale toward Beta — **CLOSED** (E5.7 signed 2026-08-02)
 **Job:** Sector large enough for multi-hour vetting.
 
-- Plan: `docs/BETA_E5_CONTENT_SCALE.md` (locked 2026-07-31)
+- Plan: `docs/BETA_E5_CONTENT_SCALE.md`
 - Ship **6 systems** (budget 8); stations **~10**; branched gate graph
 - Multi-station logistics (long hauls + secondary docks + trade contrast)
 - Map / NAV sector chart (functional)
-- Caps lift first (**E5.1**), then pack → graph → logistics ∥ map → integration → **[GATE] E5.7**
+- **[GATE] E5.7** — **signed** 2026-08-02
+
+### E6 — Lived-in space — **PLAN LOCKED** (build next)
+**Job:** Systems feel like places — solids, distance, sky, attackable ships, density by law.
+
+- Plan: `docs/BETA_E6_LIVED_IN_SPACE.md` (locked 2026-08-02)
+- Order: **A solids** → **C sky** → **B attackable traffic** → **D density** → integration → **[GATE] E6.6**
+- Soft bump + impact damage by mass class; ship budget **20**
 - Still no Holding / Ops
 
-### Later (after E2–E5 prove)
+### Later (after E6 prove)
 - **Operations** (hired ships, charters, warehouses)
 - **Holding** (sovereign territory / ignition)
 - Production art/audio pipeline
 - Full Traitor career / patrol fleets / customs minigames
+- Mining / belt economy (belts are landmarks in E6 only)
 
 ---
 
@@ -98,8 +106,10 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 | Debt ladder / Operation economy | E3 / Ops |
 | Character creation + annexation opening | E4 |
 | Multiple recovery chains | E4+ |
-| Operations layer | post E5 |
+| Lived-in space (collision, sky, attackable traffic) | **E6** |
+| Operations layer | post E6 |
 | Holding endgame | after Ops |
+| Asteroid mining / belt economy | post E6 |
 | Dynamic economy / story campaign / edge mystery | Destination DEFERRED until unlocked |
 | Greenfield rebuild of P0–P2 | **never** |
 

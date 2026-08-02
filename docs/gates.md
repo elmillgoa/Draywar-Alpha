@@ -398,3 +398,46 @@ Not a re-open of E2�E4. Refuse ? iterate E5.1�E5.6 only. Sign ? E5 closed; p
 - **2026-08-02** — E5.1–E5.6 code complete (lint green, GUT 507/507). Gate open for Elliot play.
 - **2026-08-02 (pre-play)** — **Blocked.** Elliot: opening screen pinned, bottom runs off viewport, no scroll — cannot start playing. Fix before E5.7 attempt can proceed.
 - **2026-08-02 (fix)** — Create screen: option columns scroll; Confirm/Cancel stay pinned. Annexation: body scrolls; Continue pinned. Panels clamp to window. Gate open again for play.
+
+### Attempt 1 — 2026-08-02
+
+**Verdict: signed — E5.7 content scale feel passes.**
+
+**Elliot (verbatim intent):**
+
+> Signed, move on
+
+**Notes:** Opening scroll fixed before play. Follow-on feedback (systems too close, no collision, traffic not attackable, pirates-by-gate, wants real star systems) is **not** an E5 reopen — opens **E6 Lived-in space**. Flying was fine.
+
+---
+
+## E6.6 — Lived-in space feel
+
+**Criteria:** After a session in open space, does a system feel like a **place** — solid, spaced, sky, ships that matter, density by law — enough to keep expanding, without needing Ops yet?
+
+Not a re-open of E1–E5. Refuse → iterate E6.1–E6.5 only. Sign → E6 closed; Ops still later unless re-prioritised.
+
+**What that means in play (plain):**
+
+- Soft bump off stations/ships; ramming a station hurts more than clipping a small freighter.
+- Pad and gate are a real transit, not the same prop cluster.
+- Sun / planets / belt make systems look different.
+- Freighters and patrols can be locked and shot; standing reacts where law says.
+- Patrolled feels busier and safer near the pad; lawless meaner; pirates are not default gate greeters in government space.
+- Flying still controllable.
+
+### Play script (cold, ~45–75 min)
+
+1. **New Game** — create path, annexation, tip, docked Alpha Port.
+2. **Undock Alpha** — note sky (sun/planet). No pirates on the pad. Traffic visible.
+3. **Fly toward gate** — should take a real transit. Soft-bump a station structure if you scrape (damage scales).
+4. **Jump to Beta** — contested ecology: hostiles not camping undock; sky differs if layout says so.
+5. **Lock a freighter** — fire or ram; note standing feedback vs pirate kill.
+6. **Lawless spur** (Gamma or Zeta) — meaner placement; density contrast vs Alpha.
+7. **Secondary dock** — fly to a second station in a dual-dock system; distance should read.
+8. **Save / Quit / Continue** — still skips opening; state sane.
+9. Judge: lived-in enough to keep going, or still a toy box with paint?
+
+### Attempt log
+
+- **2026-08-02** — E6 plan locked (`docs/BETA_E6_LIVED_IN_SPACE.md`). Gate opens after E6.5.
