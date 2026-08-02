@@ -6,9 +6,9 @@ extends Node3D
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B0, B1
 ##
 ## Loads a system id from ContentLibrary and places station + gate meshes with
-## distinct silhouettes, per-system lighting, starfield, and world gate labels.
-## Does not spawn the player (entities layer). Main composes the two.
-## Gates are jump destinations (GateTravelService + Main rebuild).
+## distinct silhouettes, per-system lighting, starfield, celestial sky (E6.2),
+## and world gate labels. Does not spawn the player (entities layer). Main
+## composes the two. Gates are jump destinations (GateTravelService + Main rebuild).
 
 signal built(system_id: StringName)
 
@@ -47,6 +47,8 @@ func build() -> void:
 	_add_environment()
 	_place_stations(system)
 	_place_gates(system)
+	# Sky after stations/gates so belt rocks can clear pad and gate positions.
+	CelestialSky.place_under(self, system_id)
 	_spawn_npc_traffic()
 	_spawn_hostile()
 	built.emit(system_id)

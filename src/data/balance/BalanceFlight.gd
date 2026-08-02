@@ -320,6 +320,158 @@ const HUD_LINE_SPEED: float = 1.0
 const HUD_LINE_THROTTLE: float = 2.0
 const HUD_LINE_STATUS: float = 3.0
 
+# --- Celestial sky (E6.2 Package C) ----------------------------------------
+# Backdrop + landmarks only. No landing, mining, or orbital physics (D7).
+# Planets/moons/sun disc are unshaded meshes far from the play bubble.
+# Belt rocks (when present) use mass class rock + STATICS layer (E6.1 soft bump).
+
+## Scene root name for all sky bodies under SystemWorld.
+const CELESTIAL_ROOT_NAME: StringName = &"CelestialSky"
+
+## Child name for the visible sun disc mesh (DirectionalLight stays SystemSun).
+const CELESTIAL_SUN_DISC_NAME: StringName = &"SunDisc"
+
+## Child name for the belt band root (rocks parented under it).
+const CELESTIAL_BELT_ROOT_NAME: StringName = &"BeltBand"
+
+## Meta key on celestial nodes: "sun" | "planet" | "moon" | "rock".
+const META_CELESTIAL_KIND: StringName = &"celestial_kind"
+const CELESTIAL_KIND_SUN: StringName = &"sun"
+const CELESTIAL_KIND_PLANET: StringName = &"planet"
+const CELESTIAL_KIND_MOON: StringName = &"moon"
+const CELESTIAL_KIND_ROCK: StringName = &"rock"
+
+## Meta: body index within kind (planet 0/1, moon 0, rock slot).
+const META_CELESTIAL_INDEX: StringName = &"celestial_index"
+
+## Minimum distance (m) from STATION_POSITION for planet/moon/sun disc centres.
+## Keeps backdrop outside pad/gate transit (~1.3 km gate stretch).
+const CELESTIAL_MIN_DISTANCE: float = 2800.0
+
+## Rocks must stay this far from every station and gate world position.
+const CELESTIAL_ROCK_PLAY_CLEARANCE: float = 900.0
+
+## Default sun disc radius (metres) at layout distance — large angular size.
+const CELESTIAL_SUN_DISC_RADIUS: float = 110.0
+
+## Default sun disc distance from system origin along layout direction.
+const CELESTIAL_SUN_DISC_DISTANCE: float = 4200.0
+
+## Sphere mesh segments for large backdrop bodies (perf-cheap).
+const CELESTIAL_PLANET_SEGMENTS: int = 16
+const CELESTIAL_PLANET_RINGS: int = 12
+const CELESTIAL_ROCK_SEGMENTS: int = 8
+const CELESTIAL_ROCK_RINGS: int = 6
+
+## Default rock sphere radius range when belt places colliders.
+const CELESTIAL_ROCK_RADIUS_MIN: float = 4.0
+const CELESTIAL_ROCK_RADIUS_MAX: float = 14.0
+
+## Vertical jitter on belt rocks (metres half-range).
+const CELESTIAL_BELT_Y_SPREAD: float = 35.0
+
+## Fallback sun direction when layout dir is zero.
+const CELESTIAL_DEFAULT_SUN_DIR: Vector3 = Vector3(0.0, 0.5, -1.0)
+
+## SphereMesh height = radius * this factor (diameter).
+const CELESTIAL_SPHERE_HEIGHT_FACTOR: float = 2.0
+
+## Fallback planet radius/colour when a layout entry is incomplete.
+const CELESTIAL_FALLBACK_PLANET_RADIUS: float = 200.0
+const COLOR_CELESTIAL_FALLBACK_PLANET: Color = Color(0.5, 0.5, 0.55)
+
+## Fallback moon radius/colour when a layout entry is incomplete.
+const CELESTIAL_FALLBACK_MOON_RADIUS: float = 50.0
+const COLOR_CELESTIAL_FALLBACK_MOON: Color = Color(0.65, 0.65, 0.68)
+
+## Fallback belt ring radius when layout omits belt_radius.
+const CELESTIAL_FALLBACK_BELT_RADIUS: float = 500.0
+
+## Rock placement: attempt multiplier and angular/radial jitter.
+const CELESTIAL_ROCK_ATTEMPT_MULT: int = 8
+const CELESTIAL_ROCK_ANGLE_JITTER: float = 0.12
+const CELESTIAL_ROCK_RADIAL_MIN: float = 0.82
+const CELESTIAL_ROCK_RADIAL_MAX: float = 1.12
+
+## Unshaded rock mesh colour (shared across belt systems).
+const COLOR_CELESTIAL_ROCK: Color = Color(0.42, 0.36, 0.3)
+
+## Per-system sun disc colour (unshaded emissive cue).
+const COLOR_SUN_DISC_ALPHA: Color = Color(0.95, 0.97, 1.0)
+const COLOR_SUN_DISC_BETA: Color = Color(1.0, 0.72, 0.28)
+const COLOR_SUN_DISC_GAMMA: Color = Color(0.75, 1.0, 0.82)
+const COLOR_SUN_DISC_DELTA: Color = Color(0.82, 0.72, 1.0)
+const COLOR_SUN_DISC_EPSILON: Color = Color(1.0, 0.68, 0.32)
+const COLOR_SUN_DISC_ZETA: Color = Color(0.72, 0.74, 0.78)
+const COLOR_SUN_DISC_DEFAULT: Color = Color(1.0, 0.95, 0.85)
+
+## Hand-layout planet/moon colours (keyed by system in celestial_layout_for).
+const COLOR_PLANET_ALPHA_A: Color = Color(0.42, 0.62, 0.95)
+const COLOR_PLANET_ALPHA_B: Color = Color(0.55, 0.78, 0.92)
+const COLOR_MOON_ALPHA: Color = Color(0.72, 0.76, 0.82)
+const COLOR_PLANET_BETA: Color = Color(0.92, 0.48, 0.18)
+const COLOR_PLANET_GAMMA: Color = Color(0.22, 0.68, 0.48)
+const COLOR_MOON_GAMMA: Color = Color(0.55, 0.7, 0.58)
+const COLOR_PLANET_DELTA_A: Color = Color(0.52, 0.32, 0.88)
+const COLOR_PLANET_DELTA_B: Color = Color(0.68, 0.52, 0.92)
+const COLOR_PLANET_EPSILON: Color = Color(0.82, 0.48, 0.22)
+const COLOR_PLANET_ZETA: Color = Color(0.48, 0.5, 0.52)
+const COLOR_PLANET_DEFAULT: Color = Color(0.5, 0.55, 0.65)
+
+## Hand-layout body radii.
+const CELESTIAL_RADIUS_ALPHA_A: float = 320.0
+const CELESTIAL_RADIUS_ALPHA_B: float = 180.0
+const CELESTIAL_RADIUS_ALPHA_MOON: float = 55.0
+const CELESTIAL_RADIUS_BETA: float = 420.0
+const CELESTIAL_RADIUS_GAMMA: float = 280.0
+const CELESTIAL_RADIUS_GAMMA_MOON: float = 48.0
+const CELESTIAL_RADIUS_DELTA_A: float = 360.0
+const CELESTIAL_RADIUS_DELTA_B: float = 140.0
+const CELESTIAL_RADIUS_EPSILON: float = 240.0
+const CELESTIAL_RADIUS_ZETA: float = 300.0
+const CELESTIAL_RADIUS_DEFAULT: float = 250.0
+
+## Per-system sun disc distance / radius overrides.
+const CELESTIAL_SUN_DIST_BETA: float = 4000.0
+const CELESTIAL_SUN_RADIUS_BETA: float = 130.0
+const CELESTIAL_SUN_DIST_GAMMA: float = 4100.0
+const CELESTIAL_SUN_RADIUS_GAMMA: float = 100.0
+const CELESTIAL_SUN_DIST_DELTA: float = 4300.0
+const CELESTIAL_SUN_RADIUS_DELTA: float = 105.0
+const CELESTIAL_SUN_DIST_EPSILON: float = 3900.0
+const CELESTIAL_SUN_RADIUS_EPSILON: float = 115.0
+const CELESTIAL_SUN_DIST_ZETA: float = 4500.0
+const CELESTIAL_SUN_RADIUS_ZETA: float = 85.0
+
+## Belt band params (Gamma sparse, Epsilon dense).
+const CELESTIAL_BELT_CENTER_GAMMA: Vector3 = Vector3(-2400.0, 0.0, 2100.0)
+const CELESTIAL_BELT_RADIUS_GAMMA: float = 520.0
+const CELESTIAL_ROCK_COUNT_GAMMA: int = 6
+const CELESTIAL_BELT_CENTER_EPSILON: Vector3 = Vector3(-2600.0, 20.0, 1900.0)
+const CELESTIAL_BELT_RADIUS_EPSILON: float = 680.0
+const CELESTIAL_ROCK_COUNT_EPSILON: int = 12
+
+## Planet / moon world positions (far from play bubble).
+const CELESTIAL_POS_ALPHA_A: Vector3 = Vector3(-3400.0, 180.0, -2200.0)
+const CELESTIAL_POS_ALPHA_B: Vector3 = Vector3(2800.0, -120.0, 3100.0)
+const CELESTIAL_POS_ALPHA_MOON: Vector3 = Vector3(-3000.0, 260.0, -1950.0)
+const CELESTIAL_POS_BETA: Vector3 = Vector3(3600.0, 200.0, -2400.0)
+const CELESTIAL_POS_GAMMA: Vector3 = Vector3(-2900.0, 80.0, 3300.0)
+const CELESTIAL_POS_GAMMA_MOON: Vector3 = Vector3(-2550.0, 140.0, 3050.0)
+const CELESTIAL_POS_DELTA_A: Vector3 = Vector3(2200.0, 250.0, 3600.0)
+const CELESTIAL_POS_DELTA_B: Vector3 = Vector3(-3100.0, -90.0, 2600.0)
+const CELESTIAL_POS_EPSILON: Vector3 = Vector3(3200.0, 120.0, 2800.0)
+const CELESTIAL_POS_ZETA: Vector3 = Vector3(-3800.0, 60.0, -1800.0)
+const CELESTIAL_POS_DEFAULT: Vector3 = Vector3(0.0, 0.0, -3200.0)
+
+## Sun direction vectors (normalized at use time).
+const CELESTIAL_SUN_DIR_ALPHA: Vector3 = Vector3(0.35, 0.55, -0.75)
+const CELESTIAL_SUN_DIR_BETA: Vector3 = Vector3(-0.55, 0.4, -0.7)
+const CELESTIAL_SUN_DIR_GAMMA: Vector3 = Vector3(0.2, 0.65, 0.7)
+const CELESTIAL_SUN_DIR_DELTA: Vector3 = Vector3(0.7, 0.45, 0.35)
+const CELESTIAL_SUN_DIR_EPSILON: Vector3 = Vector3(-0.4, 0.5, -0.75)
+const CELESTIAL_SUN_DIR_ZETA: Vector3 = Vector3(0.15, 0.35, 0.9)
+
 
 ## Soft bump: cancel velocity into the contact normal; keep lateral slide (E6.1).
 ## `normal` points out of the surface toward the body. When moving into the
@@ -486,3 +638,249 @@ static func sun_pitch_for(system_id: StringName) -> float:
 			return SUN_PITCH_GAMMA_DEGREES
 		_:
 			return SUN_PITCH_DEGREES
+
+
+## Sun disc albedo for a system id.
+static func sun_disc_color_for(system_id: StringName) -> Color:
+	match system_id:
+		&"system_alpha":
+			return COLOR_SUN_DISC_ALPHA
+		&"system_beta":
+			return COLOR_SUN_DISC_BETA
+		&"system_gamma":
+			return COLOR_SUN_DISC_GAMMA
+		&"system_delta":
+			return COLOR_SUN_DISC_DELTA
+		&"system_epsilon":
+			return COLOR_SUN_DISC_EPSILON
+		&"system_zeta":
+			return COLOR_SUN_DISC_ZETA
+		_:
+			return COLOR_SUN_DISC_DEFAULT
+
+
+## One planet/moon entry for celestial_layout_for tables.
+static func _celestial_body(position: Vector3, radius: float, color: Color) -> Dictionary:
+	return {
+		"position": position,
+		"radius": radius,
+		"color": color,
+	}
+
+
+## Hand layout for one system: sun direction, planets, optional moons, belt rocks.
+## Full-sized fields always present; empty arrays mean "none" for that slot.
+## Positions are world metres relative to system origin (STATION_POSITION).
+static func celestial_layout_for(system_id: StringName) -> Dictionary:
+	match system_id:
+		&"system_alpha":
+			# Cool Authority home — twin ice worlds + moon, no belt.
+			return {
+				"sun_dir": CELESTIAL_SUN_DIR_ALPHA.normalized(),
+				"sun_distance": CELESTIAL_SUN_DISC_DISTANCE,
+				"sun_radius": CELESTIAL_SUN_DISC_RADIUS,
+				"planets":
+				[
+					_celestial_body(
+						CELESTIAL_POS_ALPHA_A, CELESTIAL_RADIUS_ALPHA_A, COLOR_PLANET_ALPHA_A
+					),
+					_celestial_body(
+						CELESTIAL_POS_ALPHA_B, CELESTIAL_RADIUS_ALPHA_B, COLOR_PLANET_ALPHA_B
+					),
+				],
+				"moons":
+				[
+					_celestial_body(
+						CELESTIAL_POS_ALPHA_MOON, CELESTIAL_RADIUS_ALPHA_MOON, COLOR_MOON_ALPHA
+					),
+				],
+				"belt_enabled": false,
+				"belt_center": Vector3.ZERO,
+				"belt_radius": 0.0,
+				"rock_count": 0,
+			}
+		&"system_beta":
+			# Warm contested hub — single orange gas giant, no moon/belt.
+			return {
+				"sun_dir": CELESTIAL_SUN_DIR_BETA.normalized(),
+				"sun_distance": CELESTIAL_SUN_DIST_BETA,
+				"sun_radius": CELESTIAL_SUN_RADIUS_BETA,
+				"planets":
+				[
+					_celestial_body(CELESTIAL_POS_BETA, CELESTIAL_RADIUS_BETA, COLOR_PLANET_BETA),
+				],
+				"moons": [],
+				"belt_enabled": false,
+				"belt_center": Vector3.ZERO,
+				"belt_radius": 0.0,
+				"rock_count": 0,
+			}
+		&"system_gamma":
+			# Lawless fringe — teal world, moon, sparse rock belt.
+			return {
+				"sun_dir": CELESTIAL_SUN_DIR_GAMMA.normalized(),
+				"sun_distance": CELESTIAL_SUN_DIST_GAMMA,
+				"sun_radius": CELESTIAL_SUN_RADIUS_GAMMA,
+				"planets":
+				[
+					_celestial_body(
+						CELESTIAL_POS_GAMMA, CELESTIAL_RADIUS_GAMMA, COLOR_PLANET_GAMMA
+					),
+				],
+				"moons":
+				[
+					_celestial_body(
+						CELESTIAL_POS_GAMMA_MOON, CELESTIAL_RADIUS_GAMMA_MOON, COLOR_MOON_GAMMA
+					),
+				],
+				"belt_enabled": true,
+				"belt_center": CELESTIAL_BELT_CENTER_GAMMA,
+				"belt_radius": CELESTIAL_BELT_RADIUS_GAMMA,
+				"rock_count": CELESTIAL_ROCK_COUNT_GAMMA,
+			}
+		&"system_delta":
+			# Violet Reach spur — twin purple bodies, no belt.
+			return {
+				"sun_dir": CELESTIAL_SUN_DIR_DELTA.normalized(),
+				"sun_distance": CELESTIAL_SUN_DIST_DELTA,
+				"sun_radius": CELESTIAL_SUN_RADIUS_DELTA,
+				"planets":
+				[
+					_celestial_body(
+						CELESTIAL_POS_DELTA_A, CELESTIAL_RADIUS_DELTA_A, COLOR_PLANET_DELTA_A
+					),
+					_celestial_body(
+						CELESTIAL_POS_DELTA_B, CELESTIAL_RADIUS_DELTA_B, COLOR_PLANET_DELTA_B
+					),
+				],
+				"moons": [],
+				"belt_enabled": false,
+				"belt_center": Vector3.ZERO,
+				"belt_radius": 0.0,
+				"rock_count": 0,
+			}
+		&"system_epsilon":
+			# Named belt system — copper world + dense rock band (colliders).
+			return {
+				"sun_dir": CELESTIAL_SUN_DIR_EPSILON.normalized(),
+				"sun_distance": CELESTIAL_SUN_DIST_EPSILON,
+				"sun_radius": CELESTIAL_SUN_RADIUS_EPSILON,
+				"planets":
+				[
+					_celestial_body(
+						CELESTIAL_POS_EPSILON, CELESTIAL_RADIUS_EPSILON, COLOR_PLANET_EPSILON
+					),
+				],
+				"moons": [],
+				"belt_enabled": true,
+				"belt_center": CELESTIAL_BELT_CENTER_EPSILON,
+				"belt_radius": CELESTIAL_BELT_RADIUS_EPSILON,
+				"rock_count": CELESTIAL_ROCK_COUNT_EPSILON,
+			}
+		&"system_zeta":
+			# Ash far spur — single grey world, dim sun, empty sky otherwise.
+			return {
+				"sun_dir": CELESTIAL_SUN_DIR_ZETA.normalized(),
+				"sun_distance": CELESTIAL_SUN_DIST_ZETA,
+				"sun_radius": CELESTIAL_SUN_RADIUS_ZETA,
+				"planets":
+				[
+					_celestial_body(CELESTIAL_POS_ZETA, CELESTIAL_RADIUS_ZETA, COLOR_PLANET_ZETA),
+				],
+				"moons": [],
+				"belt_enabled": false,
+				"belt_center": Vector3.ZERO,
+				"belt_radius": 0.0,
+				"rock_count": 0,
+			}
+		_:
+			# Safe default so unknown ids still get a sun + one planet.
+			return {
+				"sun_dir": CELESTIAL_DEFAULT_SUN_DIR.normalized(),
+				"sun_distance": CELESTIAL_SUN_DISC_DISTANCE,
+				"sun_radius": CELESTIAL_SUN_DISC_RADIUS,
+				"planets":
+				[
+					_celestial_body(
+						CELESTIAL_POS_DEFAULT, CELESTIAL_RADIUS_DEFAULT, COLOR_PLANET_DEFAULT
+					),
+				],
+				"moons": [],
+				"belt_enabled": false,
+				"belt_center": Vector3.ZERO,
+				"belt_radius": 0.0,
+				"rock_count": 0,
+			}
+
+
+## Typed planets array from a layout dictionary (strict-safe).
+static func celestial_planets(layout: Dictionary) -> Array:
+	var out: Array = []
+	if not layout.has("planets"):
+		return out
+	var raw: Variant = layout["planets"]
+	if typeof(raw) == TYPE_ARRAY:
+		var as_array: Array = raw
+		return as_array
+	return out
+
+
+## Typed moons array from a layout dictionary (strict-safe).
+static func celestial_moons(layout: Dictionary) -> Array:
+	var out: Array = []
+	if not layout.has("moons"):
+		return out
+	var raw: Variant = layout["moons"]
+	if typeof(raw) == TYPE_ARRAY:
+		var as_array: Array = raw
+		return as_array
+	return out
+
+
+## Rock count from layout (0 when absent).
+static func celestial_rock_count(layout: Dictionary) -> int:
+	if not layout.has("rock_count"):
+		return 0
+	var raw: Variant = layout["rock_count"]
+	if typeof(raw) == TYPE_INT:
+		var as_i: int = raw
+		return as_i
+	if typeof(raw) == TYPE_FLOAT:
+		var as_f: float = raw
+		return int(as_f)
+	return 0
+
+
+## Whether layout enables a belt band.
+static func celestial_belt_enabled(layout: Dictionary) -> bool:
+	if not layout.has("belt_enabled"):
+		return false
+	var raw: Variant = layout["belt_enabled"]
+	if typeof(raw) == TYPE_BOOL:
+		var as_b: bool = raw
+		return as_b
+	return false
+
+
+## Compact layout signature for tests / scene queries (counts + primary colour).
+static func celestial_fingerprint(system_id: StringName) -> Dictionary:
+	var layout: Dictionary = celestial_layout_for(system_id)
+	var planets: Array = celestial_planets(layout)
+	var moons: Array = celestial_moons(layout)
+	var primary: Color = Color.BLACK
+	if not planets.is_empty():
+		var first_raw: Variant = planets[0]
+		if typeof(first_raw) == TYPE_DICTIONARY:
+			var first: Dictionary = first_raw
+			if first.has("color"):
+				var color_raw: Variant = first["color"]
+				if typeof(color_raw) == TYPE_COLOR:
+					var as_color: Color = color_raw
+					primary = as_color
+	return {
+		"planet_count": planets.size(),
+		"moon_count": moons.size(),
+		"rock_count": celestial_rock_count(layout),
+		"belt_enabled": celestial_belt_enabled(layout),
+		"primary_planet_color": primary,
+	}

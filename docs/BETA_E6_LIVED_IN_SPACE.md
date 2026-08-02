@@ -137,7 +137,8 @@ damage = IMPACT_BASE * mass_class_factor(obstacle) * speed_factor(closing_speed)
 
 ### E6.2 Package C — Lived-in sky
 
-**Status:** pending  
+**Status:** complete (2026-08-02)  
+
 
 **Shape:** Per-system celestial layout (data or balance-driven hand layout): **sun direction/disc**, **1–2 planets**, optional **moon**, **belt band** (visual + optional sparse rocks with mass class `rock`). Systems must be **visually distinct** at a glance (Alpha ≠ Zeta). No landing, no mining.
 
