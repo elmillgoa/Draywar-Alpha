@@ -41,12 +41,17 @@ var _fin_mat: StandardMaterial3D = null
 var _lock_highlighted: bool = false
 var _hit_flash_left: float = 0.0
 var _jink_time: float = 0.0
+## instance_id → impact cooldown remaining (E6.1 soft bump vs statics / ships).
+var _impact_cooldown: Dictionary = {}
 
 
 func _ready() -> void:
 	add_to_group(BalanceCombat.GROUP_HOSTILE)
-	collision_layer = 1
-	collision_mask = 0
+	add_to_group(BalanceCombat.GROUP_IMPACT_BODY)
+	collision_layer = BalanceFlight.PHYSICS_LAYER_SHIPS
+	collision_mask = BalanceFlight.PHYSICS_MASK_SHIPS_AND_STATICS
+	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	set_meta(BalanceCombat.META_MASS_CLASS, BalanceCombat.MASS_CLASS_HOSTILE)
 	# Ensure stats are applied even if spawn_under was not used.
 	if max_hp <= 0.0 or hp <= 0.0:
 		apply_profile(profile_id)
@@ -323,7 +328,9 @@ func _close_distance(to_player: Vector3, distance: float, dt: float) -> void:
 			lateral = lateral.normalized()
 			var side: float = sin(_jink_time * _jink_freq)
 			velocity = lateral * (_jink_speed * side)
-	global_position = global_position + velocity * dt
+	# Collision-aware step (E6.1): soft bump against statics / ships.
+	move_and_slide()
+	_resolve_soft_bumps(dt)
 
 
 func _fire_at_player(player: Node3D) -> void:
@@ -571,6 +578,56 @@ func _build_mesh() -> void:
 	collision.shape = shape
 	collision.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
 	add_child(collision)
+
+
+## Soft bump after move_and_slide — keep lateral, cancel into-normal (E6.1).
+## Player impact damage is applied by PlayerShip (single writer for mutual hits).
+func _resolve_soft_bumps(dt: float) -> void:
+	_tick_impact_cooldowns(dt)
+	var count: int = get_slide_collision_count()
+	if count <= 0:
+		return
+	var i: int = 0
+	while i < count:
+		var col: KinematicCollision3D = get_slide_collision(i)
+		if col == null:
+			i += 1
+			continue
+		var normal: Vector3 = col.get_normal()
+		velocity = BalanceFlight.apply_soft_bump(velocity, normal)
+		if BalanceFlight.IMPACT_SEPARATION_METRES > 0.0:
+			global_position = (
+				global_position + normal.normalized() * BalanceFlight.IMPACT_SEPARATION_METRES
+			)
+		i += 1
+
+
+func _tick_impact_cooldowns(dt: float) -> void:
+	if _impact_cooldown.is_empty():
+		return
+	var doomed: Array = []
+	for key: Variant in _impact_cooldown.keys():
+		var prev: float = _impact_cooldown_value(key)
+		var left: float = prev - dt
+		if left <= 0.0:
+			doomed.append(key)
+		else:
+			_impact_cooldown[key] = left
+	for key: Variant in doomed:
+		_impact_cooldown.erase(key)
+
+
+func _impact_cooldown_value(key: Variant) -> float:
+	if not _impact_cooldown.has(key):
+		return 0.0
+	var raw: Variant = _impact_cooldown[key]
+	if typeof(raw) == TYPE_FLOAT:
+		var as_f: float = raw
+		return as_f
+	if typeof(raw) == TYPE_INT:
+		var as_i: int = raw
+		return float(as_i)
+	return 0.0
 
 
 func _spawn_beam(from: Vector3, to: Vector3, color: Color) -> void:

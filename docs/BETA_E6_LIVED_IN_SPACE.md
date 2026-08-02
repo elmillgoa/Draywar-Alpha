@@ -107,7 +107,7 @@ damage = IMPACT_BASE * mass_class_factor(obstacle) * speed_factor(closing_speed)
 
 ### E6.1 Package A — Solid space
 
-**Status:** pending  
+**Status:** complete (2026-08-02)  
 
 **Shape:**
 

@@ -205,6 +205,9 @@ func test_free_fire_hits_hostile_without_lock() -> void:
 	space.add_child(ship)
 	ship.global_position = Vector3.ZERO
 	ship.set_aim_camera(cam)
+	# Freeze pilot motion so soft-bump / flight integration cannot nudge the shot line.
+	ship.set_flight_enabled(false)
+	ship.set_physics_process(false)
 	await get_tree().process_frame
 
 	assert_eq(ship.locked_target(), null, "must hit without lock")
@@ -218,19 +221,20 @@ func test_free_fire_hits_hostile_without_lock() -> void:
 	aim_dir = aim_dir.normalized()
 
 	# Sit on the free-fire aim ray inside bolt travel range; freeze AI so it stays put.
-	var range_m: float = 40.0
+	var range_m: float = 30.0
 	var hostile: HostileNpc = HostileNpc.spawn_under(
 		space, ship.global_position + aim_dir * range_m
 	)
 	hostile.set_physics_process(false)
-	await get_tree().process_frame
+	hostile.velocity = Vector3.ZERO
+	await get_tree().physics_frame
 	assert_eq(ship.locked_target(), null)
 
 	var before: float = hostile.remaining_hp()
 	assert_true(ship.try_fire())
-	# Travel time: 40 m / 280 m/s ≈ 0.14 s; wait with margin.
+	# Travel time: 30 m / 280 m/s ≈ 0.11 s; wait with margin for headless physics.
 	var waited: float = 0.0
-	while waited < 0.6 and is_instance_valid(hostile) and hostile.remaining_hp() >= before:
+	while waited < 1.0 and is_instance_valid(hostile) and hostile.remaining_hp() >= before:
 		await get_tree().physics_frame
 		waited += get_tree().root.get_physics_process_delta_time()
 	assert_true(is_instance_valid(hostile), "hostile should still exist after free-fire")

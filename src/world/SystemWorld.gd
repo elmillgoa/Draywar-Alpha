@@ -291,14 +291,24 @@ func _spawn_hostile() -> void:
 		i += 1
 
 
-## Balance offset from station anchor, pushed outside any station safe bubble.
+## Balance offset from station anchor by policing ecology, pushed outside safe.
 func _ambient_world_position(slot: int) -> Vector3:
+	var policing: StringName = _system_policing()
 	var candidate: Vector3 = (
-		BalanceFlight.STATION_POSITION + BalanceCombat.ambient_spawn_offset(slot)
+		BalanceFlight.STATION_POSITION
+		+ BalanceCombat.ambient_spawn_offset_for_policing(policing, slot)
 	)
 	if not _is_inside_any_station_safe(candidate):
 		return candidate
 	return _position_outside_station_safe(candidate)
+
+
+## Policing tag for the loaded system (empty if unknown).
+func _system_policing() -> StringName:
+	var system: StarSystem = _load_system(system_id)
+	if system == null:
+		return &""
+	return system.policing
 
 
 ## Live combat hostiles under this world (GROUP_HOSTILE, valid, still alive).
@@ -564,6 +574,21 @@ func _make_station_body(pos: Vector3, color: Color) -> Node3D:
 	tower.material_override = _unshaded(color.lightened(BalanceFlight.STATION_TOWER_LIGHTEN))
 	tower.position = Vector3(0.0, BalanceFlight.STATION_TOWER_Y, 0.0)
 	root.add_child(tower)
+
+	# E6.1 solid: StaticBody covering main disc + core (stations not destroyed).
+	var collider: StaticBody3D = StaticBody3D.new()
+	collider.name = "StationCollider"
+	collider.collision_layer = BalanceFlight.PHYSICS_LAYER_STATICS
+	collider.collision_mask = 0
+	collider.set_meta(BalanceCombat.META_MASS_CLASS, BalanceCombat.MASS_CLASS_STATION)
+	collider.add_to_group(BalanceCombat.GROUP_IMPACT_BODY)
+	var station_shape: CollisionShape3D = CollisionShape3D.new()
+	var station_cyl: CylinderShape3D = CylinderShape3D.new()
+	station_cyl.radius = BalanceFlight.STATION_DISC_RADIUS
+	station_cyl.height = BalanceFlight.STATION_CYLINDER_HEIGHT
+	station_shape.shape = station_cyl
+	collider.add_child(station_shape)
+	root.add_child(collider)
 	return root
 
 
@@ -613,6 +638,22 @@ func _make_gate_body(pos: Vector3, dest_id: StringName) -> Node3D:
 	)
 	label.position = Vector3(0.0, BalanceFlight.GATE_LABEL_HEIGHT, 0.0)
 	root.add_child(label)
+
+	# E6.1 solid: upright cylinder approx of the ring (gates not destroyed).
+	var collider: StaticBody3D = StaticBody3D.new()
+	collider.name = "GateCollider"
+	collider.collision_layer = BalanceFlight.PHYSICS_LAYER_STATICS
+	collider.collision_mask = 0
+	collider.set_meta(BalanceCombat.META_MASS_CLASS, BalanceCombat.MASS_CLASS_GATE)
+	collider.add_to_group(BalanceCombat.GROUP_IMPACT_BODY)
+	var gate_shape: CollisionShape3D = CollisionShape3D.new()
+	var gate_cyl: CylinderShape3D = CylinderShape3D.new()
+	gate_cyl.radius = BalanceFlight.GATE_RING_OUTER
+	gate_cyl.height = BalanceFlight.GATE_RING_OUTER * BalanceFlight.GATE_COLLIDER_HEIGHT_FACTOR
+	gate_shape.shape = gate_cyl
+	# Match upright ring orientation (cylinder default is Y-up — correct for stand).
+	collider.add_child(gate_shape)
+	root.add_child(collider)
 	return root
 
 

@@ -73,7 +73,8 @@ const DOCK_APPROACH_RADIUS: float = 90.0
 const DOCK_INTERACT_RADIUS: float = 45.0
 
 ## Where the ship reappears relative to the station on undock (local +Z out).
-const UNDOCK_OFFSET: Vector3 = Vector3(0.0, 5.0, 55.0)
+## Outside station StaticBody (disc radius ~22 + hurtbox); E6.1 stretched pad.
+const UNDOCK_OFFSET: Vector3 = Vector3(0.0, 5.0, 80.0)
 
 ## Throttle forced after undock so the player is not stuck at full burn.
 const UNDOCK_THROTTLE: float = 0.15
@@ -100,16 +101,42 @@ const CAMERA_FOV: float = 65.0
 ## How far ahead of the ship the camera looks (metres along forward).
 const CAMERA_LOOK_AHEAD: float = 8.0
 
-# --- World layout (system_alpha gray box) ----------------------------------
+# --- Physics layers (E6.1) -------------------------------------------------
+# Layer bit values: layer 1 → value 1, layer 2 → value 2.
+# Ships (player/hostile/traffic) on SHIPS; station/gate/rock on STATICS.
+# Projectiles keep mask SHIPS only so they ignore static props.
+
+## Collision layer for ships (player, hostiles, traffic colliders).
+const PHYSICS_LAYER_SHIPS: int = 1
+
+## Collision layer for static world props (station, gate, rock).
+const PHYSICS_LAYER_STATICS: int = 2
+
+## Mask for bodies that collide with ships and statics (player / hostiles).
+const PHYSICS_MASK_SHIPS_AND_STATICS: int = PHYSICS_LAYER_SHIPS | PHYSICS_LAYER_STATICS
+
+# --- World layout (system gray box) — E6.1 stretch -------------------------
 
 ## Station world position for the first playable system.
 const STATION_POSITION: Vector3 = Vector3(0.0, 0.0, 0.0)
 
-## Gate world position (visual marker; jump not required for A1).
-const GATE_POSITION: Vector3 = Vector3(220.0, 0.0, -160.0)
+## Minimum pad → nearest gate separation (metres). Order-of-magnitude over pre-E6 ~272.
+const LAYOUT_MIN_STATION_GATE_SEPARATION: float = 1200.0
 
-## Player spawn offset from the station (starts clear of the dock bubble).
+## Minimum primary → secondary dock separation (metres) in multi-dock systems.
+const LAYOUT_MIN_DOCK_SEPARATION: float = 450.0
+
+## Gate world position (primary arc anchor). Length ≥ LAYOUT_MIN_STATION_GATE_SEPARATION.
+const GATE_POSITION: Vector3 = Vector3(1100.0, 0.0, -800.0)
+
+## Player spawn offset from the station (starts clear of the dock bubble / collider).
 const PLAYER_SPAWN_OFFSET: Vector3 = Vector3(0.0, 8.0, 130.0)
+
+## Soft-bump restitution (0 = cancel into-normal only; small = slight push-out).
+const SOFT_BUMP_RESTITUTION: float = 0.05
+
+## Extra separation along contact normal after slide if still overlapping (metres).
+const IMPACT_SEPARATION_METRES: float = 0.2
 
 ## Gray-box mesh extents.
 const STATION_MESH_SIZE: Vector3 = Vector3(36.0, 22.0, 36.0)
@@ -211,6 +238,8 @@ const GATE_RING_RING_SEGMENTS: int = 12
 const GATE_CORE_RADIUS_FACTOR: float = 0.78
 const GATE_CORE_HEIGHT_FACTOR: float = 1.35
 const GATE_RING_PITCH_DEGREES: float = 90.0
+## Cylinder collider height as a factor of GATE_RING_OUTER (upright ring approx).
+const GATE_COLLIDER_HEIGHT_FACTOR: float = 1.2
 const STATION_CYLINDER_RADIUS: float = 16.0
 const STATION_CYLINDER_HEIGHT: float = 28.0
 const STATION_CYLINDER_SEGMENTS: int = 12
@@ -290,6 +319,25 @@ const STATION_MENU_DIM_ALPHA: float = 0.55
 const HUD_LINE_SPEED: float = 1.0
 const HUD_LINE_THROTTLE: float = 2.0
 const HUD_LINE_STATUS: float = 3.0
+
+
+## Soft bump: cancel velocity into the contact normal; keep lateral slide (E6.1).
+## `normal` points out of the surface toward the body. When moving into the
+## surface (dot < 0), the into-component is removed and a small restitution
+## push-out is applied. Never hard-zeros the full velocity vector.
+static func apply_soft_bump(
+	velocity: Vector3, normal: Vector3, restitution: float = -1.0
+) -> Vector3:
+	var rest: float = restitution
+	if rest < 0.0:
+		rest = SOFT_BUMP_RESTITUTION
+	if normal.length_squared() < DIRECTION_EPSILON:
+		return velocity
+	var n: Vector3 = normal.normalized()
+	var into: float = velocity.dot(n)
+	if into >= 0.0:
+		return velocity
+	return velocity - n * into * (1.0 + rest)
 
 
 ## Backdrop colour for a system id (falls back to default space colour).

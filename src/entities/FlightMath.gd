@@ -98,3 +98,10 @@ static func lead_point(
 	shooter_pos: Vector3, target_pos: Vector3, target_vel: Vector3, shot_speed: float
 ) -> Vector3:
 	return BalanceCombat.lead_point(shooter_pos, target_pos, target_vel, shot_speed)
+
+
+## Soft bump re-export (body lives on BalanceFlight so world may call it too).
+static func apply_soft_bump(
+	velocity: Vector3, normal: Vector3, restitution: float = -1.0
+) -> Vector3:
+	return BalanceFlight.apply_soft_bump(velocity, normal, restitution)

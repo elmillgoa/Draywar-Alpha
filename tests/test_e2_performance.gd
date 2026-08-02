@@ -144,7 +144,9 @@ func test_densest_system_spawn_smoke() -> void:
 	# Ambient may be under the concurrent cap; fill to max (bounty-style ensure).
 	_free_all_hostiles(world)
 	await get_tree().process_frame
-	var step: float = BalanceCombat.TARGET_LOCK_RANGE + 200.0
+	var step: float = (
+		BalanceCombat.TARGET_LOCK_RANGE + BalanceCombat.BOUNTY_SPAWN_OFFSET.length() + 200.0
+	)
 	var i: int = 0
 	while i < BalanceCombat.MAX_CONCURRENT_HOSTILES:
 		world.ensure_hostile_near(Vector3(float(i) * step + 800.0, 0.0, 0.0))

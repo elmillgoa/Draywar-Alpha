@@ -277,7 +277,10 @@ func test_concurrent_cap_blocks_further_spawns() -> void:
 	await get_tree().process_frame
 
 	# Space requests farther than lock range so each ensure actually needs a new spawn.
-	var step: float = BalanceCombat.TARGET_LOCK_RANGE + 200.0
+	# Include bounty offset length so placed prey near request N is outside lock of N+1.
+	var step: float = (
+		BalanceCombat.TARGET_LOCK_RANGE + BalanceCombat.BOUNTY_SPAWN_OFFSET.length() + 200.0
+	)
 	var i: int = 0
 	while i < BalanceCombat.MAX_CONCURRENT_HOSTILES:
 		var request: Vector3 = Vector3(float(i) * step + 800.0, 0.0, 0.0)

@@ -13,9 +13,50 @@ extends RefCounted
 ## Scene-tree group for combat hostiles (not ambient NpcTraffic).
 const GROUP_HOSTILE: StringName = &"hostile_npc"
 
+## Scene-tree group for collidable impact bodies (station/gate/traffic/hostile).
+const GROUP_IMPACT_BODY: StringName = &"impact_body"
+
+## Meta key storing mass class StringName on colliders (E6.1).
+const META_MASS_CLASS: StringName = &"mass_class"
+
 ## Victim Entity tag on kill reports (attribution target is still the
 ## local system controller when one holds the system — Reach in alpha).
 const VICTIM_ENTITY_ID: StringName = &"entity_free_haulers"
+
+# --- Impact mass classes / damage (E6.1 Package A) -------------------------
+
+const MASS_CLASS_STATION: StringName = &"station"
+const MASS_CLASS_GATE: StringName = &"gate"
+const MASS_CLASS_ROCK: StringName = &"rock"
+const MASS_CLASS_HOSTILE: StringName = &"hostile"
+const MASS_CLASS_TRAFFIC_LIGHT: StringName = &"traffic_light"
+const MASS_CLASS_TRAFFIC_HEAVY: StringName = &"traffic_heavy"
+
+## Base impact damage before mass × speed factors.
+const IMPACT_BASE: float = 12.0
+
+## Closing speed (m/s) below this → soft bump only, no hull damage.
+const IMPACT_SPEED_THRESHOLD: float = 8.0
+
+## Reference closing speed above threshold for speed_factor ≈ 1.0.
+const IMPACT_SPEED_REF: float = 20.0
+
+## Per-pair contact cooldown so one scrape does not multi-hit every frame.
+const IMPACT_COOLDOWN_SECONDS: float = 0.35
+
+## Mass class multipliers (player damage when ramming that class).
+const IMPACT_MASS_FACTOR: Dictionary = {
+	MASS_CLASS_STATION: 3.5,
+	MASS_CLASS_GATE: 3.0,
+	MASS_CLASS_ROCK: 1.5,
+	MASS_CLASS_HOSTILE: 1.2,
+	MASS_CLASS_TRAFFIC_LIGHT: 0.7,
+	MASS_CLASS_TRAFFIC_HEAVY: 1.8,
+}
+
+## When the player rams another damageable ship, that ship takes impact as if
+## hit by this class (hauler / freighter mass — no separate player mass class).
+const IMPACT_PLAYER_AS_MASS_CLASS: StringName = MASS_CLASS_TRAFFIC_HEAVY
 
 # --- Input -----------------------------------------------------------------
 
@@ -29,7 +70,8 @@ const ACTION_TARGET_LOCK: StringName = &"target_lock"
 const TARGET_LOCK_KEY: Key = KEY_TAB
 
 ## Max distance to include a hostile in the lock cycle (metres).
-const TARGET_LOCK_RANGE: float = 400.0
+## Raised E6.1 with stretched layout so bounty prey remains lockable across pad→lane.
+const TARGET_LOCK_RANGE: float = 800.0
 
 # --- Player weapon (bolts — no auto-hit on lock) ----------------------------
 # Defaults / no-hull fallback. Live play reads active Hull weapon fields (E2.4).
@@ -242,15 +284,22 @@ const AMBIENT_HOSTILE_COUNT_PATROLLED: int = 0
 const AMBIENT_HOSTILE_COUNT_CONTESTED: int = 1
 const AMBIENT_HOSTILE_COUNT_LAWLESS: int = 2
 
-## World offset from station anchor — near the gate line, NOT the undock pad.
-## Station is at origin; gate sits around GATE_POSITION — keep pirates there.
-## First ambient spawn uses this (legacy single-pirate path / tests).
-const SPAWN_OFFSET: Vector3 = Vector3(200.0, 14.0, -130.0)
+## Legacy / contested mid-lane ambient offsets (E6.1 ecology).
+## Contested: mid-system / lane / belt — far from undock pad, not gate-camping.
+## Length must exceed STATION_SAFE_RADIUS. SPAWN_OFFSET aliases primary for tests.
+const SPAWN_OFFSET_CONTESTED_PRIMARY: Vector3 = Vector3(700.0, 20.0, 400.0)
+const SPAWN_OFFSET_CONTESTED_SECONDARY: Vector3 = Vector3(-520.0, 25.0, 580.0)
+const SPAWN_OFFSET_CONTESTED_TERTIARY: Vector3 = Vector3(380.0, 18.0, -560.0)
 
-## Additional ambient offsets for denser systems (lawless count 2+). Each length
-## must exceed STATION_SAFE_RADIUS so pad ganking stays impossible.
-const SPAWN_OFFSET_SECONDARY: Vector3 = Vector3(-185.0, 16.0, -145.0)
-const SPAWN_OFFSET_TERTIARY: Vector3 = Vector3(160.0, 18.0, 175.0)
+## Lawless ambient: nearer the gate line than contested (meaner approach feel).
+const SPAWN_OFFSET_LAWLESS_PRIMARY: Vector3 = Vector3(950.0, 20.0, -650.0)
+const SPAWN_OFFSET_LAWLESS_SECONDARY: Vector3 = Vector3(1000.0, 18.0, -900.0)
+const SPAWN_OFFSET_LAWLESS_TERTIARY: Vector3 = Vector3(850.0, 22.0, -700.0)
+
+## Backward-compatible aliases → contested table (tests / single-offset callers).
+const SPAWN_OFFSET: Vector3 = SPAWN_OFFSET_CONTESTED_PRIMARY
+const SPAWN_OFFSET_SECONDARY: Vector3 = SPAWN_OFFSET_CONTESTED_SECONDARY
+const SPAWN_OFFSET_TERTIARY: Vector3 = SPAWN_OFFSET_CONTESTED_TERTIARY
 
 ## How many named ambient offsets exist (index wraps if count exceeds this).
 const AMBIENT_SPAWN_OFFSET_SLOT_COUNT: int = 3
@@ -258,14 +307,19 @@ const AMBIENT_SPAWN_OFFSET_SLOT_COUNT: int = 3
 ## Offset from the player (or request point) when a bounty needs a live hostile
 ## and none remain. Length must exceed STATION_SAFE_RADIUS so undock airspace
 ## stays clear; ensure_hostile_near still rechecks every station safe radius.
-const BOUNTY_SPAWN_OFFSET: Vector3 = Vector3(180.0, 12.0, -100.0)
+const BOUNTY_SPAWN_OFFSET: Vector3 = Vector3(320.0, 16.0, -200.0)
 
 ## Extra push past STATION_SAFE_RADIUS when the first offset still lands in a
 ## station bubble (secondary docks / tight geometry).
-const BOUNTY_SPAWN_SAFE_MARGIN: float = 25.0
+const BOUNTY_SPAWN_SAFE_MARGIN: float = 40.0
 
 ## No hostile fire / engage inside this radius of any station (safe undock).
-const STATION_SAFE_RADIUS: float = 110.0
+## Raised E6.1 with larger station pads / secondary dock spacing.
+const STATION_SAFE_RADIUS: float = 180.0
+
+## Ambient hostiles must not sit inside this radius of any gate (patrolled assert;
+## contested preferred mid-lane also clears it). Centre-based metres.
+const GATE_ENCOUNTER_APPROACH_RADIUS: float = 120.0
 
 ## After undock, hostiles wait this long before they may fire (seconds).
 const UNDOCK_GRACE_SECONDS: float = 5.0
@@ -483,20 +537,68 @@ static func ambient_count_for_policing(policing: StringName) -> int:
 	return AMBIENT_HOSTILE_COUNT_PATROLLED
 
 
-## World offset from station for ambient slot `index` (wraps across named slots).
+## World offset from station for ambient slot `index` (wraps; contested table).
+## Prefer `ambient_spawn_offset_for_policing` for live ecology (E6.1).
 static func ambient_spawn_offset(index: int) -> Vector3:
+	return ambient_spawn_offset_for_policing(&"contested", index)
+
+
+## Ambient spawn offset by policing tier (E6.1 encounter ecology).
+## Patrolled returns contested slots for safety (count is 0 so unused).
+## Lawless uses nearer-gate slots; contested uses mid/lane/belt slots.
+static func ambient_spawn_offset_for_policing(policing: StringName, index: int) -> Vector3:
 	var slot: int = index
 	if AMBIENT_SPAWN_OFFSET_SLOT_COUNT > 0:
 		slot = posmod(index, AMBIENT_SPAWN_OFFSET_SLOT_COUNT)
+	if policing == &"lawless":
+		match slot:
+			0:
+				return SPAWN_OFFSET_LAWLESS_PRIMARY
+			1:
+				return SPAWN_OFFSET_LAWLESS_SECONDARY
+			2:
+				return SPAWN_OFFSET_LAWLESS_TERTIARY
+			_:
+				return SPAWN_OFFSET_LAWLESS_PRIMARY
+	# contested, patrolled, unknown → mid-lane table
 	match slot:
 		0:
-			return SPAWN_OFFSET
+			return SPAWN_OFFSET_CONTESTED_PRIMARY
 		1:
-			return SPAWN_OFFSET_SECONDARY
+			return SPAWN_OFFSET_CONTESTED_SECONDARY
 		2:
-			return SPAWN_OFFSET_TERTIARY
+			return SPAWN_OFFSET_CONTESTED_TERTIARY
 		_:
-			return SPAWN_OFFSET
+			return SPAWN_OFFSET_CONTESTED_PRIMARY
+
+
+## Mass-class multiplier for impact (unknown → 1.0).
+static func mass_factor(mass_class: StringName) -> float:
+	if IMPACT_MASS_FACTOR.has(mass_class):
+		var raw: Variant = IMPACT_MASS_FACTOR[mass_class]
+		if typeof(raw) == TYPE_FLOAT:
+			var as_f: float = raw
+			return as_f
+		if typeof(raw) == TYPE_INT:
+			var as_i: int = raw
+			return float(as_i)
+	return 1.0
+
+
+## Speed factor for impact. Below threshold → 0; scales by excess over threshold.
+static func speed_factor(closing_speed: float) -> float:
+	if closing_speed < IMPACT_SPEED_THRESHOLD:
+		return 0.0
+	if IMPACT_SPEED_REF <= 0.0:
+		return 0.0
+	return maxf(0.0, closing_speed - IMPACT_SPEED_THRESHOLD) / IMPACT_SPEED_REF
+
+
+## Hull damage from ramming `mass_class` at `closing_speed` (0 below threshold).
+static func impact_damage(mass_class: StringName, closing_speed: float) -> float:
+	if closing_speed < IMPACT_SPEED_THRESHOLD:
+		return 0.0
+	return IMPACT_BASE * mass_factor(mass_class) * speed_factor(closing_speed)
 
 
 ## Lead intercept so a bolt at `shot_speed` meets a moving target.

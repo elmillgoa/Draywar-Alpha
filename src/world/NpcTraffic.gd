@@ -116,7 +116,12 @@ func _color_for_policing(policing: StringName) -> Color:
 
 func _make_npc(color: Color) -> Node3D:
 	# Capsule hull + small dorsal fin — traffic, not combat fighter.
-	var root: Node3D = Node3D.new()
+	# AnimatableBody3D so orbiting ships are solid bumps (E6.1); lock/kill is E6.3.
+	var root: AnimatableBody3D = AnimatableBody3D.new()
+	root.collision_layer = BalanceFlight.PHYSICS_LAYER_SHIPS
+	root.collision_mask = 0
+	root.set_meta(BalanceCombat.META_MASS_CLASS, BalanceCombat.MASS_CLASS_TRAFFIC_LIGHT)
+	root.add_to_group(BalanceCombat.GROUP_IMPACT_BODY)
 
 	var hull: MeshInstance3D = MeshInstance3D.new()
 	var capsule: CapsuleMesh = CapsuleMesh.new()
@@ -142,4 +147,13 @@ func _make_npc(color: Color) -> Node3D:
 	fin.material_override = fin_mat
 	fin.position = BalanceEconomy.NPC_FIN_OFFSET
 	root.add_child(fin)
+
+	var collision: CollisionShape3D = CollisionShape3D.new()
+	collision.name = "TrafficCollider"
+	var shape: CapsuleShape3D = CapsuleShape3D.new()
+	shape.radius = BalanceEconomy.NPC_MESH_SIZE.x * BalanceEconomy.NPC_CAPSULE_RADIUS_FACTOR
+	shape.height = BalanceEconomy.NPC_MESH_SIZE.z
+	collision.shape = shape
+	collision.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
+	root.add_child(collision)
 	return root

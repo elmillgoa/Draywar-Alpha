@@ -67,3 +67,14 @@ func test_integrate_velocity_approaches_desired() -> void:
 	var next: Vector3 = FlightMath.integrate_velocity(current, desired, 45.0, 1.8, 0.5)
 	assert_lt(next.z, 0.0)
 	assert_gt(next.z, desired.z)
+
+
+func test_soft_bump_cancels_into_normal_keeps_lateral() -> void:
+	var velocity: Vector3 = Vector3(10.0, 0.0, -20.0)
+	var normal: Vector3 = Vector3(0.0, 0.0, 1.0)
+	var after: Vector3 = FlightMath.apply_soft_bump(velocity, normal, 0.0)
+	assert_almost_eq(after.x, 10.0, TOLERANCE)
+	assert_almost_eq(after.z, 0.0, TOLERANCE)
+	# Separating velocity unchanged.
+	var sep: Vector3 = FlightMath.apply_soft_bump(Vector3(0.0, 0.0, 5.0), normal, 0.0)
+	assert_almost_eq(sep.z, 5.0, TOLERANCE)

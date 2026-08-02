@@ -177,7 +177,8 @@ const JUMP_ARRIVAL_OFFSET: Vector3 = Vector3(0.0, 8.0, 70.0)
 const GATE_ARC_STEP_DEGREES: float = 40.0
 
 ## Radius of the gate placement arc (metres from GATE_POSITION).
-const GATE_ARC_RADIUS: float = 30.0
+## Raised E6.1 with stretched multi-gate layout so arcs are not knotted.
+const GATE_ARC_RADIUS: float = 100.0
 
 # --- Mission pay defaults --------------------------------------------------
 
@@ -383,8 +384,9 @@ const NPC_COUNT_CONTESTED: int = 8
 const NPC_COUNT_LAWLESS: int = 5
 
 ## Orbit radius range for NPC wander (metres from system origin).
-const NPC_ORBIT_MIN: float = 80.0
-const NPC_ORBIT_MAX: float = 280.0
+## Raised E6.1 so traffic uses stretched space (colliders live; density is E6.4).
+const NPC_ORBIT_MIN: float = 120.0
+const NPC_ORBIT_MAX: float = 600.0
 
 ## NPC wander speed (m/s).
 const NPC_SPEED: float = 12.0

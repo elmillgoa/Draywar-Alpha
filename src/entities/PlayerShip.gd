@@ -33,12 +33,15 @@ var _last_reported_speed: float = -1.0
 var _fire_cooldown: float = 0.0
 var _crippled: bool = false
 var _locked_target: Node = null
+## instance_id → seconds remaining before another impact hit on that body (E6.1).
+var _impact_cooldown: Dictionary = {}
 
 
 func _ready() -> void:
 	FlightInput.ensure_actions()
-	collision_layer = 1
-	collision_mask = 0
+	collision_layer = BalanceFlight.PHYSICS_LAYER_SHIPS
+	collision_mask = BalanceFlight.PHYSICS_MASK_SHIPS_AND_STATICS
+	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	_sync_hull_id_from_service()
 	_apply_hull_from_library(hull_id)
 	_build_mesh()
@@ -235,7 +238,11 @@ func _physics_process(delta: float) -> void:
 		effective_afterburn
 	)
 	velocity = FlightMath.integrate_velocity(velocity, desired, _acceleration, _drag, dt)
+	# Closing speed must use pre-slide velocity: move_and_slide strips the
+	# into-wall component, so post-slide closing is ~0 and impact never fires.
+	var pre_slide_velocity: Vector3 = velocity
 	move_and_slide()
+	_resolve_soft_bumps_and_impact(dt, pre_slide_velocity)
 
 	var speed: float = velocity.length()
 	if speed != _last_reported_speed:
@@ -708,3 +715,112 @@ func _is_docked() -> bool:
 		var as_text: String = station_raw
 		return not as_text.is_empty()
 	return false
+
+
+## Soft bump + impact damage after move_and_slide (E6.1). Lateral motion kept.
+## `impact_velocity` is pre-slide velocity (required for real closing speed).
+func _resolve_soft_bumps_and_impact(dt: float, impact_velocity: Vector3) -> void:
+	_tick_impact_cooldowns(dt)
+	var count: int = get_slide_collision_count()
+	if count <= 0:
+		return
+	var i: int = 0
+	while i < count:
+		var col: KinematicCollision3D = get_slide_collision(i)
+		if col == null:
+			i += 1
+			continue
+		var normal: Vector3 = col.get_normal()
+		var relative: Vector3 = impact_velocity
+		var collider: Object = col.get_collider()
+		if collider is CharacterBody3D:
+			var other_body: CharacterBody3D = collider as CharacterBody3D
+			relative = impact_velocity - other_body.velocity
+		var closing: float = maxf(0.0, -relative.dot(normal))
+		# Soft bump still acts on post-slide velocity (keep lateral slide).
+		velocity = BalanceFlight.apply_soft_bump(velocity, normal)
+		# Mild separation if still pressed into the surface.
+		if closing > 0.0 and BalanceFlight.IMPACT_SEPARATION_METRES > 0.0:
+			global_position = (
+				global_position + normal.normalized() * BalanceFlight.IMPACT_SEPARATION_METRES
+			)
+		var mass_class: StringName = _mass_class_from_collider(collider)
+		if mass_class != &"":
+			_try_impact_damage(mass_class, closing, collider)
+		i += 1
+
+
+func _tick_impact_cooldowns(dt: float) -> void:
+	if _impact_cooldown.is_empty():
+		return
+	var doomed: Array = []
+	for key: Variant in _impact_cooldown.keys():
+		var prev: float = _impact_cooldown_value(key)
+		var left: float = prev - dt
+		if left <= 0.0:
+			doomed.append(key)
+		else:
+			_impact_cooldown[key] = left
+	for key: Variant in doomed:
+		_impact_cooldown.erase(key)
+
+
+func _impact_cooldown_value(key: Variant) -> float:
+	if not _impact_cooldown.has(key):
+		return 0.0
+	var raw: Variant = _impact_cooldown[key]
+	if typeof(raw) == TYPE_FLOAT:
+		var as_f: float = raw
+		return as_f
+	if typeof(raw) == TYPE_INT:
+		var as_i: int = raw
+		return float(as_i)
+	return 0.0
+
+
+func _mass_class_from_collider(collider: Object) -> StringName:
+	var node: Node = collider as Node
+	while node != null:
+		if node.has_meta(BalanceCombat.META_MASS_CLASS):
+			var raw: Variant = node.get_meta(BalanceCombat.META_MASS_CLASS)
+			if typeof(raw) == TYPE_STRING_NAME:
+				var as_name: StringName = raw
+				return as_name
+			if typeof(raw) == TYPE_STRING:
+				var as_text: String = raw
+				return StringName(as_text)
+		node = node.get_parent()
+	return &""
+
+
+func _try_impact_damage(mass_class: StringName, closing_speed: float, collider: Object) -> void:
+	var damage: float = BalanceCombat.impact_damage(mass_class, closing_speed)
+	if damage <= 0.0:
+		return
+	var pair_id: int = 0
+	if collider is Object:
+		pair_id = (collider as Object).get_instance_id()
+	if _impact_cooldown.has(pair_id):
+		return
+	_impact_cooldown[pair_id] = BalanceCombat.IMPACT_COOLDOWN_SECONDS
+	var wallet: Node = _wallet_node()
+	if wallet != null and wallet.has_method(&"apply_damage"):
+		wallet.call(&"apply_damage", damage)
+	# Mutual: damageable hostiles also take impact (D3). Traffic kill is E6.3.
+	if collider is Node:
+		var target: Node = _hostile_from_collider(collider as Node)
+		if target != null and target.has_method(&"take_damage"):
+			var other_dmg: float = BalanceCombat.impact_damage(
+				BalanceCombat.IMPACT_PLAYER_AS_MASS_CLASS, closing_speed
+			)
+			if other_dmg > 0.0:
+				target.call(&"take_damage", other_dmg)
+
+
+func _hostile_from_collider(node: Node) -> Node:
+	var walk: Node = node
+	while walk != null:
+		if walk.is_in_group(BalanceCombat.GROUP_HOSTILE):
+			return walk
+		walk = walk.get_parent()
+	return null
