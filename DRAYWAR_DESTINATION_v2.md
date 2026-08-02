@@ -122,15 +122,22 @@ Ignition produces a career epitaph. Playable holding-as-faction beyond ignition 
 ## 9. Deferred list (do not build)
 
 - Edge mystery beyond one hazardous empty system
-- Story campaign
-- Dynamic economy over time
 - Damage/armor type matrix
 - Hybrid and additional hulls
 - Ironman / difficulty modes
-- Playable holding beyond ignition
+- Playable holding beyond ignition (empire management after buy — passive dock/storage only for 1.0)
 - Full Entity lore and names (placeholders until content phase)
 - Multiplayer, VR, planetary landings, ship interiors, walking
 - Rich long-term personal-help variety and true Entity hierarchy (see reputation doc)
+
+### Unlocked for Steam 1.0 (2026-08-02)
+
+Previously deferred; now planned in `docs/STEAM_PHASE_PLAN.md` + `docs/PRODUCT_DIRECTION.md`:
+
+- **Story campaign** (through debt clear + Holding purchase → sandbox)
+- **Dynamic economy over time** (MarketService sim)
+
+Do not freestyle either — execute only via the Steam phase plan (S1+).
 
 ---
 

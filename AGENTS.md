@@ -1,24 +1,27 @@
-# Draywar Alpha — always-on operating rules
+# Draywar — always-on operating rules
 
 Loaded automatically every session, and inherited by every subagent. You are
-executing a locked Alpha plan. Design decisions are already made. Your judgment
-is for *implementation*.
+executing a locked **Steam 1.0 product plan**. Design decisions are already
+made. Your judgment is for *implementation*.
+
+**Maturity:** tech demo → core complete (real Alpha) → content complete (real
+Beta) → polish. Do not call the current build industry Alpha/Beta.
 
 ---
 
 ## 1. Authority (higher beats lower)
 
 1. **`DRAYWAR_AGENT_GUARDRAILS_v2.md`** — autonomy tiers, stop conditions. Absolute.
-2. **`Alpha/ALPHA_VISION.md` + `Alpha/ALPHA_SCOPE.md`** — prove-it mission and hard ceilings. **Alpha is the source of truth for what we build now.**
-3. **`docs/reputation_and_standing.md`** — source of truth for standing, Entities, People, recovery, status moment. Do not invent standing rules.
-4. **`Alpha/ALPHA_PHASE_PLAN.md`** — work queue (A0 → A5). Contracts / phases in order.
-5. **`Alpha/ALPHA_EXPANSION_PATH.md`** — how Alpha grows into the full game without redesign.
-6. **`docs/state.md`** — where the build actually is right now.
+2. **`docs/STEAM_PHASE_PLAN.md` + `docs/PRODUCT_DIRECTION.md`** — **what we build now** (S0–S10). Campaign through Holding → sandbox; real economy sim; 30h/80h.
+3. **`docs/reputation_and_standing.md`** — standing, Entities, People, recovery, status moment. Do not invent standing rules.
+4. **`DRAYWAR_DESTINATION_v2.md`** — Fidelity / Tone filters + locked fantasy spine (Ship → Ops → Holding). Story campaign + dynamic economy are **unlocked** for the Steam plan (were deferred).
+5. **`docs/state.md`** — where the build actually is right now.
 
-**Supporting (not Alpha authority):**
+**Historical (do not use as the work queue):**
 
-- `DRAYWAR_DESTINATION_v2.md` / `DRAYWAR_PHASE_PLAN_v2.md` — full-game north star after Final Alpha Gate. Do not build full-plan content during Alpha.
-- `DRAYWAR_CONVENTIONS.md` — **informational** house style. Not grounds to stop a run.
+- `Alpha/*` — prove-it Alpha (done).
+- `docs/BETA_*.md` / `docs/BETA_ROADMAP.md` — post-Alpha E-phases (E1–E6 closed).
+- `DRAYWAR_PHASE_PLAN_v2.md` — old full-game phase sketch; superseded by Steam phase plan for sequencing.
 
 Ambiguity: resolve with Destination **Fidelity** + **Tone** filters. If those fail, `/escalate` — do not invent.
 

@@ -81,20 +81,33 @@ This is **not** greenfield Destination Phase 0. Alpha already shipped foundation
 - Map / NAV sector chart (functional)
 - **[GATE] E5.7** — **signed** 2026-08-02
 
-### E6 — Lived-in space — **PLAN LOCKED** (build next)
+### E6 — Lived-in space — **CLOSED** (gate signed 2026-08-02)
 **Job:** Systems feel like places — solids, distance, sky, attackable ships, density by law.
 
-- Plan: `docs/BETA_E6_LIVED_IN_SPACE.md` (locked 2026-08-02)
-- Order: **A solids** → **C sky** → **B attackable traffic** → **D density** → integration → **[GATE] E6.6**
+- Plan: `docs/BETA_E6_LIVED_IN_SPACE.md`
 - Soft bump + impact damage by mass class; ship budget **20**
-- Still no Holding / Ops
+- **Elliot:** technically closed; still feels super thin (tech-demo maturity)
 
-### Later (after E6 prove)
+### Product bar raise (2026-08-02) — plan next, do not freestyle build
+**Authority:** `docs/PRODUCT_DIRECTION.md` (overrides “story / dynamic economy deferred” for Steam 1.0 intent)
+
+Elliot’s bar: not real Alpha yet (core systems incomplete). Real Alpha = all core loops built and under bug smash. Real Beta = content in, major bugs found, polish / endgame / launch prep.
+
+Locked product calls:
+- **Campaign** through debts paid + buy Holding (asteroid/station) → then **true sandbox**
+- **Real economy simulator** (prices, scarcity/abundance, goods that move) — first-class pillar
+- **Hours:** ≥30h main-path campaign; ~80h completionist
+- Ambition frame: **space Skyrim** (dense freedom + main spine + radiant volume) on Freelancer/Tone filters
+
+### Later (queued; order set by product plan, not this freeze alone)
+- Living activity density / world tick
+- **Economy sim** (production, consumption, regional prices)
 - **Operations** (hired ships, charters, warehouses)
-- **Holding** (sovereign territory / ignition)
+- **Story campaign spine** (through Holding ignition)
+- **Holding** + sandbox continue
 - Production art/audio pipeline
 - Full Traitor career / patrol fleets / customs minigames
-- Mining / belt economy (belts are landmarks in E6 only)
+- Mining / belt economy
 
 ---
 

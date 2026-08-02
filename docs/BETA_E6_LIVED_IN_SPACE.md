@@ -1,9 +1,9 @@
 # Beta E6 — Lived-in space
 
-**Status:** **E6.1–E6.5 complete** — next **[GATE] E6.6** (play only; do not auto-sign)  
+**Status:** **CLOSED** — E6.1–E6.5 code complete; **E6.6 signed 2026-08-02** (phase closed; product still thin — see `docs/PRODUCT_DIRECTION.md`)  
 **Date:** 2026-08-02  
 **Authority:** Destination Fidelity / Tone + `docs/BETA_ROADMAP.md` E6 + standing law + this file  
-**Gates:** E1–E5 feel all signed; this phase ends at **[GATE] E6.6**
+**Gates:** E1–E6 feel all signed
 
 ## Job
 
@@ -211,7 +211,7 @@ damage = IMPACT_BASE * mass_class_factor(obstacle) * speed_factor(closing_speed)
 
 ### E6.6 **[GATE] Lived-in space feel**
 
-**Status:** open (after E6.5)  
+**Status:** **signed 2026-08-02** — phase closed; still “super thin” as a product (tech-demo maturity — not a real Alpha/Beta)  
 
 **Criteria (plain):** After a session in open space, does a system feel like a **place** — solid, spaced, sky, ships that matter, density by law — enough to keep expanding, without needing Ops yet?
 
