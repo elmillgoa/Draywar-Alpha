@@ -1,25 +1,28 @@
 class_name Balance
 extends RefCounted
 
-## The balance layer's entry file — Alpha A0.
+## The balance layer's entry file â€” Alpha A0.
 ##
 ## Every tunable lives here or under `src/data/balance/`.
 ## `scripts/check_magic_numbers.py` fails the build on a numeric literal
 ## anywhere under `src/` outside this layer.
 
-## Alpha content ceilings — `Alpha/ALPHA_SCOPE.md`, keyed by content directory.
+## Content ceilings â€” keyed by content directory. E5 lifts systems/stations/people
+## past Alpha; see `docs/BETA_E5_CONTENT_SCALE.md` (E5.1). Destination Â§10 is the
+## hard upper bound for those three.
 ##
 ## These are **ceilings, not targets**. Exceeding one is a stop condition, and
 ## `ContentLibrary` turns that into a loud failure at load. Categories listed
 ## with no directory yet cost nothing and document where the pipeline is going.
 const CONTENT_BUDGET: Dictionary[StringName, int] = {
-	&"star_systems": 4,
-	## E1 cap: stations ≤7 (second docks in existing systems).
-	&"stations": 7,
+	## E5.1: Destination v1 ceiling (ship target 6 systems in E5.2+).
+	&"star_systems": 8,
+	## E5.1: Destination Â§10 (~10 docks).
+	&"stations": 10,
 	&"entities": 6,
-	## E1 cap: people ≤20 (density pack contacts).
-	&"people": 20,
-	## E1.4 trade contrast: commodities toward 8–10 (E1 cap ≤10).
+	## E5.1: people â‰¤24 (small lift under Destination 20â€“35).
+	&"people": 24,
+	## E1.4 trade contrast: commodities toward 8â€“10 (E1 cap â‰¤10).
 	&"commodities": 10,
 	## E3.4 smuggle kind + denser boards; budget raised to 12 (E3 caps).
 	&"contract_types": 12,
@@ -28,11 +31,11 @@ const CONTENT_BUDGET: Dictionary[StringName, int] = {
 	&"equipment": 10,
 	## E4.4: two personal recovery chains (Mendi/Reach + Jax/Drift). Ceiling, not target.
 	&"recovery_chains": 2,
-	## E4.1: 3 axes × 3 options (origin / trade / mark). Ceiling is the set size.
+	## E4.1: 3 axes Ã— 3 options (origin / trade / mark). Ceiling is the set size.
 	&"life_path_options": 9,
 }
 
-## Time control — three speeds and nothing between them.
+## Time control â€” three speeds and nothing between them.
 ##
 ## `TIME_SCALE_NORMAL` is also the rate the combat lock forces and the rate a
 ## load returns to, so it is one constant rather than three copies of 1.0.

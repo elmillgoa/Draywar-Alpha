@@ -1,7 +1,7 @@
 # Beta E5 — Content scale toward Beta
 
-**Status:** Active work queue — **plan locked 2026-07-31** (build not started)  
-**Date:** 2026-07-31  
+**Status:** Active work queue — **E5.1 complete**; next **E5.2**  
+**Date:** 2026-07-31 (plan); E5.1 built 2026-08-02  
 **Authority:** Destination §1 Fidelity (hand-built universe / trade lanes) + §10 v1 budget + `docs/BETA_ROADMAP.md` E5 + standing law  
 **Gates:** E1–E4 feel all signed; this phase ends at **[GATE] E5.7**
 
@@ -86,7 +86,7 @@ Alpha —— Beta —— Gamma
 
 | ID | Name | Status |
 |----|------|--------|
-| E5.1 | Content budget lift | planned |
+| E5.1 | Content budget lift | **complete** |
 | E5.2 | Systems + stations pack | planned |
 | E5.3 | Branch gate graph + world | planned |
 | E5.4 | Multi-station logistics | planned |
@@ -110,7 +110,7 @@ E5.4 and E5.5 may proceed in parallel after E5.3 if two agents; both must finish
 
 ### E5.1 Content budget lift
 
-**Status:** planned
+**Status:** **complete** (2026-08-02)
 
 **Shape:** Raise `Balance.CONTENT_BUDGET` (and comments) to E5 ceilings **before** adding files that would fail `ContentLibrary` load. No new play content required in this contract — only the deliberate lift + tests that assert the new ceilings.
 
@@ -128,6 +128,8 @@ E5.4 and E5.5 may proceed in parallel after E5.3 if two agents; both must finish
 3. Live content still loads (3/6/15 under new ceilings).  
 4. This doc’s Caps table and `docs/state.md` note the lift.  
 5. Lint + GUT green.
+
+**Evidence:** `Balance.CONTENT_BUDGET` at 8/10/24; `tests/test_e5_content_budget.gd` + existing over-budget path in `test_content_library.gd`; live counts still 3/6/15; lint + GUT green at complete.
 
 ---
 
@@ -289,6 +291,6 @@ A serious multi-hour Beta will still lack: escort family, deeper NPC schedules, 
 | Field | Value |
 |-------|--------|
 | Plan | **locked for build** 2026-07-31 (Elliot: plan now, build when usage resets) |
-| Code | not started |
+| Code | E5.1 complete 2026-08-02; E5.2–E5.6 not started |
 | E5.7 | open |
-| Next session | `/start` → **E5.1 Content budget lift** |
+| Next session | `/start` → **E5.2 Systems + stations pack** |
