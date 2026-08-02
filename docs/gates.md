@@ -396,3 +396,5 @@ Not a re-open of E2�E4. Refuse ? iterate E5.1�E5.6 only. Sign ? E5 closed; p
 ### Attempt log
 
 - **2026-08-02** — E5.1–E5.6 code complete (lint green, GUT 507/507). Gate open for Elliot play.
+- **2026-08-02 (pre-play)** — **Blocked.** Elliot: opening screen pinned, bottom runs off viewport, no scroll — cannot start playing. Fix before E5.7 attempt can proceed.
+- **2026-08-02 (fix)** — Create screen: option columns scroll; Confirm/Cancel stay pinned. Annexation: body scrolls; Continue pinned. Panels clamp to window. Gate open again for play.

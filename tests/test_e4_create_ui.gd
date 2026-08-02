@@ -34,6 +34,45 @@ func test_create_ui_theme_and_axes() -> void:
 	assert_eq(option_btns.size(), BalanceStanding.LIFE_PATH_OPTION_COUNT)
 
 
+func test_create_footer_not_in_scroll_and_panel_fits_viewport() -> void:
+	# Confirm/Cancel must stay pinned; option columns live in the scroll body.
+	var create: LifePathCreate = LifePathCreate.new()
+	add_child_autofree(create)
+	await get_tree().process_frame
+	create.show_create()
+	await get_tree().process_frame
+
+	var confirm: Button = _find_button(create, BalanceSession.LIFE_PATH_CREATE_CONFIRM)
+	var cancel: Button = _find_button(create, BalanceSession.LIFE_PATH_CREATE_CANCEL)
+	assert_ne(confirm, null)
+	assert_ne(cancel, null)
+	assert_false(_is_under_scroll(confirm), "Confirm must stay outside scroll")
+	assert_false(_is_under_scroll(cancel), "Cancel must stay outside scroll")
+	assert_true(_has_scroll(create), "create must offer a scroll body for options")
+
+	var panel: PanelContainer = _find_panel(create)
+	assert_ne(panel, null)
+	assert_lte(
+		panel.custom_minimum_size.y,
+		BalanceSession.LIFE_PATH_CREATE_HEIGHT,
+		"panel never taller than design height"
+	)
+	assert_lte(
+		panel.custom_minimum_size.x,
+		BalanceSession.LIFE_PATH_CREATE_WIDTH,
+		"panel never wider than design width"
+	)
+	var vp: Vector2 = create.get_viewport().get_visible_rect().size
+	var margin: float = BalanceSession.LIFE_PATH_CREATE_VIEWPORT_MARGIN
+	var avail_h: float = vp.y - margin - margin
+	var avail_w: float = vp.x - margin - margin
+	# Headless GUT viewports can be tiny; only assert clamp when space is real.
+	if avail_h > 1.0:
+		assert_lte(panel.custom_minimum_size.y, avail_h, "panel height must fit viewport")
+	if avail_w > 1.0:
+		assert_lte(panel.custom_minimum_size.x, avail_w, "panel width must fit viewport")
+
+
 func test_confirm_disabled_until_three_picks() -> void:
 	var create: LifePathCreate = LifePathCreate.new()
 	add_child_autofree(create)
@@ -221,3 +260,21 @@ func _press_option_named(create: LifePathCreate, display_name: String) -> void:
 			btn.pressed.emit()
 			return
 	fail_test("option button not found for %s" % display_name)
+
+
+func _is_under_scroll(node: Node) -> bool:
+	var walk: Node = node.get_parent()
+	while walk != null:
+		if walk is ScrollContainer:
+			return true
+		walk = walk.get_parent()
+	return false
+
+
+func _has_scroll(root: Node) -> bool:
+	if root is ScrollContainer:
+		return true
+	for child: Node in root.get_children():
+		if _has_scroll(child):
+			return true
+	return false

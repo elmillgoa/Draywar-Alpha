@@ -190,6 +190,11 @@ const LIFE_PATH_CREATE_WIDTH: float = 720.0
 const LIFE_PATH_CREATE_HEIGHT: float = 560.0
 const LIFE_PATH_CREATE_HALF_WIDTH: float = 360.0
 const LIFE_PATH_CREATE_HALF_HEIGHT: float = 280.0
+## Keep panel inside the window; content columns scroll if they still overflow.
+const LIFE_PATH_CREATE_VIEWPORT_MARGIN: float = 24.0
+const LIFE_PATH_CREATE_SCROLL_MIN_HEIGHT: float = 160.0
+## Center panel offsets from half-size (width * factor).
+const LIFE_PATH_CREATE_CENTER_HALF: float = 0.5
 const LIFE_PATH_CREATE_BUTTON_WIDTH: float = 200.0
 const LIFE_PATH_CREATE_BUTTON_HEIGHT: float = 40.0
 const LIFE_PATH_CREATE_OPTION_MIN_HEIGHT: float = 72.0
@@ -226,6 +231,8 @@ const ANNEXATION_WIDTH: float = 520.0
 const ANNEXATION_HEIGHT: float = 320.0
 const ANNEXATION_HALF_WIDTH: float = 260.0
 const ANNEXATION_HALF_HEIGHT: float = 160.0
+const ANNEXATION_VIEWPORT_MARGIN: float = 24.0
+const ANNEXATION_CENTER_HALF: float = 0.5
 const ANNEXATION_BUTTON_WIDTH: float = 200.0
 const ANNEXATION_BUTTON_HEIGHT: float = 40.0
 const ANNEXATION_SPACER: float = 12.0

@@ -28,6 +28,9 @@ func _ready() -> void:
 	layer = BalanceSession.LIFE_PATH_CREATE_CANVAS_LAYER
 	visible = false
 	_build_ui()
+	if not get_viewport().size_changed.is_connected(_fit_panel_to_viewport):
+		get_viewport().size_changed.connect(_fit_panel_to_viewport)
+	_fit_panel_to_viewport()
 
 
 ## Open the create screen and reset picks to none.
@@ -40,6 +43,7 @@ func show_create() -> void:
 		_cancel_btn.disabled = false
 	_clear_button_highlights()
 	_refresh_confirm_state()
+	_fit_panel_to_viewport()
 	_open = true
 	visible = true
 
@@ -143,14 +147,18 @@ func _build_ui() -> void:
 	_panel.offset_bottom = BalanceSession.LIFE_PATH_CREATE_HALF_HEIGHT
 	root.add_child(_panel)
 
+	# Header + scroll body + pinned footer (Confirm/Cancel always on screen).
 	var outer: VBoxContainer = VBoxContainer.new()
 	outer.alignment = BoxContainer.ALIGNMENT_BEGIN
+	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_panel.add_child(outer)
 
 	var title: Label = Label.new()
 	title.add_theme_font_size_override("font_size", BalanceFlight.HUD_TITLE_FONT_SIZE)
 	title.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	title.text = BalanceSession.LIFE_PATH_CREATE_TITLE
 	outer.add_child(title)
 
@@ -158,17 +166,29 @@ func _build_ui() -> void:
 	subtitle.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	subtitle.text = BalanceSession.LIFE_PATH_CREATE_SUBTITLE
 	outer.add_child(subtitle)
 
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size = Vector2(0.0, BalanceSession.LIFE_PATH_CREATE_SPACER)
+	spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	outer.add_child(spacer)
+
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0.0, BalanceSession.LIFE_PATH_CREATE_SCROLL_MIN_HEIGHT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	outer.add_child(scroll)
 
 	var columns: HBoxContainer = HBoxContainer.new()
 	columns.add_theme_constant_override("separation", int(BalanceSession.LIFE_PATH_CREATE_AXIS_GAP))
-	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	outer.add_child(columns)
+	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Shrink-begin so content height drives the scroll bar (same pattern as station menu).
+	columns.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	scroll.add_child(columns)
 
 	_build_axis_column(
 		columns, BalanceSession.LIFE_PATH_CREATE_AXIS_ORIGIN, BalanceStanding.LIFE_PATH_AXIS_ORIGIN
@@ -182,17 +202,20 @@ func _build_ui() -> void:
 
 	var spacer2: Control = Control.new()
 	spacer2.custom_minimum_size = Vector2(0.0, BalanceSession.LIFE_PATH_CREATE_SPACER)
+	spacer2.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	outer.add_child(spacer2)
 
 	_hint = Label.new()
 	_hint.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_hint.text = BalanceSession.LIFE_PATH_CREATE_NEED_ALL
 	outer.add_child(_hint)
 
 	var actions: HBoxContainer = HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	actions.add_theme_constant_override("separation", BalanceSession.LIFE_PATH_CREATE_ACTION_GAP)
 	outer.add_child(actions)
 
@@ -213,6 +236,31 @@ func _build_ui() -> void:
 	actions.add_child(_confirm_btn)
 
 	_refresh_confirm_state()
+
+
+## Cap the modal to the visible window so Confirm never sits off-screen.
+func _fit_panel_to_viewport() -> void:
+	if _panel == null:
+		return
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	if vp.x <= 1.0 or vp.y <= 1.0:
+		return
+	var margin: float = BalanceSession.LIFE_PATH_CREATE_VIEWPORT_MARGIN
+	var avail_w: float = vp.x - margin - margin
+	var avail_h: float = vp.y - margin - margin
+	# Design size by default; shrink when the window is smaller. Never grow past viewport.
+	var w: float = BalanceSession.LIFE_PATH_CREATE_WIDTH
+	var h: float = BalanceSession.LIFE_PATH_CREATE_HEIGHT
+	if avail_w > 1.0:
+		w = minf(w, avail_w)
+	if avail_h > 1.0:
+		h = minf(h, avail_h)
+	var half: float = BalanceSession.LIFE_PATH_CREATE_CENTER_HALF
+	_panel.custom_minimum_size = Vector2(w, h)
+	_panel.offset_left = -w * half
+	_panel.offset_top = -h * half
+	_panel.offset_right = w * half
+	_panel.offset_bottom = h * half
 
 
 func _build_axis_column(parent: Control, axis_title: String, axis: StringName) -> void:

@@ -20,6 +20,9 @@ func _ready() -> void:
 	layer = BalanceSession.ANNEXATION_CANVAS_LAYER
 	visible = false
 	_build_ui()
+	if not get_viewport().size_changed.is_connected(_fit_panel_to_viewport):
+		get_viewport().size_changed.connect(_fit_panel_to_viewport)
+	_fit_panel_to_viewport()
 
 
 ## Show annexation with a baggage line already formatted by Main / caller.
@@ -29,6 +32,7 @@ func show_annexation(baggage_line: String) -> void:
 		_baggage.text = baggage_line
 	if _continue_btn != null:
 		_continue_btn.disabled = false
+	_fit_panel_to_viewport()
 	_open = true
 	visible = true
 
@@ -92,9 +96,24 @@ func _build_ui() -> void:
 	_panel.offset_bottom = BalanceSession.ANNEXATION_HALF_HEIGHT
 	root.add_child(_panel)
 
+	var outer: VBoxContainer = VBoxContainer.new()
+	outer.alignment = BoxContainer.ALIGNMENT_BEGIN
+	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel.add_child(outer)
+
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	outer.add_child(scroll)
+
 	var layout: VBoxContainer = VBoxContainer.new()
 	layout.alignment = BoxContainer.ALIGNMENT_CENTER
-	_panel.add_child(layout)
+	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	layout.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	scroll.add_child(layout)
 
 	var title: Label = Label.new()
 	title.add_theme_font_size_override("font_size", BalanceFlight.HUD_TITLE_FONT_SIZE)
@@ -127,15 +146,41 @@ func _build_ui() -> void:
 
 	var spacer3: Control = Control.new()
 	spacer3.custom_minimum_size = Vector2(0.0, BalanceSession.ANNEXATION_SPACER)
-	layout.add_child(spacer3)
+	outer.add_child(spacer3)
 
 	_continue_btn = Button.new()
 	_continue_btn.text = BalanceSession.ANNEXATION_CONTINUE
 	_continue_btn.custom_minimum_size = Vector2(
 		BalanceSession.ANNEXATION_BUTTON_WIDTH, BalanceSession.ANNEXATION_BUTTON_HEIGHT
 	)
+	_continue_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_continue_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_continue_btn.pressed.connect(_on_continue_pressed)
-	layout.add_child(_continue_btn)
+	outer.add_child(_continue_btn)
+
+
+## Cap the modal to the visible window so Continue never sits off-screen.
+func _fit_panel_to_viewport() -> void:
+	if _panel == null:
+		return
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	if vp.x <= 1.0 or vp.y <= 1.0:
+		return
+	var margin: float = BalanceSession.ANNEXATION_VIEWPORT_MARGIN
+	var avail_w: float = vp.x - margin - margin
+	var avail_h: float = vp.y - margin - margin
+	var w: float = BalanceSession.ANNEXATION_WIDTH
+	var h: float = BalanceSession.ANNEXATION_HEIGHT
+	if avail_w > 1.0:
+		w = minf(w, avail_w)
+	if avail_h > 1.0:
+		h = minf(h, avail_h)
+	var half: float = BalanceSession.ANNEXATION_CENTER_HALF
+	_panel.custom_minimum_size = Vector2(w, h)
+	_panel.offset_left = -w * half
+	_panel.offset_top = -h * half
+	_panel.offset_right = w * half
+	_panel.offset_bottom = h * half
 
 
 func _on_continue_pressed() -> void:
