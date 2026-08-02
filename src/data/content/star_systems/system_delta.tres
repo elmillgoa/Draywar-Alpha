@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StarSystem" load_steps=2 format=3]
+
+; Reach corridor spur — E5.2. Held by Reach Authority.
+[ext_resource type="Script" path="res://src/data/shapes/StarSystem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"system_delta"
+display_name = "Delta Corridor"
+held_by = &"entity_reach_authority"
+policing = &"patrolled"
+station_ids = Array[StringName]([&"station_delta_port", &"station_delta_yard"])
+gate_destination_ids = Array[StringName]([&"system_beta"])
+flavor_line = "Second Reach lane off Beta — quieter pads, same Authority stamp."

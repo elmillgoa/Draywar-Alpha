@@ -21,7 +21,7 @@ func after_each() -> void:
 
 func test_three_systems_distinct_controllers_and_policing() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(&"star_systems")
-	assert_eq(ids.size(), 3, "Alpha ships three systems")
+	assert_gte(ids.size(), 3, "at least the original three systems")
 	var controllers: Dictionary = {}
 	var polices: Dictionary = {}
 	for id: StringName in ids:
@@ -34,7 +34,7 @@ func test_three_systems_distinct_controllers_and_policing() -> void:
 		controllers[system.held_by] = true
 		polices[system.policing] = true
 		assert_false(system.flavor_line.is_empty(), "%s has flavor for place feel" % id)
-	assert_eq(controllers.size(), 3, "three distinct controllers")
+	assert_gte(controllers.size(), 3, "at least three distinct controllers")
 	assert_eq(polices.size(), 3, "patrolled / contested / lawless all present")
 	assert_true(ContentLibrary.has_item(SYSTEM_ALPHA))
 	assert_true(ContentLibrary.has_item(SYSTEM_BETA))

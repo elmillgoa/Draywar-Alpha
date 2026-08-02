@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+; Reach yard hand — E5.2 Contacts at Delta docks.
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_ra_bryn"
+display_name = "Yard Hand Bryn"
+primary_entity_id = &"entity_reach_authority"
+rank = &"low"
+network_person_ids = Array[StringName]([&"person_ra_cole", &"person_ra_mendi"])
+default_player_standing = 0.0

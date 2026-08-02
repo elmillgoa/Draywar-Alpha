@@ -20,6 +20,8 @@ const ACTION_PAUSE: StringName = &"pause_menu"
 const ACTION_FIRE: StringName = &"fire_weapon"
 ## Target lock cycle (Tab). Name matches BalanceCombat.ACTION_TARGET_LOCK.
 const ACTION_TARGET_LOCK: StringName = &"target_lock"
+## Sector chart (M) — E5.5.
+const ACTION_SECTOR_MAP: StringName = &"sector_map"
 
 
 ## Ensures every flight action exists with its default key. Idempotent.
@@ -34,6 +36,7 @@ static func ensure_actions() -> void:
 	_bind(ACTION_FIRE, BalanceCombat.FIRE_KEY)
 	_bind_mouse(ACTION_FIRE, BalanceCombat.FIRE_MOUSE_BUTTON)
 	_bind(ACTION_TARGET_LOCK, BalanceCombat.TARGET_LOCK_KEY)
+	_bind(ACTION_SECTOR_MAP, KEY_M)
 
 
 static func _bind(action: StringName, physical_key: Key) -> void:

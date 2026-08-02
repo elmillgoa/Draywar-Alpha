@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; Fringe far-spur dock — E5.2.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_zeta_spur"
+display_name = "Zeta Spur Dock"
+system_id = &"system_zeta"
+controller_entity_id = &"entity_gamma_collective"
+position_offset = Vector3(0, 0, 0)
+flavor_line = "End-of-chart pad. Scrap piles and long-haul turn-ins."

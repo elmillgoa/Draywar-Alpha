@@ -6,9 +6,10 @@ extends GutTest
 
 const ContentLibraryScript = preload("res://src/systems/ContentLibrary.gd")
 
-const LIVE_SYSTEMS: int = 3
-const LIVE_STATIONS: int = 6
-const LIVE_PEOPLE: int = 15
+## Live pack after E5.2 (was 3/6/15 before the content pack).
+const LIVE_SYSTEMS: int = 6
+const LIVE_STATIONS: int = 10
+const LIVE_PEOPLE: int = 19
 
 const E5_STAR_SYSTEMS_CEILING: int = 8
 const E5_STATIONS_CEILING: int = 10
@@ -25,9 +26,9 @@ func test_live_content_loads_under_e5_ceilings() -> void:
 	var systems: Array[StringName] = ContentLibrary.ids_in(&"star_systems")
 	var stations: Array[StringName] = ContentLibrary.ids_in(&"stations")
 	var people: Array[StringName] = ContentLibrary.ids_in(&"people")
-	assert_eq(systems.size(), LIVE_SYSTEMS, "E5.1 does not add systems yet")
-	assert_eq(stations.size(), LIVE_STATIONS, "E5.1 does not add stations yet")
-	assert_eq(people.size(), LIVE_PEOPLE, "E5.1 does not add people yet")
+	assert_eq(systems.size(), LIVE_SYSTEMS, "E5 live systems under ceiling")
+	assert_eq(stations.size(), LIVE_STATIONS, "E5 live stations under ceiling")
+	assert_eq(people.size(), LIVE_PEOPLE, "E5 live people under ceiling")
 	assert_lte(systems.size(), Balance.CONTENT_BUDGET[&"star_systems"])
 	assert_lte(stations.size(), Balance.CONTENT_BUDGET[&"stations"])
 	assert_lte(people.size(), Balance.CONTENT_BUDGET[&"people"])

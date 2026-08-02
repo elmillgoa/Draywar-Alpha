@@ -10,5 +10,5 @@ display_name = "Beta Drift"
 held_by = &"entity_beta_syndicate"
 policing = &"contested"
 station_ids = Array[StringName]([&"station_beta_hub", &"station_beta_spit"])
-gate_destination_ids = Array[StringName]([&"system_alpha", &"system_gamma"])
-flavor_line = "Contested corridor — Syndicate gray market, mixed traffic."
+gate_destination_ids = Array[StringName]([&"system_alpha", &"system_gamma", &"system_delta"])
+flavor_line = "Contested corridor — Syndicate gray market, mixed traffic. Branch hub for Delta."

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+; Fringe spur runner — E5.2 Contacts at Zeta.
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_gc_kade"
+display_name = "Spur Runner Kade"
+primary_entity_id = &"entity_gamma_collective"
+rank = &"low"
+network_person_ids = Array[StringName]([&"person_gc_sela", &"person_gc_tavi"])
+default_player_standing = 0.0

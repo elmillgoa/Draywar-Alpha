@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StarSystem" load_steps=2 format=3]
+
+; Far lawless spur — E5.2. Held by Fringe Collective.
+[ext_resource type="Script" path="res://src/data/shapes/StarSystem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"system_zeta"
+display_name = "Zeta Spur"
+held_by = &"entity_gamma_collective"
+policing = &"lawless"
+station_ids = Array[StringName]([&"station_zeta_spur"])
+gate_destination_ids = Array[StringName]([&"system_epsilon"])
+flavor_line = "Far spur at the edge of the chart — multi-hour haul, scrap and silence."

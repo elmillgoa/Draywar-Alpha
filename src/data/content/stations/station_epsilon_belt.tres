@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; Drift Syndicate belt dock in Epsilon — E5.2.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_epsilon_belt"
+display_name = "Epsilon Belt Dock"
+system_id = &"system_epsilon"
+controller_entity_id = &"entity_beta_syndicate"
+position_offset = Vector3(0, 0, 0)
+flavor_line = "Syndicate belt station — gray manifests, contested approach."

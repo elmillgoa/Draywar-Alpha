@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; Primary Reach dock in Delta Corridor — E5.2.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_delta_port"
+display_name = "Delta Port"
+system_id = &"system_delta"
+controller_entity_id = &"entity_reach_authority"
+position_offset = Vector3(0, 0, 0)
+flavor_line = "Authority secondary corridor pad. Clean freights and sealed manifests."

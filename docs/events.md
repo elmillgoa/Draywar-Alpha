@@ -840,6 +840,24 @@ No parameters.
 **Emitted by** `CaptainSheet` (Close), `Main` (Escape while sheet open).
 **Listened to by** `CaptainSheet`.
 
+### `on_sector_map_open_requested()`
+
+UI asked to open the sector chart (E5.5).
+
+No parameters.
+
+**Emitted by** `PauseMenu`, `Main` (M key in flight).
+**Listened to by** `SectorMapPanel`.
+
+### `on_sector_map_close_requested()`
+
+UI asked to close the sector chart.
+
+No parameters.
+
+**Emitted by** `SectorMapPanel` (Close), `Main` (Escape while map open).
+**Listened to by** `SectorMapPanel`.
+
 ### `on_manual_save_requested()`
 
 Pause menu asked to write the default career save.

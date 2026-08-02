@@ -214,6 +214,12 @@ signal on_captain_sheet_open_requested
 ## Captain sheet: close the sheet.
 signal on_captain_sheet_close_requested
 
+## Pause / flight: open the sector chart (E5.5).
+signal on_sector_map_open_requested
+
+## Sector map: close the chart.
+signal on_sector_map_close_requested
+
 ## Pause menu: write the default career save.
 signal on_manual_save_requested
 

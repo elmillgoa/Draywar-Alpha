@@ -27,6 +27,7 @@ var _station_menu: StationMenu = null
 var _main_menu: MainMenu = null
 var _pause_menu: PauseMenu = null
 var _captain_sheet: CaptainSheet = null
+var _sector_map: SectorMapPanel = null
 var _new_game_tip: NewGameTip = null
 var _life_path_create: LifePathCreate = null
 var _opening_annexation: OpeningAnnexation = null
@@ -54,9 +55,22 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(FlightInput.ACTION_SECTOR_MAP):
+		if not _in_play or _console_open or _jump_busy or _opening_in_progress:
+			return
+		if _sector_map != null and _sector_map.visible:
+			EventBus.on_sector_map_close_requested.emit()
+		else:
+			EventBus.on_sector_map_open_requested.emit()
+		get_viewport().set_input_as_handled()
+		return
 	if not event.is_action_pressed(FlightInput.ACTION_PAUSE):
 		return
 	if not _in_play or _console_open or _jump_busy or _opening_in_progress:
+		return
+	if _sector_map != null and _sector_map.visible:
+		EventBus.on_sector_map_close_requested.emit()
+		get_viewport().set_input_as_handled()
 		return
 	if _captain_sheet != null and _captain_sheet.visible:
 		EventBus.on_captain_sheet_close_requested.emit()
@@ -97,6 +111,10 @@ func _create_session_ui() -> void:
 	_captain_sheet = CaptainSheet.new()
 	_captain_sheet.name = "CaptainSheet"
 	add_child(_captain_sheet)
+
+	_sector_map = SectorMapPanel.new()
+	_sector_map.name = "SectorMapPanel"
+	add_child(_sector_map)
 
 	_new_game_tip = NewGameTip.new()
 	_new_game_tip.name = "NewGameTip"
@@ -147,6 +165,9 @@ func _set_pause(open: bool) -> void:
 	EventBus.on_pause_changed.emit(open)
 	if not open and _captain_sheet != null:
 		_captain_sheet.visible = false
+	if not open and _sector_map != null and _sector_map.visible:
+		# Keep map open when resuming from pause if it was opened there — OK.
+		pass
 
 
 func _on_new_game_requested() -> void:

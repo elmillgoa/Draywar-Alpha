@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+; Reach corridor clerk — E5.2 Contacts at Delta docks.
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_ra_cole"
+display_name = "Clerk Cole"
+primary_entity_id = &"entity_reach_authority"
+rank = &"mid"
+network_person_ids = Array[StringName]([&"person_ra_kell", &"person_ra_bryn"])
+default_player_standing = 0.0

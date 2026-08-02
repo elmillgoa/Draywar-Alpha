@@ -269,6 +269,27 @@ const TRADE_SYSTEM_BUY_MUL: Dictionary = {
 		&"commodity_medical": 1.15,
 		&"commodity_munitions": 1.15,
 	},
+	## E5.4 far spur — cheap scrap buy; expensive grain (core→spur route).
+	&"system_delta":
+	{
+		&"commodity_grain": 0.85,
+		&"commodity_spare_parts": 0.9,
+		&"commodity_scrap": 1.1,
+	},
+	&"system_epsilon":
+	{
+		&"commodity_munitions": 0.85,
+		&"commodity_alloy": 0.9,
+		&"commodity_medical": 1.1,
+	},
+	&"system_zeta":
+	{
+		&"commodity_scrap": 0.65,
+		&"commodity_ore": 0.7,
+		&"commodity_grain": 1.35,
+		&"commodity_luxuries": 1.3,
+		&"commodity_medical": 1.2,
+	},
 }
 
 ## Per-system sell multipliers: system_id → { commodity_id → float mul on base_sell }.
@@ -299,6 +320,27 @@ const TRADE_SYSTEM_SELL_MUL: Dictionary = {
 		&"commodity_munitions": 1.55,
 		&"commodity_scrap": 0.85,
 		&"commodity_ore": 0.85,
+	},
+	## E5.4: grain sells high at Zeta; scrap sells high back at Alpha (existing).
+	&"system_delta":
+	{
+		&"commodity_grain": 1.05,
+		&"commodity_spare_parts": 1.15,
+		&"commodity_scrap": 1.2,
+	},
+	&"system_epsilon":
+	{
+		&"commodity_munitions": 1.1,
+		&"commodity_fuel_cells": 1.2,
+		&"commodity_medical": 1.15,
+	},
+	&"system_zeta":
+	{
+		&"commodity_grain": 2.2,
+		&"commodity_medical": 1.55,
+		&"commodity_luxuries": 1.6,
+		&"commodity_scrap": 0.8,
+		&"commodity_ore": 0.8,
 	},
 }
 

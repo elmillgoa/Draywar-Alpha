@@ -51,11 +51,13 @@ func _build_ui() -> void:
 	_panel = PanelContainer.new()
 	_panel.theme = DraywarUiTheme.build()
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.custom_minimum_size = Vector2(BalanceSession.MENU_WIDTH, BalanceSession.MENU_HEIGHT)
+	_panel.custom_minimum_size = Vector2(
+		BalanceSession.MENU_WIDTH, BalanceSession.MENU_HEIGHT_WITH_MAP
+	)
 	_panel.offset_left = -BalanceSession.MENU_HALF_WIDTH
-	_panel.offset_top = -BalanceSession.MENU_HALF_HEIGHT
+	_panel.offset_top = -BalanceSession.MENU_HALF_HEIGHT_WITH_MAP
 	_panel.offset_right = BalanceSession.MENU_HALF_WIDTH
-	_panel.offset_bottom = BalanceSession.MENU_HALF_HEIGHT
+	_panel.offset_bottom = BalanceSession.MENU_HALF_HEIGHT_WITH_MAP
 	_root.add_child(_panel)
 
 	var layout: VBoxContainer = VBoxContainer.new()
@@ -82,6 +84,9 @@ func _build_ui() -> void:
 
 	var sheet_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_CAPTAIN_SHEET)
 	sheet_btn.pressed.connect(_on_sheet_pressed)
+
+	var map_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_SECTOR_MAP)
+	map_btn.pressed.connect(_on_map_pressed)
 
 	var save_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_SAVE)
 	save_btn.pressed.connect(_on_save_pressed)
@@ -114,6 +119,10 @@ func _on_resume_pressed() -> void:
 
 func _on_sheet_pressed() -> void:
 	EventBus.on_captain_sheet_open_requested.emit()
+
+
+func _on_map_pressed() -> void:
+	EventBus.on_sector_map_open_requested.emit()
 
 
 func _on_save_pressed() -> void:

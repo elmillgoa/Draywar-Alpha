@@ -1,7 +1,7 @@
 # Beta E5 — Content scale toward Beta
 
-**Status:** Active work queue — **E5.1 complete**; next **E5.2**  
-**Date:** 2026-07-31 (plan); E5.1 built 2026-08-02  
+**Status:** **Code complete** (E5.1–E5.6) — **E5.7 gate open**  
+**Date:** 2026-07-31 (plan); E5.1–E5.6 built 2026-08-02  
 **Authority:** Destination §1 Fidelity (hand-built universe / trade lanes) + §10 v1 budget + `docs/BETA_ROADMAP.md` E5 + standing law  
 **Gates:** E1–E4 feel all signed; this phase ends at **[GATE] E5.7**
 
@@ -33,10 +33,10 @@ Sector large enough for **multi-hour vetting**: more systems and docks, routes t
 
 | Element | Now (live) | E5 target | E5 budget ceiling | Destination v1 |
 |---------|------------|-----------|-------------------|----------------|
-| Star systems | 3 | **6** | **8** | 8 |
-| Stations | 6 | **~10** | **10** | ~10 |
+| Star systems | **6** | **6** | **8** | 8 |
+| Stations | **10** | **~10** | **10** | ~10 |
 | Entities | 4 | 4–5 | **6** | 8–12 |
-| People | 15 | ≤24 | **24** | 20–35 |
+| People | **19** | ≤24 | **24** | 20–35 |
 | Job kinds | 3 | **3** | (templates ≤12) | 4 kinds |
 | Player hulls | 2 | **2** | 2 | 2 |
 | Recovery chains | 2 | **2** | 2 | — |
@@ -87,11 +87,11 @@ Alpha —— Beta —— Gamma
 | ID | Name | Status |
 |----|------|--------|
 | E5.1 | Content budget lift | **complete** |
-| E5.2 | Systems + stations pack | planned |
-| E5.3 | Branch gate graph + world | planned |
-| E5.4 | Multi-station logistics | planned |
-| E5.5 | Map / NAV upgrade | planned |
-| E5.6 | Integration / balance / perf | planned |
+| E5.2 | Systems + stations pack | **complete** |
+| E5.3 | Branch gate graph + world | **complete** |
+| E5.4 | Multi-station logistics | **complete** |
+| E5.5 | Map / NAV upgrade | **complete** |
+| E5.6 | Integration / balance / perf | **complete** |
 | E5.7 | **[GATE] Content scale feel** | open |
 
 ### Sequencing
@@ -135,7 +135,7 @@ E5.4 and E5.5 may proceed in parallel after E5.3 if two agents; both must finish
 
 ### E5.2 Systems + stations pack
 
-**Status:** planned
+**Status:** **complete** (2026-08-02)
 
 **Shape:** Add **Delta, Epsilon, Zeta** as full `StarSystem` resources + enough new `Station` resources to reach **9–10** docks total. Full-sized fields (held_by, policing, station_ids, flavor_line, position offsets). **0–1 new Entity** only if needed (D3). **2–6 new People** used on Contacts at new docks (not orphan data). Presentation: placeholders OK if systems are distinguishable (sky/light reuse patterns from E1.1).
 
@@ -153,7 +153,7 @@ E5.4 and E5.5 may proceed in parallel after E5.3 if two agents; both must finish
 
 ### E5.3 Branch gate graph + world
 
-**Status:** planned
+**Status:** **complete** (2026-08-02)
 
 **Shape:** Wire `gate_destination_ids` so the six-system graph **branches** (D5). Beta (or another hub) has **≥2** gate destinations. Gate meshes + travel service work for every edge both ways (or document one-way only if deliberately designed — default **bidirectional**). World rebuild on jump still correct; undock/dock unchanged in law.
 
@@ -171,7 +171,7 @@ E5.4 and E5.5 may proceed in parallel after E5.3 if two agents; both must finish
 
 ### E5.4 Multi-station logistics
 
-**Status:** planned
+**Status:** **complete** (2026-08-02)
 
 **Shape:** Make the larger sector **force route choices**, not only more scenery.
 
@@ -197,7 +197,7 @@ No new job *kind*. No new standing law. Pay/standing only through existing missi
 
 ### E5.5 Map / NAV upgrade
 
-**Status:** planned
+**Status:** **complete** (2026-08-02)
 
 **Shape:** Replace “text-only NAV is the whole story” with a **sector chart** the player can open in flight and/or pause.
 
@@ -227,7 +227,7 @@ Optional (nice, not accept blockers): visited tint; station count under system n
 
 ### E5.6 Integration / balance / perf
 
-**Status:** planned
+**Status:** **complete** (2026-08-02)
 
 **Shape:** One contract that proves the phase holds together: multi-system path, save/load, performance, no softlocks after opening cast.
 
@@ -291,6 +291,6 @@ A serious multi-hour Beta will still lack: escort family, deeper NPC schedules, 
 | Field | Value |
 |-------|--------|
 | Plan | **locked for build** 2026-07-31 (Elliot: plan now, build when usage resets) |
-| Code | E5.1 complete 2026-08-02; E5.2–E5.6 not started |
-| E5.7 | open |
-| Next session | `/start` → **E5.2 Systems + stations pack** |
+| Code | E5.1–E5.6 complete 2026-08-02 |
+| E5.7 | open — play script in `docs/gates.md` |
+| Next session | `/start` → **play + sign E5.7** |

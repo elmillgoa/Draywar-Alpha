@@ -41,6 +41,8 @@ const MISSION_KEY_OBJECTIVE_MET: StringName = &"objective_met"
 const MAIN_MENU_CANVAS_LAYER: int = 40
 const PAUSE_MENU_CANVAS_LAYER: int = 35
 const CAPTAIN_SHEET_CANVAS_LAYER: int = 36
+## Sector chart above pause so map can open from pause or flight (E5.5).
+const SECTOR_MAP_CANVAS_LAYER: int = 37
 
 # --- Menu layout -----------------------------------------------------------
 
@@ -76,9 +78,46 @@ const MAIN_QUIT: String = "Quit"
 const PAUSE_TITLE: String = "PAUSED"
 const PAUSE_RESUME: String = "Resume"
 const PAUSE_CAPTAIN_SHEET: String = "Captain sheet"
+const PAUSE_SECTOR_MAP: String = "Sector map"
 const PAUSE_SAVE: String = "Save"
 const PAUSE_LOAD: String = "Load"
 const PAUSE_QUIT_TO_MENU: String = "Quit to menu"
+
+## Sector chart (E5.5) — functional layout for 6 systems.
+const SECTOR_MAP_TITLE: String = "SECTOR CHART"
+const SECTOR_MAP_CLOSE: String = "Close"
+const SECTOR_MAP_CURRENT_FORMAT: String = "Here  %s"
+const SECTOR_MAP_CURRENT_UNKNOWN: String = "Here  —"
+const SECTOR_MAP_WIDTH: float = 520.0
+const SECTOR_MAP_HEIGHT: float = 420.0
+const SECTOR_MAP_HALF_WIDTH: float = 260.0
+const SECTOR_MAP_HALF_HEIGHT: float = 210.0
+const SECTOR_MAP_CHART_WIDTH: float = 480.0
+const SECTOR_MAP_CHART_HEIGHT: float = 280.0
+const SECTOR_MAP_NODE_SIZE: float = 14.0
+const SECTOR_MAP_NODE_SIZE_CURRENT: float = 20.0
+const SECTOR_MAP_EDGE_WIDTH: float = 2.0
+const SECTOR_MAP_EDGE_COLOR: Color = Color(0.55, 0.6, 0.7, 0.85)
+const SECTOR_MAP_NODE_COLOR: Color = Color(0.45, 0.55, 0.75)
+const SECTOR_MAP_NODE_COLOR_CURRENT: Color = Color(0.95, 0.82, 0.25)
+const SECTOR_MAP_LABEL_OFFSET_X: float = 12.0
+const SECTOR_MAP_LABEL_OFFSET_Y: float = -8.0
+const SECTOR_MAP_NODE_HALF: float = 0.5
+const SECTOR_MAP_FALLBACK_POS: Vector2 = Vector2(40.0, 40.0)
+## Chart positions (local to chart control) for the branched E5 graph.
+const SECTOR_MAP_NODE_POSITIONS: Dictionary = {
+	&"system_alpha": Vector2(60.0, 140.0),
+	&"system_beta": Vector2(180.0, 140.0),
+	&"system_gamma": Vector2(300.0, 140.0),
+	&"system_delta": Vector2(180.0, 40.0),
+	&"system_epsilon": Vector2(380.0, 140.0),
+	&"system_zeta": Vector2(440.0, 220.0),
+}
+## Undirected path graph: internal nodes have this degree; ends have 1.
+const GRAPH_PATH_INTERNAL_DEGREE: int = 2
+## Pause panel taller with sector map button.
+const MENU_HEIGHT_WITH_MAP: float = 420.0
+const MENU_HALF_HEIGHT_WITH_MAP: float = 210.0
 
 const SHEET_TITLE: String = "CAPTAIN"
 const SHEET_STANDING_HEADER: String = "Standing"
