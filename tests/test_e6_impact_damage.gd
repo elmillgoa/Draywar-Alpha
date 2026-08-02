@@ -152,7 +152,7 @@ func test_live_slow_bump_does_not_damage_hull() -> void:
 	ship.set_flight_enabled(false)
 	space.add_child(ship)
 	ship.global_position = Vector3(0.0, 0.0, 4.0)
-	# Below IMPACT_SPEED_THRESHOLD (8 m/s).
+	# Well below IMPACT_SPEED_THRESHOLD (bump only).
 	ship.velocity = Vector3(0.0, 0.0, -4.0)
 	await get_tree().physics_frame
 

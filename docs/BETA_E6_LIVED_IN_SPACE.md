@@ -1,6 +1,6 @@
 # Beta E6 — Lived-in space
 
-**Status:** **PLAN LOCKED** (build next) — E5.7 signed 2026-08-02  
+**Status:** **E6.1–E6.5 complete** — next **[GATE] E6.6** (play only; do not auto-sign)  
 **Date:** 2026-08-02  
 **Authority:** Destination Fidelity / Tone + `docs/BETA_ROADMAP.md` E6 + standing law + this file  
 **Gates:** E1–E5 feel all signed; this phase ends at **[GATE] E6.6**
@@ -192,18 +192,20 @@ damage = IMPACT_BASE * mass_class_factor(obstacle) * speed_factor(closing_speed)
 
 ### E6.5 Integration / balance / perf
 
-**Status:** pending  
+**Status:** complete (2026-08-02)  
 
 **Shape:** One continuous career path: New Game → open space transit pad→gate → sky reads → lock/shoot a freighter (standing feedback) → contested/lawless ecology differs → multi-dock hop → save/continue. Tune impact damage so casual docking approach does not cripple; deliberate ram does. Retune flight only if soft bump broke A1 feel.
 
 **Acceptance:**
 
-1. Cold path scriptable in tests or manual checklist: dock, undock, transit, gate, combat, traffic kill standing, save/load.  
-2. Opening cast + Continue skip still hold.  
-3. E3 money teeth and E2 combat fairness (lead/bolts) still hold.  
-4. Full GUT green; lint green.  
-5. `docs/state.md` + journal updated.  
-6. No Ops/Holding creep.
+1. Cold path scriptable in tests or manual checklist: dock, undock, transit, gate, combat, traffic kill standing, save/load. ✅ (`tests/test_e6_integration.gd`)  
+2. Opening cast + Continue skip still hold. ✅  
+3. E3 money teeth and E2 combat fairness (lead/bolts) still hold. ✅  
+4. Full GUT green; lint green. ✅ (571/571)  
+5. `docs/state.md` + journal updated. ✅  
+6. No Ops/Holding creep. ✅  
+
+**Balance note:** `IMPACT_SPEED_THRESHOLD` raised **8 → 14** m/s so undock cruise (`UNDOCK_THROTTLE × SHIP_MAX_SPEED` ≈ 10.5) is bump-only; deliberate ram (≥40 m/s / full throttle) still damages; station > traffic_light mass factors unchanged.
 
 ---
 

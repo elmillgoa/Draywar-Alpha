@@ -70,7 +70,9 @@ const MASS_CLASS_TRAFFIC_HEAVY: StringName = &"traffic_heavy"
 const IMPACT_BASE: float = 12.0
 
 ## Closing speed (m/s) below this → soft bump only, no hull damage.
-const IMPACT_SPEED_THRESHOLD: float = 8.0
+## E6.5: above undock cruise (UNDOCK_THROTTLE × SHIP_MAX_SPEED ≈ 10.5 m/s) so
+## casual leave/approach scrapes do not chip hull; deliberate ram still hurts.
+const IMPACT_SPEED_THRESHOLD: float = 14.0
 
 ## Reference closing speed above threshold for speed_factor ≈ 1.0.
 const IMPACT_SPEED_REF: float = 20.0
