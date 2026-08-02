@@ -441,3 +441,4 @@ Not a re-open of E1–E5. Refuse → iterate E6.1–E6.5 only. Sign → E6 close
 ### Attempt log
 
 - **2026-08-02** — E6 plan locked (`docs/BETA_E6_LIVED_IN_SPACE.md`). Gate opens after E6.5.
+- **2026-08-02** — E6.1–E6.5 code complete (lint green, GUT 571/571). Gate ready for human play. **Not signed.**
