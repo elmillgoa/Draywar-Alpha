@@ -24,6 +24,7 @@ TimeScale="*res://src/systems/time/TimeScale.gd"
 ServiceRegistry="*res://src/systems/ServiceRegistry.gd"
 WorldClock="*res://src/systems/time/WorldClock.gd"
 StandingService="*res://src/systems/standing/StandingService.gd"
+MarketService="*res://src/systems/market/MarketService.gd"
 
 [debug]
 

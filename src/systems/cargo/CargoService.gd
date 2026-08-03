@@ -1,9 +1,10 @@
 class_name CargoService
 extends Node
 
-## Player cargo hold and station buy/sell — Path C B3 / E3.3.
+## Player cargo hold and station buy/sell — Path C B3 / E3.3 / Steam S2.
 ##
-## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B3, docs/BETA_E3_ECONOMY.md E3.3
+## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B3, docs/BETA_E3_ECONOMY.md E3.3,
+## docs/STEAM_PHASE_PLAN.md Phase S2, docs/economy_sim.md §12
 ##
 ## Single writer for cargo inventory. Child of Main (not an autoload).
 ## Optional save section `cargo` (schema v1, no envelope bump).
@@ -11,6 +12,15 @@ extends Node
 ## Console: `cargo` lists hold contents.
 ## E3.3: open-market buy/sell blocked when commodity is contraband for the
 ## dock controller; fee-charging docks call inspect_on_dock() (not session restore).
+##
+## **This service no longer prices anything.** Since S2 every price comes from
+## stock at the docked *station*, not from a table keyed by system: the service
+## asks MarketService for a quote and commits the trade through it, so two docks
+## in one system charge different numbers and buying moves the price as you buy.
+## MarketService is reached by bare autoload name (it has no `class_name`),
+## which is the sanctioned way to ask another system a question — the same way
+## this file already reaches StandingService. The market-facing arithmetic lives
+## in CargoTrade beside this file: same system, split for file length only.
 
 var _inventory: Dictionary = {}  # StringName commodity_id → int qty
 
@@ -259,91 +269,179 @@ func inspect_on_dock() -> Dictionary:
 	}
 
 
-## True when docked and can afford + fit a buy of this qty.
+## What buying `qty` of this commodity would cost at the docked station.
+## Pure — it moves no stock and no credits. Keys are BalanceMarket.QUOTE_KEY_*.
+## Exists so the trade UI asks one service, not two.
+func quote_buy(commodity_id: StringName, qty: int) -> Dictionary:
+	return MarketService.quote_buy(_docked_station_id(), commodity_id, qty)
+
+
+## What selling `qty` of this commodity would pay at the docked station. Pure.
+func quote_sell(commodity_id: StringName, qty: int) -> Dictionary:
+	return MarketService.quote_sell(_docked_station_id(), commodity_id, qty)
+
+
+## Everything the station trade row shows for one commodity: stock here, unit
+## prices, the market's reason line, and how many units the station, the hold
+## and the wallet will each allow. Keys are BalanceEconomy.TRADE_ROW_KEY_*.
+func trade_row(commodity_id: StringName) -> Dictionary:
+	return CargoTrade.row(
+		_docked_station_id(),
+		commodity_id,
+		quantity(commodity_id),
+		_units_that_fit(commodity_id),
+		_wallet_credits()
+	)
+
+
+## True when docked and can afford + fit a buy of this qty, and the station will
+## release that many units in one trade (docs/economy_sim.md §6).
 func can_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
-	var allowed: bool = (
-		qty > 0
-		and _is_docked()
-		and trade_allowed_at_dock()
-		and not is_restricted_at_dock(commodity_id)
-	)
-	var commodity: Commodity = null
-	if allowed:
-		commodity = _commodity(commodity_id)
-		allowed = commodity != null and can_add(commodity_id, qty)
-	var wallet: Node = null
-	if allowed:
-		wallet = _wallet()
-		allowed = wallet != null and wallet.has_method(&"can_afford")
-	if allowed:
-		var cost: int = _unit_buy_price(commodity) * qty
-		allowed = wallet.call(&"can_afford", cost) == true
-	return allowed
+	var station_id: StringName = _tradable_station_for(commodity_id, qty)
+	if String(station_id).is_empty() or not can_add(commodity_id, qty):
+		return false
+	var quote: Dictionary = MarketService.quote_buy(station_id, commodity_id, qty)
+	if CargoTrade.quote_units(quote) != qty:
+		return false
+	var wallet: Node = _wallet()
+	if wallet == null or not wallet.has_method(&"can_afford"):
+		return false
+	return wallet.call(&"can_afford", CargoTrade.quote_total(quote)) == true
 
 
-## True when docked and hold has at least qty to sell.
+## True when docked, the hold has at least qty, and the station will absorb that
+## many units in one trade.
 func can_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
-	var allowed: bool = (
-		qty > 0
-		and _is_docked()
-		and trade_allowed_at_dock()
-		and not is_restricted_at_dock(commodity_id)
-		and _commodity(commodity_id) != null
-	)
-	if allowed:
-		allowed = quantity(commodity_id) >= qty
-	return allowed
+	var station_id: StringName = _tradable_station_for(commodity_id, qty)
+	if String(station_id).is_empty() or quantity(commodity_id) < qty:
+		return false
+	var quote: Dictionary = MarketService.quote_sell(station_id, commodity_id, qty)
+	return CargoTrade.quote_units(quote) == qty
 
 
-## Buy from the docked station. Returns true on success.
+## Buy from the docked station's market. Returns true on success.
+##
+## Order is quote → check money and hold → spend → commit → move cargo, with a
+## refund if a later step fails (docs/economy_sim.md §12). The quote is pure, so
+## nothing has moved if any check refuses. All-or-nothing on purpose: a trade
+## the station will only part-fill is refused rather than silently clamped, so
+## the number the captain pressed is always the number they get.
 func try_buy(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
-	var ok: bool = false
-	if (
-		qty > 0
-		and _is_docked()
-		and trade_allowed_at_dock()
-		and not is_restricted_at_dock(commodity_id)
-	):
-		var commodity: Commodity = _commodity(commodity_id)
-		if commodity != null and can_add(commodity_id, qty):
-			var cost: int = _unit_buy_price(commodity) * qty
-			var wallet: Node = _wallet()
-			if wallet != null and wallet.has_method(&"try_spend"):
-				if wallet.call(&"try_spend", cost) == true:
-					if add(commodity_id, qty):
-						EventBus.on_trade_completed.emit(
-							BalanceEconomy.TRADE_SIDE_BUY, commodity_id, qty, -cost
-						)
-						_record_legal_trade()
-						ok = true
-					elif wallet.has_method(&"add_credits"):
-						# Refund if inventory race (should not happen after can_add).
-						wallet.call(&"add_credits", cost)
-	return ok
+	var station_id: StringName = _tradable_station_for(commodity_id, qty)
+	if String(station_id).is_empty():
+		return false
+	var quote: Dictionary = MarketService.quote_buy(station_id, commodity_id, qty)
+	var wallet: Node = _wallet()
+	if CargoTrade.quote_units(quote) != qty or wallet == null or not can_add(commodity_id, qty):
+		return false
+	if not wallet.has_method(&"try_spend") or not wallet.has_method(&"add_credits"):
+		return false
+	if wallet.call(&"try_spend", CargoTrade.quote_total(quote)) != true:
+		return false
+	return _settle_buy(station_id, commodity_id, qty, quote, wallet)
 
 
-## Sell to the docked station. Returns true on success.
+## Sell into the docked station's market. Returns true on success.
 func try_sell(commodity_id: StringName, qty: int = BalanceEconomy.TRADE_QTY_UNIT) -> bool:
-	var ok: bool = false
-	if (
-		qty > 0
-		and _is_docked()
-		and trade_allowed_at_dock()
-		and not is_restricted_at_dock(commodity_id)
-	):
-		var commodity: Commodity = _commodity(commodity_id)
-		if commodity != null and quantity(commodity_id) >= qty:
-			var payout: int = _unit_sell_price(commodity) * qty
-			if remove(commodity_id, qty):
-				var wallet: Node = _wallet()
-				if wallet != null and wallet.has_method(&"add_credits") and payout > 0:
-					wallet.call(&"add_credits", payout)
-				EventBus.on_trade_completed.emit(
-					BalanceEconomy.TRADE_SIDE_SELL, commodity_id, qty, payout
-				)
-				_record_legal_trade()
-				ok = true
-	return ok
+	var station_id: StringName = _tradable_station_for(commodity_id, qty)
+	if String(station_id).is_empty():
+		return false
+	var quote: Dictionary = MarketService.quote_sell(station_id, commodity_id, qty)
+	if CargoTrade.quote_units(quote) != qty or quantity(commodity_id) < qty:
+		return false
+	if not remove(commodity_id, qty):
+		return false
+	return _settle_sell(station_id, commodity_id, qty, quote)
+
+
+## Move the stock and finish a buy whose credits have already left the wallet.
+## Every exit that is not a completed trade puts the credits back.
+func _settle_buy(
+	station_id: StringName, commodity_id: StringName, qty: int, quote: Dictionary, wallet: Node
+) -> bool:
+	var total: int = CargoTrade.quote_total(quote)
+	var charged: int = MarketService.commit_buy(station_id, commodity_id, qty)
+	if charged <= 0:
+		wallet.call(&"add_credits", total)
+		return false
+	if charged != total:
+		# The world clock moved between the quote and the commit: settle up at
+		# the price the market actually charged, never at the stale one.
+		wallet.call(&"add_credits", total - charged)
+	if not add(commodity_id, qty):
+		# Unreachable after can_add; refund rather than trust it cannot happen.
+		wallet.call(&"add_credits", charged)
+		return false
+	_announce_trade(station_id, commodity_id, qty, -charged, CargoTrade.quote_unit_avg(quote))
+	return true
+
+
+## Hand the units over and take the payment. The hold is refilled if the market
+## refuses after the cargo has already left it.
+func _settle_sell(
+	station_id: StringName, commodity_id: StringName, qty: int, quote: Dictionary
+) -> bool:
+	var paid: int = MarketService.commit_sell(station_id, commodity_id, qty)
+	if paid <= 0:
+		add(commodity_id, qty)
+		return false
+	var wallet: Node = _wallet()
+	if wallet != null and wallet.has_method(&"add_credits"):
+		wallet.call(&"add_credits", paid)
+	_announce_trade(station_id, commodity_id, qty, paid, CargoTrade.quote_unit_avg(quote))
+	return true
+
+
+## One completed trade: the bus event, exactly one telemetry row, and the
+## standing credit for trading legally here.
+##
+## The money row is emitted here and not by WalletService, because a trade moves
+## credits through the generic try_spend / add_credits path that carries no
+## activity tag — without this the telemetry log would show every dock fee and
+## refuel and no trades at all (docs/economy_sim.md §10).
+func _announce_trade(
+	station_id: StringName, commodity_id: StringName, qty: int, credits_delta: int, unit_price: int
+) -> void:
+	var side: StringName = BalanceEconomy.TRADE_SIDE_SELL
+	var reason: StringName = BalanceTelemetry.REASON_TRADE_SELL
+	if credits_delta < 0:
+		side = BalanceEconomy.TRADE_SIDE_BUY
+		reason = BalanceTelemetry.REASON_TRADE_BUY
+	EventBus.on_trade_completed.emit(side, commodity_id, qty, credits_delta)
+	EventBus.on_money_event.emit(
+		reason,
+		credits_delta,
+		_wallet_credits(),
+		CargoTrade.money_detail(commodity_id, qty, unit_price, station_id, _dock_system_id())
+	)
+	_record_legal_trade()
+
+
+## The docked station this commodity may legally be traded at, or empty when it
+## may not be. Folds together every non-market refusal: undocked, standing too
+## low (Hostile/Hated), open-market contraband for the dock controller (E3.3),
+## a nonsense quantity, or a commodity that is not content at all.
+func _tradable_station_for(commodity_id: StringName, qty: int) -> StringName:
+	if qty <= 0 or not trade_allowed_at_dock() or is_restricted_at_dock(commodity_id):
+		return &""
+	if _commodity(commodity_id) == null:
+		return &""
+	return _docked_station_id()
+
+
+## How many more units of this commodity the hold has room for.
+func _units_that_fit(commodity_id: StringName) -> int:
+	var commodity: Commodity = _commodity(commodity_id)
+	if commodity == null or commodity.unit_volume <= 0:
+		return 0
+	return free_volume() / commodity.unit_volume
+
+
+func _wallet_credits() -> int:
+	var wallet: Node = _wallet()
+	if wallet == null or not wallet.has_method(&"credits"):
+		return 0
+	return _variant_to_int(wallet.call(&"credits"))
 
 
 func _on_buy_requested(commodity_id: StringName, qty: int) -> void:
@@ -352,16 +450,6 @@ func _on_buy_requested(commodity_id: StringName, qty: int) -> void:
 
 func _on_sell_requested(commodity_id: StringName, qty: int) -> void:
 	try_sell(commodity_id, qty)
-
-
-## Unit buy price at the currently docked station's system.
-func _unit_buy_price(commodity: Commodity) -> int:
-	return BalanceEconomy.buy_price_at(commodity, _dock_system_id())
-
-
-## Unit sell price at the currently docked station's system.
-func _unit_sell_price(commodity: Commodity) -> int:
-	return BalanceEconomy.sell_price_at(commodity, _dock_system_id())
 
 
 func _record_legal_trade() -> void:

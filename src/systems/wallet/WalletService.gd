@@ -11,6 +11,8 @@ extends Node
 ## Undocked life-support upkeep drains credits via tick_upkeep (never negative).
 ## Free Haulers loan: borrow once while clear; job garnish; manual repay; grace
 ## dock standing hit only (no repossession, no game-over).
+## Emits EventBus.on_money_event on every real credit movement for the S2
+## telemetry log (docs/STEAM_PHASE_PLAN.md Phase S2).
 
 const CREDITS: StringName = BalanceEconomy.CREDITS_COMMAND
 const ACTION_SET: String = "set"
@@ -160,6 +162,7 @@ func tick_upkeep(delta_scaled: float, is_docked: bool) -> int:
 	var paid: int = mini(whole, _credits)
 	if paid > 0:
 		_set_credits(_credits - paid)
+		_emit_money(BalanceTelemetry.REASON_UPKEEP, -paid)
 	if paid < whole:
 		# Broke mid-tick: floor at 0 and drop leftover fractional remainder.
 		_upkeep_debt = 0.0
@@ -191,6 +194,7 @@ func borrow() -> int:
 	_debt_grace_docks_left = BalanceEconomy.GRACE_DOCKS
 	_debt_grace_hit_applied = false
 	_set_credits(_credits + BalanceEconomy.LOAN_PRINCIPAL)
+	_emit_money(BalanceEconomy.REASON_LOAN_BORROW, BalanceEconomy.LOAN_PRINCIPAL)
 	_emit_debt_changed()
 	return BalanceEconomy.LOAN_PRINCIPAL
 
@@ -207,6 +211,7 @@ func try_repay(amount: int = -1) -> int:
 	if paid <= 0:
 		return 0
 	_set_credits(_credits - paid)
+	_emit_money(BalanceEconomy.REASON_LOAN_REPAY, -paid)
 	_debt_owed -= paid
 	if _debt_owed <= 0:
 		_clear_debt_state()
@@ -230,8 +235,10 @@ func apply_job_pay_with_garnish(gross: int) -> int:
 			if _debt_owed <= 0:
 				_clear_debt_state()
 			_emit_debt_changed()
+			_emit_money(BalanceEconomy.REASON_LOAN_GARNISH, -garnish)
 	if net > 0:
 		_set_credits(_credits + net)
+		_emit_money(BalanceTelemetry.REASON_JOB_PAY, net)
 	return net
 
 
@@ -363,6 +370,14 @@ func charge_dock_fee(system_id: StringName, station_id: StringName = &"") -> int
 		paid = mini(fee, _credits)
 		if paid > 0:
 			_set_credits(_credits - paid)
+			_emit_money(
+				BalanceTelemetry.REASON_DOCK_FEE,
+				-paid,
+				{
+					BalanceTelemetry.DETAIL_KEY_STATION_ID: station_id,
+					BalanceTelemetry.DETAIL_KEY_SYSTEM_ID: system_id,
+				}
+			)
 	_note_dock_for_debt_grace()
 	return paid
 
@@ -403,6 +418,8 @@ func refuel_chunk() -> float:
 		cost = _ceil_credits(units * unit_rate)
 		if not try_spend(cost):
 			return 0.0
+	if cost > 0:
+		_emit_money(BalanceTelemetry.REASON_REFUEL, -cost)
 	_set_fuel(minf(BalanceEconomy.FUEL_MAX, _fuel + units))
 	return units
 
@@ -426,6 +443,7 @@ func repair_full() -> bool:
 		return true
 	if not try_spend(cost):
 		return false
+	_emit_money(BalanceTelemetry.REASON_REPAIR, -cost)
 	_set_condition(BalanceEconomy.CONDITION_MAX)
 	if was_crippled:
 		EventBus.on_player_repaired_from_cripple.emit()
@@ -657,6 +675,15 @@ func _set_condition(value: float) -> void:
 		EventBus.on_player_crippled.emit()
 
 
+## Tags a real credit movement for the S2 telemetry log. Reads `_credits`
+## after the mutation, so callers must apply the change first. Never call
+## this from `_set_credits` itself — that would double-log every path.
+func _emit_money(reason: StringName, delta: int, detail: Dictionary = {}) -> void:
+	if delta == 0:
+		return
+	EventBus.on_money_event.emit(reason, delta, _credits, detail)
+
+
 # --- Console ---------------------------------------------------------------
 
 
@@ -685,7 +712,11 @@ func _on_command_invoked(name_of_command: StringName, args: PackedStringArray) -
 		if not raw.is_valid_int():
 			_say("Credits must be a whole number.")
 			return
+		var before: int = _credits
 		set_credits(int(raw))
+		var delta: int = _credits - before
+		if delta != 0:
+			_emit_money(BalanceTelemetry.REASON_DEBUG_CREDITS_SET, delta)
 		_say(BalanceEconomy.CONSOLE_CREDITS_SET_FORMAT % _credits)
 		return
 	_say("Usage: %s" % usage())

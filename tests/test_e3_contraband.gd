@@ -11,6 +11,10 @@ const STATION_YARD: StringName = &"station_alpha_yard"
 const STATION_BETA: StringName = &"station_beta_hub"
 const MUNITIONS: StringName = &"commodity_munitions"
 const GRAIN: StringName = &"commodity_grain"
+## A legal good BOTH Reach docks keep a market row in. Since Steam S2 a station
+## only trades what its `stock_targets` list, and Alpha Port keeps no grain
+## market — so grain is the wrong control good for "legal things still trade".
+const ORE: StringName = &"commodity_ore"
 
 
 class FakeDock:
@@ -163,11 +167,12 @@ func test_cannot_buy_or_sell_munitions_at_reach_stations() -> void:
 		assert_false(cargo.try_sell(MUNITIONS, 1), "try_sell munitions blocked at %s" % station_id)
 		assert_eq(cargo.quantity(MUNITIONS), 2, "hold unchanged after blocked sell")
 
-		# Legal goods still trade at Reach.
-		assert_false(cargo.is_restricted_at_dock(GRAIN))
-		assert_true(cargo.can_buy(GRAIN, 1), "grain still buyable at Reach")
-		assert_true(cargo.try_buy(GRAIN, 1))
-		assert_eq(cargo.quantity(GRAIN), 1)
+		# Legal goods still trade at Reach — so the refusal above is the law, not
+		# a dock that simply keeps no market in the good.
+		assert_false(cargo.is_restricted_at_dock(ORE))
+		assert_true(cargo.can_buy(ORE, 1), "a legal good is still buyable at Reach")
+		assert_true(cargo.try_buy(ORE, 1))
+		assert_eq(cargo.quantity(ORE), 1)
 
 
 func test_can_trade_munitions_at_non_reach_dock() -> void:

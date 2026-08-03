@@ -15,10 +15,12 @@ what is inside a section.
 
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
-**`standing`** (A2), **`world_clock`** (S1), **`wallet`** (A5), **`cargo`** (B3),
-**`ship`** (E2.5), **`world`** (B2), **`mission`** (B2), and **`career`** (E4.6)
+**`standing`** (A2), **`world_clock`** (S1), **`market`** (S2), **`wallet`** (A5),
+**`cargo`** (B3), **`ship`** (E2.5), **`world`** (B2), **`mission`** (B2), and
+**`career`** (E4.6)
 maps. Missing `standing` means all-neutral content defaults. Missing
-`world_clock` means elapsed game time starts at zero. Missing `wallet` means
+`world_clock` means elapsed game time starts at zero. Missing `market` means
+every station market is re-seeded from its station profile. Missing `wallet` means
 starting credits/fuel/condition. Missing `cargo` means empty hold. Missing
 `ship` means Hauler only (starter owned, active Hauler). Missing `world` keeps
 the boot system/spawn. Missing `mission` means no active job. Missing `career`
@@ -57,6 +59,33 @@ S1 only persists the clock.
 Missing section → elapsed resets to 0. Negative / non-finite values → 0.
 Load does **not** emit bulk away-time bus events; TimeScale still resets to 1x
 on `on_save_loaded` independently.
+
+### Optional section: `market` (schema v1)
+
+Written by `MarketService.to_section()` / applied by `apply_section()` via
+`CareerSave` (S2). Always gathered when saving a career. No envelope version
+bump. Applied **immediately after `world_clock` and before `wallet`/`cargo`** —
+the market resolves its own step count against the restored elapsed time, and
+trade prices off the restored stocks.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `steps_done` | `int` | Market simulation steps applied since career start. Couples the market to the world clock so a load resumes mid-timeline instead of restarting it. |
+| `stocks` | `Dictionary` | Station id string → { commodity id string → `float` stock }. One entry per (station, commodity) the station keeps a market in. |
+| `shocks` | `Array` | Active temporary price modifiers. Each entry: `station`, `commodity`, `kind` (`strip`/`glut`), `magnitude` (`float`, signed), `expiry_seconds` (`float`, world-clock second it decays to nothing). |
+
+Missing section → every market re-seeded from station profiles at their
+`stock_targets`, step count zero. On load the section is layered **over** a
+fresh content seed, so:
+
+- Unknown station or commodity ids are **dropped**, not repaired.
+- Restored stocks clamp to `[0, capacity × SELL_OVERFILL_LIMIT]`.
+- `steps_done` clamps to `floor(elapsed_seconds / STEP_SECONDS)` — a restored
+  market can never be ahead of its own clock.
+- Shocks already past their expiry, or on ids that no longer exist, are dropped.
+
+Byte-determinism holds because stocks are plain finite floats and every code
+path that produces them is deterministic (no RNG anywhere in the market sim).
 
 ### Optional section: `wallet` (schema v1)
 

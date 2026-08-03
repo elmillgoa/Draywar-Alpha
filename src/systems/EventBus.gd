@@ -243,6 +243,22 @@ signal on_trade_completed(
 	side: StringName, commodity_id: StringName, quantity: int, credits_delta: int
 )
 
+## MarketService: a player trade moved a station's market for this commodity.
+signal on_market_changed(
+	station_id: StringName, commodity_id: StringName, stock: int, unit_buy_price: int
+)
+
+## MarketService: a catch-up batch of market sim steps finished (never per step).
+signal on_market_ticked(steps_applied: int, elapsed_seconds: float)
+
+## MarketService: a new one-line sector headline is available for the ticker.
+signal on_market_news(line: String)
+
+## Any money path: credits moved, tagged by activity for the telemetry log.
+signal on_money_event(
+	reason: StringName, credits_delta: int, credits_after: int, detail: Dictionary
+)
+
 ## CargoService: fee-charging dock found jurisdictional contraband (fine + standing done).
 signal on_contraband_seized(
 	station_id: StringName,

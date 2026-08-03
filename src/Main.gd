@@ -5,8 +5,8 @@ extends Node
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B2–B3
 ##
 ## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission /
-## Recovery / Wallet / Cargo / Ship services, boots play from the main menu, and
-## rebuilds the world on gate jumps.
+## Recovery / Wallet / Cargo / Ship / MoneyLog services, boots play from the
+## main menu, and rebuilds the world on gate jumps.
 
 const BOOT_BANNER: String = "Draywar Alpha — boot OK"
 
@@ -20,6 +20,7 @@ var _docking: DockingService = null
 var _gate_travel: GateTravelService = null
 var _wallet: WalletService = null
 var _cargo: CargoService = null
+var _money_log: MoneyLog = null
 var _ship_service: ShipService = null
 var _hud: FlightHUD = null
 var _station_menu: StationMenu = null
@@ -408,6 +409,10 @@ func _boot_play_session() -> void:
 	_wallet.name = "WalletService"
 	add_child(_wallet)
 
+	_money_log = MoneyLog.new()
+	_money_log.name = "MoneyLog"
+	add_child(_money_log)
+
 	_cargo = CargoService.new()
 	_cargo.name = "CargoService"
 	add_child(_cargo)
@@ -482,6 +487,9 @@ func _tear_down_play_session() -> void:
 	if _wallet != null:
 		_wallet.queue_free()
 		_wallet = null
+	if _money_log != null:
+		_money_log.queue_free()
+		_money_log = null
 	if _world != null:
 		# Ship and camera are children of the world.
 		_world.queue_free()

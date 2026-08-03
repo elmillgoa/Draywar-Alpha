@@ -9,5 +9,27 @@ id = &"station_gamma_outpost"
 display_name = "Gamma Outpost"
 system_id = &"system_gamma"
 controller_entity_id = &"entity_gamma_collective"
-position_offset = Vector3(0, 0, 0)
+position_offset = Vector3(350, 0, 480)
 flavor_line = "Fringe Collective freeport. Cheap scrap, hungry for grain."
+economy_role = &"refinery"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_grain": 220.0,
+&"commodity_rations": 160.0,
+&"commodity_ore": 180.0,
+&"commodity_scrap": 200.0,
+&"commodity_spare_parts": 80.0,
+&"commodity_munitions": 60.0,
+&"commodity_medical": 50.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_ore": 3.5,
+&"commodity_scrap": 2.5
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_grain": 0.85,
+&"commodity_rations": 0.85,
+&"commodity_medical": 1.05,
+&"commodity_spare_parts": 1.5,
+&"commodity_munitions": 2.2
+})
+market_scale = 1.0

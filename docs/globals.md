@@ -72,3 +72,11 @@ seconds and category subscribers (not world layout or standing).
 Player standing ledger for Entities and People. Everyone that needs standing
 queries this service; two writers would split truth; it holds only the standing
 maps (and console registration), not world layout or combat state.
+
+### `MarketService` -> `res://src/systems/market/MarketService.gd`
+
+Station stock and prices for the whole sector. Trade, cargo, jobs, the news
+ticker and the sector map all price against this one service; two writers would
+split truth about what a good costs and open a same-station money pump; it holds
+only market state (stocks, step count, shocks), not the hold, the wallet or
+world layout.

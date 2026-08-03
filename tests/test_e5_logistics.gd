@@ -53,12 +53,36 @@ func test_two_long_haul_routes_at_least_two_hops() -> void:
 	assert_gte(long_routes, 2, "≥2 courier templates need ≥2 gate hops")
 
 
-func test_trade_contrast_core_vs_zeta_grain() -> void:
-	var grain: Commodity = ContentLibrary.item(GRAIN) as Commodity
-	assert_ne(grain, null)
-	var buy_alpha: int = BalanceEconomy.buy_price_at(grain, SYSTEM_ALPHA)
-	var sell_zeta: int = BalanceEconomy.sell_price_at(grain, SYSTEM_ZETA)
-	assert_gt(sell_zeta, buy_alpha, "grain profitable Alpha buy → Zeta sell")
+## E5.4's claim is that the far spur is worth the haul. Since S2 that is a fact
+## about stock rather than a per-system multiplier: Zeta Spur is the thinnest
+## market in the sector (market_scale 0.5) and it pays for it.
+func test_trade_contrast_core_vs_zeta_spur() -> void:
+	assert_true(MarketService.trades(STATION_ZETA, GRAIN), "the spur keeps a grain market")
+	var cheapest_core_grain: int = 999999
+	for station_id: StringName in ContentLibrary.ids_in(BalanceMarket.STATION_CONTENT_CATEGORY):
+		if station_id == STATION_ZETA or not MarketService.trades(station_id, GRAIN):
+			continue
+		cheapest_core_grain = mini(
+			cheapest_core_grain, MarketService.unit_buy_price(station_id, GRAIN)
+		)
+	assert_lt(cheapest_core_grain, 999999, "the core must stock grain somewhere")
+	assert_gt(
+		MarketService.unit_buy_price(STATION_ZETA, GRAIN),
+		cheapest_core_grain,
+		"grain costs more out at the spur than at the cheapest core dock"
+	)
+
+	# And at least one good can actually be carried out there at a profit.
+	var paying_hauls: int = 0
+	for commodity_id: StringName in MarketService.traded_commodity_ids(STATION_ZETA):
+		var spur_pays: int = MarketService.unit_sell_price(STATION_ZETA, commodity_id)
+		for station_id: StringName in ContentLibrary.ids_in(BalanceMarket.STATION_CONTENT_CATEGORY):
+			if station_id == STATION_ZETA or not MarketService.trades(station_id, commodity_id):
+				continue
+			if MarketService.unit_buy_price(station_id, commodity_id) < spur_pays:
+				paying_hauls += 1
+				break
+	assert_gt(paying_hauls, 0, "at least one core → Zeta Spur haul must pay")
 
 
 func test_long_haul_accept_and_turn_in() -> void:

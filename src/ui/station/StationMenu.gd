@@ -13,10 +13,13 @@ const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
 const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
 const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
 const StationLoanUiScript = preload("res://src/ui/station/StationLoanUi.gd")
+const StationNewsUiScript = preload("res://src/ui/station/StationNewsUi.gd")
 
 var _panel: PanelContainer = null
 var _title: Label = null
 var _flavor_label: Label = null
+## One-line sector headline, pinned above the scrolling body (S2 ticker).
+var _news_label: Label = null
 var _scroll: ScrollContainer = null
 ## Dynamic accept-job buttons (one per offered template for the dock controller).
 var _jobs_box: VBoxContainer = null
@@ -73,6 +76,9 @@ func _ready() -> void:
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
 	EventBus.on_hull_purchased.connect(_on_hull_purchased)
 	EventBus.on_hull_changed.connect(_on_hull_changed)
+	EventBus.on_market_news.connect(_on_market_news)
+	EventBus.on_market_ticked.connect(_on_market_ticked)
+	EventBus.on_market_changed.connect(_on_market_changed)
 
 
 func _exit_tree() -> void:
@@ -97,6 +103,9 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_cargo_changed, _on_cargo_changed)
 	_disconnect(EventBus.on_hull_purchased, _on_hull_purchased)
 	_disconnect(EventBus.on_hull_changed, _on_hull_changed)
+	_disconnect(EventBus.on_market_news, _on_market_news)
+	_disconnect(EventBus.on_market_ticked, _on_market_ticked)
+	_disconnect(EventBus.on_market_changed, _on_market_changed)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -153,6 +162,10 @@ func _build_ui() -> void:
 	_flavor_label.text = ""
 	_flavor_label.visible = false
 	outer.add_child(_flavor_label)
+
+	# Sector headline above the scroll: a captain docking after a jump reads it
+	# without scrolling, which is the whole point of the S2 ticker.
+	_news_label = StationNewsUiScript.make_label(outer)
 
 	_status_label = Label.new()
 	_status_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
@@ -362,6 +375,7 @@ func _on_undocked(_station_id: StringName) -> void:
 	if _trade_denied_label != null:
 		_trade_denied_label.visible = false
 	visible = false
+	_refresh_news()
 
 
 func _set_status(text: String) -> void:
@@ -434,9 +448,9 @@ func _on_turn_in_job_pressed() -> void:
 			if attributed:
 				var pay: int = 0
 				if result.has(&"pay_credits"):
-					pay = _variant_to_int(result[&"pay_credits"])
+					pay = StationDockQueries.as_int(result[&"pay_credits"])
 				elif result.has("pay_credits"):
-					pay = _variant_to_int(result["pay_credits"])
+					pay = StationDockQueries.as_int(result["pay_credits"])
 				_set_status(BalanceEconomy.STATION_TURN_IN_OK_FORMAT % pay)
 				_refresh_all()
 				return
@@ -455,7 +469,7 @@ func _turn_in_block_reason() -> String:
 	var dest_id: StringName = &""
 	var service: Node = _mission_service_node()
 	if service != null and service.has_method(&"active_destination_station_id"):
-		dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
+		dest_id = StationDockQueries.as_name(service.call(&"active_destination_station_id"))
 	if not String(dest_id).is_empty() and dest_id != _docked_station_id:
 		return BalanceEconomy.STATION_TURN_IN_WRONG_STATION_FORMAT % _content_name(dest_id)
 	return BalanceEconomy.STATION_TURN_IN_FAILED
@@ -568,7 +582,7 @@ func _on_switch_hull_pressed() -> void:
 func _after_switch_hull(target: StringName) -> void:
 	var ships: Node = _ship_service()
 	if ships != null and ships.has_method(&"active_hull_id"):
-		var active: StringName = _variant_to_name(ships.call(&"active_hull_id"))
+		var active: StringName = StationDockQueries.as_name(ships.call(&"active_hull_id"))
 		if active == target:
 			_set_status(BalanceEconomy.STATION_SWITCH_OK_FORMAT % _content_name(target))
 		else:
@@ -641,7 +655,8 @@ func _on_entity_standing_changed(
 func _on_wallet_changed(_credits: int) -> void:
 	if visible:
 		_refresh_services()
-		_refresh_trade()
+		# Deferred: a trade moves credits from inside a row's pressed handler.
+		call_deferred(&"_refresh_trade")
 
 
 func _on_debt_changed(_debt_owed: int, _lender_id: StringName, _grace_docks_left: int) -> void:
@@ -661,7 +676,8 @@ func _on_condition_changed(_condition: float, _condition_max: float) -> void:
 
 func _on_cargo_changed() -> void:
 	if visible:
-		_refresh_trade()
+		# Deferred: a trade fires this from inside a row's pressed handler.
+		call_deferred(&"_refresh_trade")
 		_refresh_services()
 
 
@@ -676,11 +692,33 @@ func _on_hull_changed(_old_hull_id: StringName, _new_hull_id: StringName) -> voi
 		call_deferred(&"_refresh_trade")
 
 
+func _on_market_news(_line: String) -> void:
+	_refresh_news()
+
+
+func _on_market_ticked(_steps_applied: int, _elapsed_seconds: float) -> void:
+	if visible:
+		_refresh_news()
+		call_deferred(&"_refresh_trade")
+
+
+func _on_market_changed(
+	_station_id: StringName, _commodity_id: StringName, _stock: int, _unit_buy_price: int
+) -> void:
+	if visible:
+		call_deferred(&"_refresh_trade")
+
+
+func _refresh_news() -> void:
+	StationNewsUiScript.refresh(_news_label, visible)
+
+
 func _refresh_all() -> void:
 	_refresh_job_buttons()
 	_refresh_contacts_list()
 	_refresh_recovery_buttons()
 	_refresh_services()
+	_refresh_news()
 	_refresh_trade()
 
 
@@ -839,7 +877,6 @@ func _refresh_trade() -> void:
 	StationTradeUiScript.refresh(
 		_trade_box,
 		_trade_denied_label,
-		_dock_system_id(),
 		_cargo_service(),
 		visible,
 		_on_trade_buy_pressed,
@@ -847,12 +884,15 @@ func _refresh_trade() -> void:
 	)
 
 
-func _on_trade_buy_pressed(commodity_id: StringName) -> void:
-	EventBus.on_trade_buy_requested.emit(commodity_id, BalanceEconomy.TRADE_QTY_UNIT)
+func _on_trade_buy_pressed(commodity_id: StringName, units: int) -> void:
+	EventBus.on_trade_buy_requested.emit(commodity_id, units)
+	# Never rebuild the board from inside a row's own pressed handler (trap #11).
+	call_deferred(&"_refresh_trade")
 
 
-func _on_trade_sell_pressed(commodity_id: StringName) -> void:
-	EventBus.on_trade_sell_requested.emit(commodity_id, BalanceEconomy.TRADE_QTY_UNIT)
+func _on_trade_sell_pressed(commodity_id: StringName, units: int) -> void:
+	EventBus.on_trade_sell_requested.emit(commodity_id, units)
+	call_deferred(&"_refresh_trade")
 
 
 func _cargo_service() -> Node:
@@ -902,32 +942,11 @@ func _active_recovery_person() -> StringName:
 	if tree != null:
 		service = tree.get_first_node_in_group(&"recovery_service")
 	if service != null and service.has_method(&"active_chain_id"):
-		var chain_id: StringName = _variant_to_name(service.call(&"active_chain_id"))
+		var chain_id: StringName = StationDockQueries.as_name(service.call(&"active_chain_id"))
 		if not String(chain_id).is_empty() and ContentLibrary.has_item(chain_id):
 			var item: ContentItem = ContentLibrary.item(chain_id)
-			found = _variant_to_name(item.get("person_id"))
+			found = StationDockQueries.as_name(item.get("person_id"))
 	return found
-
-
-func _variant_to_name(value: Variant) -> StringName:
-	var result: StringName = &""
-	if typeof(value) == TYPE_STRING_NAME:
-		var as_name: StringName = value
-		result = as_name
-	elif typeof(value) == TYPE_STRING:
-		var as_text: String = value
-		result = StringName(as_text)
-	return result
-
-
-func _variant_to_int(value: Variant) -> int:
-	if typeof(value) == TYPE_INT:
-		var as_int: int = value
-		return as_int
-	if typeof(value) == TYPE_FLOAT:
-		var as_float: float = value
-		return int(as_float)
-	return 0
 
 
 func _group_bool(group: StringName, method: StringName) -> bool:
@@ -969,10 +988,6 @@ func _favor_person_for_dock() -> StringName:
 
 func _dock_controller() -> StringName:
 	return StationDockQueries.controller(_docked_station_id)
-
-
-func _dock_system_id() -> StringName:
-	return StationDockQueries.system_id(_docked_station_id)
 
 
 func _docked_station() -> Station:

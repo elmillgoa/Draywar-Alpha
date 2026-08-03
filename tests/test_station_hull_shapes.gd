@@ -15,6 +15,9 @@ func test_station_requires_system_and_controller() -> void:
 
 	station.system_id = &"system_alpha"
 	station.controller_entity_id = Station.CONTROLLER_NOBODY
+	# S2: a station also declares an economic identity and trades something.
+	station.economy_role = BalanceMarket.ROLE_TRADE_HUB
+	station.stock_targets = {&"commodity_grain": 100.0}
 	assert_eq(station.validation_errors().size(), 0)
 
 

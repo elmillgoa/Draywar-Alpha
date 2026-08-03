@@ -222,128 +222,50 @@ const CONTRABAND_SEIZE_ALL: bool = true
 ## Wallet / log reason tag for the fine (standing uses BalanceStanding.REASON_CONTRABAND).
 const REASON_CONTRABAND_FINE: StringName = &"contraband_fine"
 
-## Global sell multiplier (1.0 = base sell price). Layered under system modifiers.
-const STATION_SELL_BONUS: float = 1.0
-
-## Default buy/sell multiplier when a system has no row for a commodity.
-const TRADE_PRICE_MUL_DEFAULT: float = 1.0
-
-## Floor for resolved unit prices after modifiers (credits).
+## Floor for resolved unit prices after modifiers (credits). Mirrored by
+## `BalanceMarket.PRICE_FLOOR_CREDITS`, which is what the live market applies.
 const TRADE_PRICE_MIN: int = 1
 
-## Per-system buy multipliers: system_id → { commodity_id → float mul on base_buy }.
-## Static contrast only — not a dynamic economy (E1.4).
-##
-## Documented profitable player routes (buy_at_source < sell_at_dest):
-##   1) Grain Alpha → Gamma   (staple out to the fringe)
-##   2) Scrap Gamma → Alpha   (salvage / industrial reverse)
-##   3) Ore Gamma → Alpha     (raw ore into industry)
-##   4) Luxuries Alpha → Gamma (wealth goods outward)
-##   5) Munitions Beta → Gamma (arms from contested docks to lawless)
-##   6) Rations Alpha → Beta  (packaged food into contested space)
-## Same-station round-trips still lose (sell < buy at one dock).
-const TRADE_SYSTEM_BUY_MUL: Dictionary = {
-	&"system_alpha":
-	{
-		&"commodity_grain": 0.8,
-		&"commodity_rations": 0.8,
-		&"commodity_luxuries": 0.85,
-		&"commodity_scrap": 1.15,
-		&"commodity_ore": 1.2,
-		&"commodity_munitions": 1.1,
-	},
-	&"system_beta":
-	{
-		&"commodity_alloy": 0.85,
-		&"commodity_munitions": 0.8,
-		&"commodity_spare_parts": 0.9,
-		&"commodity_fuel_cells": 0.9,
-		&"commodity_medical": 1.15,
-		&"commodity_grain": 1.05,
-	},
-	&"system_gamma":
-	{
-		&"commodity_scrap": 0.7,
-		&"commodity_ore": 0.75,
-		&"commodity_grain": 1.25,
-		&"commodity_luxuries": 1.2,
-		&"commodity_medical": 1.15,
-		&"commodity_munitions": 1.15,
-	},
-	## E5.4 far spur — cheap scrap buy; expensive grain (core→spur route).
-	&"system_delta":
-	{
-		&"commodity_grain": 0.85,
-		&"commodity_spare_parts": 0.9,
-		&"commodity_scrap": 1.1,
-	},
-	&"system_epsilon":
-	{
-		&"commodity_munitions": 0.85,
-		&"commodity_alloy": 0.9,
-		&"commodity_medical": 1.1,
-	},
-	&"system_zeta":
-	{
-		&"commodity_scrap": 0.65,
-		&"commodity_ore": 0.7,
-		&"commodity_grain": 1.35,
-		&"commodity_luxuries": 1.3,
-		&"commodity_medical": 1.2,
-	},
-}
+# --- Trade row contract (CargoService.trade_row → station trade UI) ---------
+# One dictionary per commodity at the docked station: everything the row shows
+# and the caps that decide what the buttons may do. The UI reads these keys; it
+# never works a price or a cap out for itself (docs/economy_sim.md §8).
 
-## Per-system sell multipliers: system_id → { commodity_id → float mul on base_sell }.
-## Mirrors the buy table so the six documented routes stay profitable.
-const TRADE_SYSTEM_SELL_MUL: Dictionary = {
-	&"system_alpha":
-	{
-		&"commodity_grain": 0.8,
-		&"commodity_luxuries": 0.9,
-		&"commodity_scrap": 1.7,
-		&"commodity_ore": 1.55,
-		&"commodity_munitions": 1.1,
-	},
-	&"system_beta":
-	{
-		&"commodity_grain": 1.2,
-		&"commodity_fuel_cells": 1.25,
-		&"commodity_spare_parts": 1.2,
-		&"commodity_rations": 1.5,
-		&"commodity_medical": 1.1,
-		&"commodity_munitions": 0.95,
-	},
-	&"system_gamma":
-	{
-		&"commodity_grain": 2.0,
-		&"commodity_medical": 1.5,
-		&"commodity_luxuries": 1.55,
-		&"commodity_munitions": 1.55,
-		&"commodity_scrap": 0.85,
-		&"commodity_ore": 0.85,
-	},
-	## E5.4: grain sells high at Zeta; scrap sells high back at Alpha (existing).
-	&"system_delta":
-	{
-		&"commodity_grain": 1.05,
-		&"commodity_spare_parts": 1.15,
-		&"commodity_scrap": 1.2,
-	},
-	&"system_epsilon":
-	{
-		&"commodity_munitions": 1.1,
-		&"commodity_fuel_cells": 1.2,
-		&"commodity_medical": 1.15,
-	},
-	&"system_zeta":
-	{
-		&"commodity_grain": 2.2,
-		&"commodity_medical": 1.55,
-		&"commodity_luxuries": 1.6,
-		&"commodity_scrap": 0.8,
-		&"commodity_ore": 0.8,
-	},
-}
+## True when the docked station keeps a market in this commodity at all.
+const TRADE_ROW_KEY_TRADED: StringName = &"traded"
+
+## Whole units on this station's shelf right now.
+const TRADE_ROW_KEY_STOCK: StringName = &"stock"
+
+## Credits for the next single unit bought here.
+const TRADE_ROW_KEY_UNIT_BUY: StringName = &"unit_buy"
+
+## Credits paid for the next single unit sold here.
+const TRADE_ROW_KEY_UNIT_SELL: StringName = &"unit_sell"
+
+## The market's own plain-language line explaining this price.
+const TRADE_ROW_KEY_REASON: StringName = &"reason"
+
+## Most units the player may buy here now — market cap, hold and wallet.
+const TRADE_ROW_KEY_MAX_BUY: StringName = &"max_buy"
+
+## Most units the player may sell here now — market cap and what is held.
+const TRADE_ROW_KEY_MAX_SELL: StringName = &"max_sell"
+
+## Which of the three limits actually bit on the buy side (TRADE_LIMIT_*).
+const TRADE_ROW_KEY_BUY_LIMIT: StringName = &"buy_limit"
+
+## Which limit bit on the sell side (TRADE_LIMIT_*).
+const TRADE_ROW_KEY_SELL_LIMIT: StringName = &"sell_limit"
+
+## Limit tag: the station's own weight caps stopped the trade.
+const TRADE_LIMIT_MARKET: StringName = &"market"
+
+## Limit tag: the cargo hold stopped it (full when buying, empty when selling).
+const TRADE_LIMIT_HOLD: StringName = &"hold"
+
+## Limit tag: the wallet stopped it.
+const TRADE_LIMIT_CREDITS: StringName = &"credits"
 
 # --- Save (optional sections, schema v1) -----------------------------------
 
@@ -536,13 +458,42 @@ const STATION_RECOVERY_DRAMA_HINT_FORMAT: String = (
 	"%s still deals under the table. " + "Ask a favor, then take their work."
 )
 
-## Trade row copy.
-const STATION_TRADE_BUY_LABEL: String = "Buy 1"
-const STATION_TRADE_SELL_LABEL: String = "Sell 1"
-const STATION_TRADE_LINE_FORMAT: String = "%s  buy %d  sell %d  hold %d"
+## Trade row headline. Args: display name, stock here, unit buy, unit sell, hold qty.
+const STATION_TRADE_LINE_FORMAT: String = "%s   stock %d   buy %d   sell %d   hold %d"
 ## Trade row when commodity is restricted for the dock controller (E3.3).
 ## Args: display name, hold qty.
 const STATION_TRADE_RESTRICTED_FORMAT: String = "%s  RESTRICTED here  hold %d"
+## Trade row for a good this station keeps no market in. Args: name, hold qty.
+const STATION_TRADE_NO_MARKET_FORMAT: String = "%s  —  no market here   hold %d"
+
+## Buy / sell buttons carry the live total for the chosen quantity, straight
+## from the quote: the marginal ladder means it is not unit price × quantity
+## (docs/economy_sim.md §5). Args: units, credits.
+const STATION_TRADE_BUY_FORMAT: String = "Buy %d — %d c"
+const STATION_TRADE_SELL_FORMAT: String = "Sell %d — %d c"
+
+## Fill-the-quantity buttons beside the amount box.
+const STATION_TRADE_MAX_BUY_LABEL: String = "Max buy"
+const STATION_TRADE_MAX_SELL_LABEL: String = "Max sell"
+
+## Why a trade is capped below the amount asked for. Args: the cap.
+## Which one shows is decided by the TRADE_LIMIT_* tag on the trade row, so
+## "the shelf is thin" and "your hold is full" never get confused for each other.
+const STATION_TRADE_CAP_MARKET_FORMAT: String = "The shelf only has %d."
+const STATION_TRADE_CAP_HOLD_FORMAT: String = "You cannot carry more than %d."
+const STATION_TRADE_CAP_CREDITS_FORMAT: String = "You can only afford %d."
+const STATION_TRADE_CAP_SELL_MARKET_FORMAT: String = "This dock will only take %d."
+const STATION_TRADE_CAP_SELL_HOLD_FORMAT: String = "You are only carrying %d."
+
+## Same three reasons when the cap is zero — a count reads wrong there.
+const STATION_TRADE_NONE_MARKET: String = "Nothing left on the shelf."
+const STATION_TRADE_NONE_HOLD: String = "Your hold is full."
+const STATION_TRADE_NONE_CREDITS: String = "You cannot afford any."
+const STATION_TRADE_NONE_SELL_MARKET: String = "This dock will not take any more."
+const STATION_TRADE_NONE_SELL_HOLD: String = "You are not carrying any."
+
+## One-line sector headline on the station screen (S2 news ticker). Arg: line.
+const STATION_NEWS_PREFIX_FORMAT: String = "SECTOR — %s"
 ## Dock inspection feedback (console / toast). Args: station name, fine, entity name.
 const CONSOLE_CONTRABAND_SEIZED_FORMAT: String = (
 	"Contraband seized at %s — fine %d credits. " + "Standing fell with %s."
@@ -577,6 +528,20 @@ const STATION_TRADE_BUTTON_WIDTH: float = 72.0
 const STATION_SECTION_SPACER: float = 6.0
 const STATION_UNDOCK_SPACER: float = 10.0
 
+## Quantity control (S2 trade UI — one-unit-per-click is gone).
+## The amount box accepts more than the station will allow on purpose: typing
+## 100 into a shelf that holds 42 is how the row gets to say why.
+const STATION_TRADE_QTY_MIN: float = 1.0
+const STATION_TRADE_QTY_MAX: float = 999.0
+const STATION_TRADE_QTY_STEP: float = 1.0
+const STATION_TRADE_QTY_WIDTH: float = 92.0
+const STATION_TRADE_MAX_BUTTON_WIDTH: float = 86.0
+const STATION_TRADE_ACTION_BUTTON_WIDTH: float = 150.0
+## Gap under each trade row so rows read as separate cards, not one wall.
+const STATION_TRADE_ROW_SPACER: float = 8.0
+## Reason and cap lines are quieter than the headline they explain.
+const STATION_TRADE_SMALL_FONT_SIZE: int = 12
+
 # --- Console ---------------------------------------------------------------
 
 const CREDITS_COMMAND: StringName = &"credits"
@@ -597,7 +562,14 @@ const PERCENT_SCALE: float = 100.0
 ## Refuel cost rounding ceiling uses this unit floor when credits are partial.
 const REFUEL_MIN_UNITS: float = 0.01
 
-# --- Trade price resolution (B5 system contrast) ---------------------------
+# --- Standing-tier service multipliers (E1.5) ------------------------------
+#
+# Trade prices are NOT here any more. Before Steam S2 this file carried a
+# per-system buy/sell multiplier table and resolved unit prices from it; since
+# S2 every price comes from stock at a station via MarketService
+# (docs/economy_sim.md §1, §4). The tables were deleted rather than left as a
+# fallback: a second source of truth for what a good costs is exactly the split
+# that opens a same-station money pump.
 
 
 ## Dock fee standing multiplier for a display tier id (StandingService.tier_for).
@@ -630,57 +602,6 @@ static func service_repair_denied_for_tier(tier: StringName) -> bool:
 ## True when buy/sell is refused at this controller standing tier.
 static func trade_denied_for_tier(tier: StringName) -> bool:
 	return service_repair_denied_for_tier(tier)
-
-
-## Buy multiplier for a commodity in a system (1.0 when unlisted).
-static func trade_buy_mul(system_id: StringName, commodity_id: StringName) -> float:
-	return _trade_mul_from(TRADE_SYSTEM_BUY_MUL, system_id, commodity_id)
-
-
-## Sell multiplier for a commodity in a system (1.0 when unlisted).
-static func trade_sell_mul(system_id: StringName, commodity_id: StringName) -> float:
-	return _trade_mul_from(TRADE_SYSTEM_SELL_MUL, system_id, commodity_id)
-
-
-## Credits to buy one unit at this system (min TRADE_PRICE_MIN).
-static func buy_price_at(commodity: Commodity, system_id: StringName) -> int:
-	if commodity == null:
-		return TRADE_PRICE_MIN
-	var mul: float = trade_buy_mul(system_id, commodity.id)
-	var base: float = float(commodity.base_buy_price)
-	return maxi(TRADE_PRICE_MIN, int(roundf(base * mul)))
-
-
-## Credits paid for selling one unit at this system (min TRADE_PRICE_MIN).
-static func sell_price_at(commodity: Commodity, system_id: StringName) -> int:
-	if commodity == null:
-		return TRADE_PRICE_MIN
-	var mul: float = trade_sell_mul(system_id, commodity.id) * STATION_SELL_BONUS
-	var base: float = float(commodity.base_sell_price)
-	return maxi(TRADE_PRICE_MIN, int(roundf(base * mul)))
-
-
-static func _trade_mul_from(
-	table: Dictionary, system_id: StringName, commodity_id: StringName
-) -> float:
-	if String(system_id).is_empty() or String(commodity_id).is_empty():
-		return TRADE_PRICE_MUL_DEFAULT
-	if not table.has(system_id):
-		return TRADE_PRICE_MUL_DEFAULT
-	var row_raw: Variant = table[system_id]
-	if typeof(row_raw) != TYPE_DICTIONARY:
-		return TRADE_PRICE_MUL_DEFAULT
-	var row: Dictionary = row_raw
-	if not row.has(commodity_id):
-		return TRADE_PRICE_MUL_DEFAULT
-	var mul_raw: Variant = row[commodity_id]
-	if typeof(mul_raw) == TYPE_FLOAT:
-		var as_float: float = mul_raw
-		return as_float
-	if typeof(mul_raw) == TYPE_INT:
-		var as_int: int = mul_raw
-		return float(as_int)
-	return TRADE_PRICE_MUL_DEFAULT
 
 
 # --- Performance densify (E2.6 / E6.4) -------------------------------------

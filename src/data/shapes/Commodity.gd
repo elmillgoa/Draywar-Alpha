@@ -44,6 +44,22 @@ func validation_errors() -> PackedStringArray:
 		problems.append("`base_buy_price` must be greater than zero.")
 	if base_sell_price <= 0:
 		problems.append("`base_sell_price` must be greater than zero.")
+	if base_sell_price >= base_buy_price:
+		problems.append(
+			(
+				(
+					"`base_sell_price` (%d) must be below `base_buy_price` (%d). "
+					% [base_sell_price, base_buy_price]
+				)
+				+ (
+					"A station must never pay more for a unit than it charges for one, "
+					+ "or buying and selling at the same dock prints credits — the market "
+					+ "sim prices both sides off the same stock ladder, so this one "
+					+ "content rule is what makes a same-station round trip a guaranteed "
+					+ "loss instead of a money pump (docs/economy_sim.md §5)."
+				)
+			)
+		)
 	if unit_volume <= 0:
 		problems.append("`unit_volume` must be greater than zero.")
 

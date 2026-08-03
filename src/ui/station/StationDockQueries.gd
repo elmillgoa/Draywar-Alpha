@@ -6,6 +6,30 @@ extends RefCounted
 ## Keeps StationMenu under the file-length lint cap without changing behavior.
 
 
+## Variant → StringName for values arriving from `Object.get` / `Object.call`,
+## where the engine hands back an untyped Variant and strict typing needs a name.
+static func as_name(value: Variant) -> StringName:
+	var result: StringName = &""
+	if typeof(value) == TYPE_STRING_NAME:
+		var name_value: StringName = value
+		result = name_value
+	elif typeof(value) == TYPE_STRING:
+		var text_value: String = value
+		result = StringName(text_value)
+	return result
+
+
+## Variant → int for the same reason (a service may answer int or float).
+static func as_int(value: Variant) -> int:
+	if typeof(value) == TYPE_INT:
+		var int_value: int = value
+		return int_value
+	if typeof(value) == TYPE_FLOAT:
+		var float_value: float = value
+		return int(float_value)
+	return 0
+
+
 static func station_resource(station_id: StringName) -> Station:
 	if String(station_id).is_empty() or not ContentLibrary.has_item(station_id):
 		return null

@@ -11,3 +11,23 @@ system_id = &"system_delta"
 controller_entity_id = &"entity_reach_authority"
 position_offset = Vector3(-400, 0, 240)
 flavor_line = "Yard berth off the main Delta pad — spare crates and quiet Authority clerks."
+economy_role = &"industrial"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_grain": 220.0,
+&"commodity_ore": 180.0,
+&"commodity_scrap": 200.0,
+&"commodity_alloy": 90.0,
+&"commodity_spare_parts": 80.0,
+&"commodity_fuel_cells": 110.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_spare_parts": 4.0,
+&"commodity_alloy": 4.0
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_ore": 1.2,
+&"commodity_scrap": 1.8,
+&"commodity_grain": 0.85,
+&"commodity_fuel_cells": 1.4
+})
+market_scale = 1.2

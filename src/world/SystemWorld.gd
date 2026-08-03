@@ -101,9 +101,23 @@ func gate_positions() -> Dictionary[StringName, Vector3]:
 	return gate_world_positions.duplicate()
 
 
-## Where the player should spawn relative to the station anchor.
+## Where the player should spawn: the current system's first station's real
+## world position plus the spawn offset, so the player always starts near a
+## dock now that no station sits on the system anchor (docs/economy_sim.md
+## §3). Falls back to the anchor when the system has no stations.
 func player_spawn_position() -> Vector3:
+	var first_station_id: StringName = _first_station_id()
+	if first_station_id != &"" and station_world_positions.has(first_station_id):
+		return station_world_positions[first_station_id] + BalanceFlight.PLAYER_SPAWN_OFFSET
 	return BalanceFlight.STATION_POSITION + BalanceFlight.PLAYER_SPAWN_OFFSET
+
+
+## First station id declared by the current system, or empty if it has none.
+func _first_station_id() -> StringName:
+	var system: StarSystem = _load_system(system_id)
+	if system == null or system.station_ids.is_empty():
+		return &""
+	return system.station_ids[0]
 
 
 ## Arrival pose after a jump into this system (near the return gate if any).

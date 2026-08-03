@@ -73,24 +73,53 @@ func test_commodities_budget_and_positive_prices() -> void:
 		assert_ne(commodity, null)
 		assert_gt(commodity.base_buy_price, 0)
 		assert_gt(commodity.base_sell_price, 0)
-		var buy_a: int = BalanceEconomy.buy_price_at(commodity, SYSTEM_ALPHA)
-		var sell_a: int = BalanceEconomy.sell_price_at(commodity, SYSTEM_ALPHA)
-		assert_gte(buy_a, BalanceEconomy.TRADE_PRICE_MIN)
-		assert_gte(sell_a, BalanceEconomy.TRADE_PRICE_MIN)
+		# Since S2 a price only exists at a dock that keeps a market in the good,
+		# so this checks the live quotes rather than a table keyed by system.
+		var traded_anywhere: int = 0
+		for station_id: StringName in ContentLibrary.ids_in(BalanceMarket.STATION_CONTENT_CATEGORY):
+			if not MarketService.trades(station_id, id):
+				continue
+			traded_anywhere += 1
+			assert_gte(MarketService.unit_buy_price(station_id, id), BalanceEconomy.TRADE_PRICE_MIN)
+			assert_gte(
+				MarketService.unit_sell_price(station_id, id), BalanceEconomy.TRADE_PRICE_MIN
+			)
+		assert_gt(traded_anywhere, 0, "%s must be traded at some dock" % id)
 
 
-func test_grain_sell_price_differs_by_system() -> void:
-	var grain: Commodity = ContentLibrary.item(GRAIN) as Commodity
-	assert_ne(grain, null)
-	var sell_alpha: int = BalanceEconomy.sell_price_at(grain, SYSTEM_ALPHA)
-	var sell_beta: int = BalanceEconomy.sell_price_at(grain, SYSTEM_BETA)
-	var sell_gamma: int = BalanceEconomy.sell_price_at(grain, SYSTEM_GAMMA)
-	assert_ne(sell_alpha, sell_gamma, "grain should pay differently Alpha vs Gamma")
-	assert_gt(sell_gamma, sell_alpha, "fringe pays more for grain than Authority port")
-	assert_ne(sell_alpha, sell_beta)
-	var buy_alpha: int = BalanceEconomy.buy_price_at(grain, SYSTEM_ALPHA)
-	var buy_gamma: int = BalanceEconomy.buy_price_at(grain, SYSTEM_GAMMA)
-	assert_lt(buy_alpha, buy_gamma, "grain cheaper to buy at Alpha than Gamma")
+## Was "grain sells differently by system" against a static per-system table.
+## Same claim, live model: grain pays more where it is scarce than where it is
+## grown, and it is cheapest to buy where there is most of it.
+func test_grain_pays_more_where_it_is_scarce_than_where_it_is_grown() -> void:
+	var fullest: StringName = &""
+	var emptiest: StringName = &""
+	var most: float = -1.0
+	var least: float = 999999.0
+	for station_id: StringName in ContentLibrary.ids_in(BalanceMarket.STATION_CONTENT_CATEGORY):
+		if not MarketService.trades(station_id, GRAIN):
+			continue
+		var target: float = MarketService.target_stock(station_id, GRAIN)
+		if target <= 0.0:
+			continue
+		var fill: float = MarketService.stock_exact(station_id, GRAIN) / target
+		if fill > most:
+			most = fill
+			fullest = station_id
+		if fill < least:
+			least = fill
+			emptiest = station_id
+	assert_false(String(fullest).is_empty(), "some dock stocks grain")
+	assert_ne(fullest, emptiest, "grain must not sit at the same level sector-wide")
+	assert_lt(
+		MarketService.unit_buy_price(fullest, GRAIN),
+		MarketService.unit_buy_price(emptiest, GRAIN),
+		"grain is cheapest to buy where there is most of it"
+	)
+	assert_lt(
+		MarketService.unit_sell_price(fullest, GRAIN),
+		MarketService.unit_sell_price(emptiest, GRAIN),
+		"and the hungry dock pays the most for it"
+	)
 
 
 func test_recovery_chain_and_station_surfaces_favor_person() -> void:

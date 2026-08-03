@@ -940,6 +940,65 @@ A legal buy or sell finished; credits and cargo already updated.
 **Emitted by** `CargoService`.
 **Listened to by** (debug / future sheet money event; optional).
 
+`MarketService` is a new autoload landing in this phase (S2) — it does not yet
+exist elsewhere in the tree you can see, but the four signals below are its
+contract with the rest of the game.
+
+### `on_market_changed(station_id: StringName, commodity_id: StringName, stock: int, unit_buy_price: int)`
+
+A player trade moved a station's market for this commodity.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station whose market moved. |
+| `commodity_id` | `StringName` | Commodity content id. |
+| `stock` | `int` | Station's whole-unit stock after the trade. |
+| `unit_buy_price` | `int` | New price for one more unit. |
+
+**Emitted by** `MarketService` only when a player trade commits — never during
+simulation ticks.
+**Listened to by** the station trade UI.
+
+### `on_market_ticked(steps_applied: int, elapsed_seconds: float)`
+
+A catch-up batch of market sim steps finished bringing the market in line with
+`WorldClock`. One emit per batch, not per step.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `steps_applied` | `int` | Sim steps applied in this batch. |
+| `elapsed_seconds` | `float` | World clock total elapsed seconds at that moment. |
+
+**Emitted by** `MarketService` after it runs pending sim steps to catch up with
+`WorldClock`. One emit per batch whatever the batch size — a 10,000-step
+advance still produces a single emission.
+**Listened to by** station UI and the news ticker.
+
+### `on_market_news(line: String)`
+
+A new one-line sector headline is available for the ticker.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `line` | `String` | Headline text. |
+
+**Emitted by** `MarketService` when the headline changes.
+**Listened to by** the station menu news ticker.
+
+### `on_money_event(reason: StringName, credits_delta: int, credits_after: int, detail: Dictionary)`
+
+Any money path: credits moved, tagged by activity for the telemetry log.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `reason` | `StringName` | Activity tag (trade buy/sell, upkeep, dock fee, refuel, repair, loan, fine, job pay). |
+| `credits_delta` | `int` | Signed credit change. |
+| `credits_after` | `int` | Credit balance after the change. |
+| `detail` | `Dictionary` | Optional context (commodity id, units, unit price, station id, system id); may be empty. |
+
+**Emitted by** `WalletService` and `CargoService` on every credit movement.
+**Listened to by** the money telemetry log.
+
 ### `on_contraband_seized(station_id: StringName, entity_id: StringName, commodity_ids: PackedStringArray, fine_paid: int, standing_delta: float)`
 
 Fee-charging dock inspection found goods restricted for the station controller.

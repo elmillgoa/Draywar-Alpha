@@ -9,5 +9,25 @@ id = &"station_delta_port"
 display_name = "Delta Port"
 system_id = &"system_delta"
 controller_entity_id = &"entity_reach_authority"
-position_offset = Vector3(0, 0, 0)
+position_offset = Vector3(180, 0, 560)
 flavor_line = "Authority secondary corridor pad. Clean freights and sealed manifests."
+economy_role = &"agricultural"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_grain": 220.0,
+&"commodity_rations": 160.0,
+&"commodity_alloy": 90.0,
+&"commodity_spare_parts": 80.0,
+&"commodity_fuel_cells": 110.0,
+&"commodity_medical": 50.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_grain": 6.0,
+&"commodity_rations": 4.5
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_spare_parts": 1.5,
+&"commodity_fuel_cells": 1.4,
+&"commodity_medical": 1.05,
+&"commodity_alloy": 1.6
+})
+market_scale = 1.4

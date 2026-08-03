@@ -1,21 +1,44 @@
 class_name StationTradeUi
 extends RefCounted
 
-## Trade list rebuild for StationMenu (keeps menu under file-length lint).
+## Station trade board — Steam S2.
+##
+## Implements: docs/STEAM_PHASE_PLAN.md Phase S2 + §5.5, docs/economy_sim.md §8
+##
+## Builds one StationTradeRow per commodity and keeps the Hostile/Hated
+## trade-denied banner. The board is **station-keyed, not system-keyed**: it
+## asks the docked CargoService, which asks MarketService about this dock, so
+## two docks in one system show different stock and different prices.
+##
+## Rows are grouped so the board reads top-down: what can be traded here first,
+## then anything this dock's controller restricts (E3.3), then goods this dock
+## keeps no market in at all. Within a group the order is content order, which
+## never moves — a list that re-sorted itself as prices moved would throw the
+## captain's eye off the row they were working, and would also throw away the
+## amount they had typed into it.
+##
+## When the line-up has not changed, existing rows are refreshed in place rather
+## than rebuilt. That keeps the typed amount alive across a trade — press Buy 10
+## twice and watch the price climb — and it means no Control is ever freed from
+## inside its own pressed handler (docs/traps.md #11).
 
 
 static func clear_rows(trade_box: VBoxContainer) -> void:
 	if trade_box == null:
 		return
+	var doomed: Array[Node] = []
 	for child: Node in trade_box.get_children():
+		doomed.append(child)
+	for child: Node in doomed:
+		trade_box.remove_child(child)
 		child.queue_free()
 
 
-## Rebuild commodity buy/sell rows. Callables receive commodity_id: StringName.
+## Rebuild or refresh the trade rows. `on_buy` and `on_sell` are called with
+## (commodity_id: StringName, units: int).
 static func refresh(
 	trade_box: VBoxContainer,
 	denied_label: Label,
-	system_id: StringName,
 	cargo: Node,
 	menu_visible: bool,
 	on_buy: Callable,
@@ -23,19 +46,37 @@ static func refresh(
 ) -> void:
 	if trade_box == null:
 		return
-	clear_rows(trade_box)
 	if denied_label != null:
 		denied_label.visible = false
 	if not menu_visible:
+		clear_rows(trade_box)
 		return
 	var trade_ok: bool = true
 	if cargo != null and cargo.has_method(&"trade_allowed_at_dock"):
 		trade_ok = cargo.call(&"trade_allowed_at_dock") == true
 	if not trade_ok:
+		clear_rows(trade_box)
 		if denied_label != null:
 			denied_label.text = BalanceEconomy.STATION_TRADE_DENIED_MESSAGE
 			denied_label.visible = true
 		return
+	var wanted: Array[StringName] = row_order(cargo)
+	if _rows_match(trade_box, wanted):
+		_refresh_in_place(trade_box)
+		return
+	clear_rows(trade_box)
+	for commodity_id: StringName in wanted:
+		var row: StationTradeRow = StationTradeRow.new()
+		trade_box.add_child(row)
+		row.setup(commodity_id, cargo, on_buy, on_sell)
+
+
+## Commodity ids in board order: tradable here, then restricted here, then goods
+## this dock keeps no market in.
+static func row_order(cargo: Node) -> Array[StringName]:
+	var tradable: Array[StringName] = []
+	var restricted: Array[StringName] = []
+	var no_market: Array[StringName] = []
 	for commodity_id: StringName in ContentLibrary.ids_in(
 		BalanceEconomy.COMMODITY_CONTENT_CATEGORY
 	):
@@ -44,64 +85,50 @@ static func refresh(
 		var item: ContentItem = ContentLibrary.item(commodity_id)
 		if not (item is Commodity):
 			continue
-		var commodity: Commodity = item as Commodity
-		var hold: int = 0
-		if cargo != null and cargo.has_method(&"quantity"):
-			hold = _variant_to_int(cargo.call(&"quantity", commodity_id))
-		var restricted: bool = false
-		if cargo != null and cargo.has_method(&"is_restricted_at_dock"):
-			restricted = cargo.call(&"is_restricted_at_dock", commodity_id) == true
-		var buy_price: int = BalanceEconomy.buy_price_at(commodity, system_id)
-		var sell_price: int = BalanceEconomy.sell_price_at(commodity, system_id)
-		var row: HBoxContainer = HBoxContainer.new()
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		trade_box.add_child(row)
-
-		var line: Label = Label.new()
-		line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		if restricted:
-			line.text = (
-				BalanceEconomy.STATION_TRADE_RESTRICTED_FORMAT % [commodity.display_name, hold]
-			)
+		if _cargo_says(cargo, &"is_restricted_at_dock", commodity_id):
+			restricted.append(commodity_id)
+		elif _trades_here(cargo, commodity_id):
+			tradable.append(commodity_id)
 		else:
-			line.text = (
-				BalanceEconomy.STATION_TRADE_LINE_FORMAT
-				% [commodity.display_name, buy_price, sell_price, hold]
-			)
-		row.add_child(line)
-
-		var buy_btn: Button = Button.new()
-		buy_btn.text = BalanceEconomy.STATION_TRADE_BUY_LABEL
-		buy_btn.custom_minimum_size = Vector2(
-			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
-		)
-		var can_buy: bool = false
-		if not restricted and cargo != null and cargo.has_method(&"can_buy"):
-			can_buy = cargo.call(&"can_buy", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
-		buy_btn.disabled = not can_buy
-		buy_btn.pressed.connect(on_buy.bind(commodity_id))
-		row.add_child(buy_btn)
-
-		var sell_btn: Button = Button.new()
-		sell_btn.text = BalanceEconomy.STATION_TRADE_SELL_LABEL
-		sell_btn.custom_minimum_size = Vector2(
-			BalanceEconomy.STATION_TRADE_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
-		)
-		var can_sell: bool = false
-		if not restricted and cargo != null and cargo.has_method(&"can_sell"):
-			can_sell = cargo.call(&"can_sell", commodity_id, BalanceEconomy.TRADE_QTY_UNIT) == true
-		sell_btn.disabled = not can_sell
-		sell_btn.pressed.connect(on_sell.bind(commodity_id))
-		row.add_child(sell_btn)
+			no_market.append(commodity_id)
+	var out: Array[StringName] = []
+	out.append_array(tradable)
+	out.append_array(restricted)
+	out.append_array(no_market)
+	return out
 
 
-static func _variant_to_int(value: Variant) -> int:
-	if typeof(value) == TYPE_INT:
-		var as_int: int = value
-		return as_int
-	if typeof(value) == TYPE_FLOAT:
-		var as_float: float = value
-		return int(as_float)
-	return 0
+static func _trades_here(cargo: Node, commodity_id: StringName) -> bool:
+	if cargo == null or not cargo.has_method(&"trade_row"):
+		return false
+	var raw: Variant = cargo.call(&"trade_row", commodity_id)
+	if typeof(raw) != TYPE_DICTIONARY:
+		return false
+	var row: Dictionary = raw
+	if not row.has(BalanceEconomy.TRADE_ROW_KEY_TRADED):
+		return false
+	return row[BalanceEconomy.TRADE_ROW_KEY_TRADED] == true
+
+
+static func _cargo_says(cargo: Node, method: StringName, commodity_id: StringName) -> bool:
+	if cargo == null or not cargo.has_method(method):
+		return false
+	return cargo.call(method, commodity_id) == true
+
+
+static func _rows_match(trade_box: VBoxContainer, wanted: Array[StringName]) -> bool:
+	var children: Array[Node] = trade_box.get_children()
+	if children.size() != wanted.size():
+		return false
+	for index: int in children.size():
+		var row: StationTradeRow = children[index] as StationTradeRow
+		if row == null or row.row_commodity_id() != wanted[index]:
+			return false
+	return true
+
+
+static func _refresh_in_place(trade_box: VBoxContainer) -> void:
+	for child: Node in trade_box.get_children():
+		var row: StationTradeRow = child as StationTradeRow
+		if row != null:
+			row.refresh()
