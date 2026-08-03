@@ -154,12 +154,25 @@ func test_loadout_save_round_trip() -> void:
 	assert_true(ships.install_equipment(EQUIP_CARGO_STRAPS))
 	var section: Dictionary = ships.to_section()
 	assert_true(section.has(BalanceFlight.SAVE_KEY_LOADOUTS))
+	var light: Weapon = ContentLibrary.item(WEAPON_LIGHT) as Weapon
+	var armed_damage: float = ships.effective_weapon_damage()
+	assert_almost_eq(armed_damage, light.damage, TOLERANCE)
 
 	ships.reset()
 	assert_eq(ships.installed_weapons()[0], BalanceOutfit.EMPTY_SLOT)
+	var baseline_after_reset: float = ships.effective_weapon_damage()
+	assert_ne(baseline_after_reset, armed_damage)
+
+	var loadout_signals: Array = []
+	EventBus.on_loadout_changed.connect(
+		func(hull_id: StringName) -> void: loadout_signals.append(hull_id)
+	)
 	ships.apply_section(section)
 	assert_eq(ships.installed_weapons()[0], WEAPON_LIGHT)
 	assert_true(ships.installed_equipment().has(EQUIP_CARGO_STRAPS))
+	# Same active hull id must still re-arm effective fire stats after load.
+	assert_almost_eq(ships.effective_weapon_damage(), light.damage, TOLERANCE)
+	assert_gt(loadout_signals.size(), 0, "apply_section must emit on_loadout_changed")
 
 
 func test_fighter_weapon_ladder_three_tiers() -> void:
@@ -182,6 +195,30 @@ func test_money_sink_fighter_plus_top_weapon() -> void:
 	var total: int = BalanceEconomy.FIGHTER_PURCHASE_COST + endgame.buy_price
 	assert_gt(total, BalanceEconomy.STARTING_CREDITS * 4)
 	assert_gt(endgame.buy_price, BalanceEconomy.STARTING_CREDITS)
+
+	var host: Node = Node.new()
+	add_child_autofree(host)
+	host.add_child(FakeDocking.new())
+	var wallet: WalletService = WalletService.new()
+	host.add_child(wallet)
+	var ships: ShipService = ShipService.new()
+	host.add_child(ships)
+	await get_tree().process_frame
+
+	ships.reset()
+	wallet.reset()
+	wallet.set_credits(BalanceEconomy.STARTING_CREDITS)
+	assert_false(
+		ships.can_install(WEAPON_ENDGAME),
+		"starter wallet must not afford endgame gun alone as free mid-game"
+	)
+	wallet.set_credits(total + 500)
+	assert_true(ships.buy_fighter())
+	assert_true(ships.switch_hull(FIGHTER_ID))
+	var before: int = wallet.credits()
+	assert_true(ships.install_weapon(WEAPON_ENDGAME))
+	assert_lt(wallet.credits(), before)
+	assert_eq(wallet.credits(), before - endgame.buy_price)
 
 
 func test_hauler_cargo_career_beats_fighter_hold() -> void:

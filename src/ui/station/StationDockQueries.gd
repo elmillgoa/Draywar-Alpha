@@ -39,6 +39,16 @@ static func station_resource(station_id: StringName) -> Station:
 	return null
 
 
+## Sticky-deep with the dock controller (hostile hole — recovery foothold path).
+static func is_deep_negative_with_controller(station_id: StringName) -> bool:
+	var controller_id: StringName = controller(station_id)
+	if String(controller_id).is_empty():
+		return false
+	return (
+		StandingService.get_entity_standing(controller_id) <= BalanceStanding.STICKY_NEGATIVE_FLOOR
+	)
+
+
 static func controller(station_id: StringName) -> StringName:
 	var station: Station = station_resource(station_id)
 	if station == null:

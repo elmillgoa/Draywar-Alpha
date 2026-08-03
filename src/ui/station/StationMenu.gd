@@ -78,6 +78,7 @@ func _ready() -> void:
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
 	EventBus.on_hull_purchased.connect(_on_hull_purchased)
 	EventBus.on_hull_changed.connect(_on_hull_changed)
+	EventBus.on_loadout_changed.connect(_on_loadout_changed)
 	EventBus.on_market_news.connect(_on_market_news)
 	EventBus.on_market_ticked.connect(_on_market_ticked)
 	EventBus.on_market_changed.connect(_on_market_changed)
@@ -105,6 +106,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_cargo_changed, _on_cargo_changed)
 	_disconnect(EventBus.on_hull_purchased, _on_hull_purchased)
 	_disconnect(EventBus.on_hull_changed, _on_hull_changed)
+	_disconnect(EventBus.on_loadout_changed, _on_loadout_changed)
 	_disconnect(EventBus.on_market_news, _on_market_news)
 	_disconnect(EventBus.on_market_ticked, _on_market_ticked)
 	_disconnect(EventBus.on_market_changed, _on_market_changed)
@@ -696,6 +698,12 @@ func _on_hull_changed(_old_hull_id: StringName, _new_hull_id: StringName) -> voi
 		call_deferred(&"_refresh_trade")
 
 
+func _on_loadout_changed(_hull_id: StringName) -> void:
+	if visible:
+		# Deferred: install/remove fire from button pressed handlers.
+		call_deferred(&"_refresh_services")
+
+
 func _on_market_news(_line: String) -> void:
 	_refresh_news()
 
@@ -771,7 +779,9 @@ func _refresh_recovery_buttons() -> void:
 	elif not recovery_busy:
 		_active_recovery_person_id = &""
 
-	var deep_negative: bool = _is_deep_negative_with_controller()
+	var deep_negative: bool = StationDockQueries.is_deep_negative_with_controller(
+		_docked_station_id
+	)
 	var drama_person: StringName = _favor_person_id
 	if String(drama_person).is_empty():
 		drama_person = _offer_person_id
@@ -843,14 +853,6 @@ func _refresh_recovery_drama_header(deep_negative: bool, person_id: StringName) 
 			_recovery_hint.visible = false
 
 
-## Sticky-deep with the dock controller (hostile hole — recovery foothold path).
-func _is_deep_negative_with_controller() -> bool:
-	var controller: StringName = _dock_controller()
-	if String(controller).is_empty():
-		return false
-	return StandingService.get_entity_standing(controller) <= BalanceStanding.STICKY_NEGATIVE_FLOOR
-
-
 func _refresh_services() -> void:
 	if _refuel_btn == null:
 		return
@@ -864,10 +866,6 @@ func _refresh_services() -> void:
 		_docked_station_id,
 		visible
 	)
-	_refresh_hull_buttons()
-
-
-func _refresh_hull_buttons() -> void:
 	StationHullUiScript.refresh_buttons(
 		_buy_fighter_btn, _switch_hull_btn, _ship_service(), visible
 	)

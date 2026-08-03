@@ -692,4 +692,7 @@ play; spending on the ship feels like progress.
   signed.**
   WalletService split (Session B) still required before S6 — not part of this
   feel gate.
+- **2026-08-03** — Adversary fix: `apply_section` always emits `on_loadout_changed`
+  so save/load re-arms flight stats when the active hull id is unchanged;
+  StationMenu listens; cargo-rack uninstall refuses overweight hold.
 

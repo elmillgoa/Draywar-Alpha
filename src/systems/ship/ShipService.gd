@@ -300,6 +300,7 @@ func uninstall_weapon(slot_index: int) -> bool:
 
 
 ## Uninstall equipment at slot; refund floor(price * SELL_FRACTION).
+## Refuses when removing cargo gear would leave hold over capacity.
 func uninstall_equipment(slot_index: int) -> bool:
 	if not _is_docked():
 		return false
@@ -308,6 +309,15 @@ func uninstall_equipment(slot_index: int) -> bool:
 		return false
 	var item_id: StringName = equipment[slot_index]
 	if item_id == BalanceOutfit.EMPTY_SLOT or String(item_id).is_empty():
+		return false
+	var trial: Array[StringName] = equipment.duplicate()
+	trial[slot_index] = BalanceOutfit.EMPTY_SLOT
+	var trial_bonus: int = ShipOutfit.cargo_bonus_from(trial)
+	var hull: Hull = active_hull()
+	var trial_cap: int = 0
+	if hull != null:
+		trial_cap = maxi(0, hull.cargo_capacity + trial_bonus)
+	if _cargo_used_volume() > trial_cap:
 		return false
 	var refund: int = 0
 	if ContentLibrary.has_item(item_id):
@@ -330,6 +340,7 @@ func reset() -> void:
 	_ensure_loadout(_active_hull_id)
 	if old_id != _active_hull_id:
 		EventBus.on_hull_changed.emit(old_id, _active_hull_id)
+	EventBus.on_loadout_changed.emit(_active_hull_id)
 
 
 ## Optional save section: active_hull_id + owned_hull_ids + loadouts.
@@ -388,6 +399,9 @@ func apply_section(raw: Variant) -> void:
 	_active_hull_id = next_active
 	if old_id != _active_hull_id:
 		EventBus.on_hull_changed.emit(old_id, _active_hull_id)
+	# Always re-arm flight stats / station UI after load — even when active hull id
+	# is unchanged (upgraded guns on the same hull would otherwise stay baseline).
+	EventBus.on_loadout_changed.emit(_active_hull_id)
 	clamp_active_to_cargo_fit()
 
 
