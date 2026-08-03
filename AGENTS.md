@@ -32,6 +32,9 @@ Ambiguity: resolve with Destination **Fidelity** + **Tone** filters. If those fa
 - **Talk plain.** No jargon. Few words. Blunt is fine.
 - **Build with subagents.** Main chat orchestrates and verifies. Agents implement.
   Keep this chat thin.
+- **Elliot does not program.** He playtests and decides product ideas. All code is LLM work.
+- **Model routing:** `docs/STEAM_PHASE_PLAN.md` §22 — which model tier per phase, when to tell
+  him to switch, paste-ready kickoff prompts. Do not freestyle model advice; follow §22.
 - **Full phase per go.** When Elliot says go on a phase (e.g. "go on Phase 0" /
   A0), finish **the whole phase** before stopping. Ask every blocking question
   **before** building. Same rule for every phase. Human feel **gates** still

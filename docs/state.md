@@ -2,11 +2,11 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S0 complete.** **Outside review absorbed** into plan **v1.1**. **S1 ready** — **no code until Elliot says go**. Maturity = **tech demo**.
+**Current position:** **S0 complete.** Plan **v1.2** (review absorb + **model routing / paste-ready prompts**). **S1 ready** — **no code until Elliot says go**. Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
 |-----|------|
-| `docs/STEAM_PHASE_PLAN.md` | **Build queue S0–S10** — v1.1 (Fable amendments) |
+| `docs/STEAM_PHASE_PLAN.md` | **Build queue S0–S10** — v1.2; **§22 model routing + kickoff prompts** |
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (source of v1.1) |
@@ -29,10 +29,10 @@
 
 ## Next session starts here
 
-1. **`/start`** if cold — orient from this file + Steam plan v1.1.
-2. When Elliot says **go** (or “go on S1” / “build S1”): implement **S1** per plan Phase S1 (WorldClock, not TimeScale reuse; CI; service registry; encoding fix; upkeep on clock).
-3. Do **not** freestyle S2+ or Ops/Holding.
-4. No invented standing rules.
+1. **`/start`** if cold — orient from this file + Steam plan v1.2 §22.
+2. When Elliot says **go** on S1: open a **new Standard-tier** chat; paste **§22.6 S1** kickoff prompt; full phase.
+3. Agents must tell him when to **switch models** per §22.3–22.4 (e.g. S2 = Hard).
+4. Do **not** freestyle S2+ or Ops/Holding. No invented standing rules.
 
 ### Locked decisions (review absorb)
 
@@ -50,6 +50,7 @@
 
 ## Session history
 
+- **2026-08-02 (v1.2)** — Model routing + paste-ready phase prompts (§22); Elliot = playtest/ideas only.
 - **2026-08-02 (plan absorb)** — Fable review → plan v1.1; all 11 amendments + combat/incident locks; S1 ready on go.
 - **2026-08-02 (start)** — Fable review on disk; S1 blocked pending absorb.
 - **2026-08-02 (wrap)** — S0 docs committed; Fable review pending.

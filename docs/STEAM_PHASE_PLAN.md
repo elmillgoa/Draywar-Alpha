@@ -1,10 +1,11 @@
 # Draywar Steam 1.0 — Product Plan
 
 **Date:** 2026-08-02  
-**Version:** 1.1 (Fable outside-review amendments absorbed 2026-08-02)  
+**Version:** 1.2 (model routing + paste-ready phase prompts)  
 **Status:** Accepted build queue (S0 done). S1 code only when Elliot says go.  
 **Authority:** this plan + `docs/PRODUCT_DIRECTION.md` + Destination Fidelity/Tone + standing law  
-**Review source:** `docs/OUTSIDE_REVIEW_2026-08-02.md` (read-only; findings folded in below)
+**Review source:** `docs/OUTSIDE_REVIEW_2026-08-02.md` (read-only; findings folded in below)  
+**Who codes:** LLMs only. Elliot playtests and decides product ideas — he does not write code or run build commands.
 
 ---
 
@@ -600,12 +601,13 @@ Not a promise — a planning envelope:
 
 ## 17. Immediate next steps (post-review absorb)
 
-1. Plan v1.1 written into this file (done when this section is current)  
+1. Plan v1.1+ written (review absorb + model routing in §22)  
 2. `docs/state.md` → review absorbed; **S1 ready when Elliot says go**  
 3. Journal: review outcome + locked decisions  
-4. **Only after Elliot says go:** open S1 implementation session with `/work` — **subagents build**  
+4. **Only after Elliot says go:** open a **new chat** on the model in §22 for **S1**, paste the S1 kickoff prompt, say go  
 5. Do **not** start Ops/Holding/campaign code before S1–S2 foundations  
-6. Do **not** start S1 until go (planning complete ≠ code authorized)
+6. Do **not** start S1 until go (planning complete ≠ code authorized)  
+7. At each phase end / human gate: agent stops coding and hands you a **playtest brief** (what to try, what “pass” means). You play; you say pass/fail/ideas. LLM implements the next bit.
 
 ---
 
@@ -646,14 +648,16 @@ If any default is wrong, say so before S1 go; we amend the plan first.
 
 | Field | Value |
 |-------|--------|
-| Plan version | **1.1** (2026-08-02) |
+| Plan version | **1.2** (2026-08-02) |
 | Elliot accept (v1.0) | **accepted 2026-08-02** |
 | Outside review | Fable, 2026-08-02 — `docs/OUTSIDE_REVIEW_2026-08-02.md` |
 | Amendments (v1.1) | **All 11 Fable amendments accepted** 2026-08-02 — see §21 |
+| Model routing (v1.2) | §22 — when to switch models + paste-ready prompts |
 | Combat/time policy | Clock always runs; combat caps to 1x |
 | Incident vs mission | Incidents separate; may promote to mission |
+| Elliot’s job | Playtest + ideas only; all programming by LLM |
 
-**v1.1 accept means:** amended plan is the build queue; S1 is next **when Elliot says go**.
+**v1.2 means:** build queue + who codes + which model per phase. S1 is next **when Elliot says go**.
 
 **Code still requires explicit go** for S1 — absorbing review is not a build order.
 
@@ -676,3 +680,389 @@ If any default is wrong, say so before S1 go; we amend the plan first.
 | 11 | Polish | Text-encoding fix in S1 | Phase S1 |
 
 **Explicitly not changed (review §9):** phase order; standing law; optional-save + byte-determinism; 10–12 commodity cap; content budgets / loud-failure loading; tech-demo maturity language; 20-ship budget until measured; AGENTS.md discipline.
+
+---
+
+## 22. Model routing, Elliot’s job, and paste-ready prompts
+
+### 22.1 Roles (locked)
+
+| Who | Does | Does not |
+|-----|------|----------|
+| **LLM sessions** | All programming, tests, docs updates, commits/pushes when phase DoD is met, drafting prose/content data, playtest briefs | Invent standing law, cut scope to “pass,” reorder phases, declare a feel gate passed |
+| **Elliot** | Say **go** on a phase; **playtest** at gates; accept/fail feel; bring **product ideas**; pick among options when a session escalates | Write code, run build/test commands, debug by editing files |
+
+If a session needs a product call, it presents **options + recommendation** and waits. It does not ask Elliot to open a terminal.
+
+### 22.2 Model tiers (pick the best you have in that tier)
+
+Names drift. Use the **tier**, then the named default if you have it.
+
+| Tier | Default recommendation (2026-08) | Job |
+|------|----------------------------------|-----|
+| **Standard** | **Claude Sonnet** (Claude Code / API) *or* **Grok** strong coding session if that is the open project chat | Most implementation: S1, S3, S5 bulk, S6 after wallet split designed, S10 packaging |
+| **Hard** | **Claude Opus** (or current strongest reasoning coding model you pay for) | Wrong-is-expensive systems: S2 market correctness, S4 standing/enforcement, wallet split design, save/clock desync, economy exploits |
+| **Content** | **Claude Sonnet or Opus** — prefer whichever you trust more for long prose | S7–S9 mission text, People, news lines, ignition crisis copy, onboarding copy |
+| **Fast helper** | **Claude Haiku** / cheapest fast model — **subagent only**, never phase owner | Renames, boilerplate tests, catalog rows, mechanical refactors under a Standard/Hard parent |
+
+**Orchestrator rule:** main chat stays thin (plan + verify). Subagents implement. Parent model = phase tier above.
+
+### 22.3 When the agent must tell you to switch models
+
+Sessions **must stop and tell Elliot** (plain English + which tier + paste the right prompt from §22.5):
+
+1. **Starting a new phase** whose tier differs from the chat you are in (see table §22.4).  
+2. **Mid-phase Hard triggers** (even if the phase started on Standard):  
+   - Save/load or clock **desync** / non-determinism after two failed fix attempts  
+   - Economy **runaway prices**, NaN, or same-station money pump  
+   - **Standing / attribution / dock refuse** behavior wrong or ambiguous vs `docs/reputation_and_standing.md`  
+   - **Wallet / multi-payee / hull-vs-money** collision (S5→S6 split)  
+   - Agent has **rewritten the same design twice** without a green test suite  
+3. **Content pass** when mechanical scaffolding is done and only prose/data filling remains (S7–S9): switch to **Content** tier if you were on a pure-coder session that writes thin placeholder voice.  
+4. **Never switch models to “pass” a feel gate** — gates need Elliot play, not a smarter LLM claiming fun.
+
+When telling you to switch, the agent outputs:
+
+- Phase / problem in one line  
+- **Open a new chat on: [tier + named default]**  
+- Full kickoff prompt in a single copy-paste block  
+- What the old chat already finished (so you don’t redo work)
+
+### 22.4 Per-phase model map
+
+| Phase | Open chat on | Why | Elliot does after code claims done |
+|-------|--------------|-----|-------------------------------------|
+| **S1** WorldClock + CI + registry | **Standard** | Spec is locked; mostly plumbing | Nothing required (no feel gate). Optional smoke: jump, fight, reload once. |
+| **S2** Economy sim | **Hard** | Kill-shot tests + per-station inversion; easy to fake-green | **Gate:** trade route; market fights back (quantity UI + reason + ticker live) |
+| **S3a** Radiant + escort | **Standard** | Generator + job kind | Skip alone — wait for S3b gate |
+| **S3b** Incidents + news + traffic | **Standard**; escalate **Hard** if incident/mission seam breaks | Incident ≠ mission is easy to get wrong | **Gate:** not a thin menu loop; then arrange **external** playtest |
+| **S4** Enforcement + standing surface | **Hard** | Standing law; jurisdictional feel | **Gate:** crime differs by space; standing still the star |
+| **S5** Ship layer + wallet-split *design/land* | **Standard** for equipment; **Hard** for **WalletService split** (new chat if needed) | Split is expensive if wrong | **Gate:** ship fantasy; note screenshot-floor readiness |
+| **S6** Ops | **Standard** if wallet split already done; else **Hard** first | Fleet money + economy hooks | **Gate:** Ops feel |
+| **S7** Campaign I–II + onboarding | **Content** for prose; **Standard** for framework if split into two sessions | Framework is code; Act text is voice | **Gate:** story/freeroam + cold start (would you refund in 2h?) |
+| **S8** Holding + ignition crisis | **Content** for climax prose; **Standard/Hard** for Holding systems | Ending must not be a buy button | **Gate:** endgame + structural rhyme |
+| **S9** Content complete | **Content** primary; **Hard** for balance bugs from telemetry | Volume writing + 30h honesty | **Gate:** content complete (after external play too) |
+| **S10** Polish + RC | **Standard** | Packaging, a11y, Steam hooks | **Gate:** release candidate |
+
+### 22.5 Universal laws inside every kickoff prompt
+
+Every phase prompt below already includes these. Do not strip them:
+
+- Opened in **Grok Draywar** project folder; read `AGENTS.md`, `docs/state.md`, this plan’s phase section, `DRAYWAR_AGENT_GUARDRAILS_v2.md`.  
+- **One phase only.** No S2+ while on S1, etc.  
+- **No invented standing rules.** Standing only via StandingService + reputation doc.  
+- **Elliot does not code.** If stuck on product, present options; if stuck on hard eng, tell him to switch model per §22.3.  
+- Definition of done: criteria, lint, tests, EventBus catalog, save round-trip if needed, `docs/state.md`.  
+- Before claiming done: adversary then verify where skills exist.  
+- Phase complete → commit, push, update state, playtest brief if gate.  
+- Talk plain to Elliot.
+
+### 22.6 Paste-ready kickoff prompts
+
+Copy everything inside the fenced block for that phase into a **new** chat on the recommended model. Replace nothing unless `docs/state.md` says the phase already partially landed — then add one line: “Resume from state.md; do not redo completed bullets.”
+
+#### S1 — Standard
+
+```
+You are the implementer for Draywar Steam phase S1 only (World clock & sim foundation).
+
+Elliot does not program. You write all code, tests, CI, docs, commits. He only playtests and decides product ideas later. Do not ask him to run commands.
+
+Authority (read in order, then build):
+1) AGENTS.md
+2) docs/state.md
+3) docs/STEAM_PHASE_PLAN.md — Phase S1 + §5.3 WorldClock + §22
+4) DRAYWAR_AGENT_GUARDRAILS_v2.md
+5) docs/save_schema.md (if present)
+
+Scope — implement ALL of S1:
+- WorldClock service: owns accumulated game time; independent of player ship and world load/unload
+- Tick categories: market, board, security, wallet upkeep
+- Explicit advance N hours (jump away-time)
+- Combat policy LOCKED: clock always runs; combat only caps time-scale to 1x (no freeze)
+- Move wallet upkeep onto WorldClock (stop ship-physics-as-economy-heartbeat)
+- Save round-trip clock + empty/scaffolded sim sections
+- EventBus signals catalogued (docs/events.md same commit)
+- Service lifecycle registry / resettable convention for career reset
+- CI: test suite on push (GitHub Actions or equivalent)
+- Test-support helpers: seeded world + advance N days
+- Fix text-encoding corruption in shipped UI strings + docs/gates.md
+
+Out of scope: MarketService, radiant jobs, Ops, campaign, any feel-gate work, standing rule changes.
+
+Accept: deterministic clock tests; away-time moves same accumulators; save round-trip; upkeep not ship-only; CI green; career reset covers new services.
+
+Process: /start if needed, then full phase; subagents implement; lint + headless tests; adversary/verify; commit + push; update docs/state.md. End with a short plain-English report of what the game gained. No human feel gate on S1.
+
+If you hit save/clock non-determinism you cannot fix in two serious attempts, STOP and tell Elliot to open a Hard-tier model with the S1 prompt plus a bug brief — do not ship a fake-green clock.
+```
+
+#### S2 — Hard
+
+```
+You are the implementer for Draywar Steam phase S2 only (Economy simulator). Hard-tier: correctness over speed.
+
+Elliot does not program. You implement everything. He will playtest the S2 gate when you say the criteria are green.
+
+Authority:
+1) AGENTS.md 2) docs/state.md 3) docs/STEAM_PHASE_PLAN.md Phase S2 + §5 entire + §22
+4) DRAYWAR_AGENT_GUARDRAILS_v2.md 5) docs/save_schema.md
+
+S1 must already be done (WorldClock live). If state says S1 incomplete, STOP.
+
+Scope — all of S2:
+- MarketService; per-station stocks/prices (invert any system-only pricing)
+- Station economic fields + real world positions (no all-zero stacking)
+- Production, consumption, NPC soft flow, player weight caps
+- CargoService trades only through MarketService
+- Trade UI: quantity control + stock + reason line
+- One-line news ticker (minimal sim visibility)
+- Money-event telemetry log (local CSV or equivalent)
+- Full §5.6 tests including: long-run stability 10k ticks, away-time equivalence, byte-deterministic market save, no same-station money pump, no dead commodities, tick ms budget
+- Optional save section market includes clock coupling as plan requires
+
+Out of scope: radiant generator, Ops, campaign, inventing standing, skipping kill-shot tests.
+
+Accept: §5.6 all green. Then STOP coding for the gate and give Elliot a playtest brief:
+- What build/commit to run
+- Exact trade route to try
+- What “market fights back” should feel like
+- What to report back (pass / fail / ideas)
+
+Do not mark the human gate passed yourself. After he passes, update state and wrap. If gate fails, fix only what he named.
+```
+
+#### S3a — Standard
+
+```
+You are the implementer for Draywar Steam phase S3a only (Radiant work surface).
+
+Elliot does not program. S2 must be complete per docs/state.md or STOP.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN Phase S3 S3a + §6.1, §22, guardrails.
+
+Scope S3a only:
+- Radiant job generator fed by market + security (variety: stakes, standing entanglement hooks, not only identical hauls)
+- Escort job kind
+- Board restock on WorldClock
+
+Out of scope: incidents, full news system, traffic AI rewrite, S3b, Ops, campaign. Do not call the S3 human gate done (gate is after S3b).
+
+Accept: generator + escort + restock tested headless; boards refresh over clock. Commit, push, state note S3a done / S3b next. Short report for Elliot.
+```
+
+#### S3b — Standard (escalate Hard if mission seam breaks)
+
+```
+You are the implementer for Draywar Steam phase S3b only (Space life + news).
+
+Elliot does not program. S3a must be done or STOP.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN Phase S3 S3b + §6.2–6.4, §22, reputation doc if standing touches events.
+
+LOCKED: space events are INCIDENTS — lightweight, separate from MissionService one-active-mission slot. Accepting an incident MAY promote to a mission. Do not force all events through MissionService.
+
+Scope S3b:
+- Opportunistic incidents (distress, intercept, customs light) under ship budget
+- News/rumor feed v1 (thicken S2 ticker if needed)
+- Traffic purpose lite: dock/undock + a few purposeful freighters when news implies shortage
+
+Accept: 60–90 min free session can find varied work (criteria). Then STOP for Elliot gate + external playtest planning.
+Playtest brief must include: how to find radiant vs incidents, what “thin menu loop” failure looks like.
+Do not pass the gate yourself. After gate: remind Elliot external strangers should touch the build before trusting 30h claims.
+```
+
+#### S4 — Hard
+
+```
+You are the implementer for Draywar Steam phase S4 only (Enforcement & standing career surface). Hard-tier.
+
+Elliot does not program. He playtests jurisdictional feel.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN Phase S4 + §7, docs/reputation_and_standing.md (full), guardrails, §22.
+
+CRITICAL: Do not invent standing rules. If the reputation doc is silent, STOP and escalate options to Elliot — do not invent.
+
+Scope S4:
+- Patrol heat / response
+- Customs scan playable loop
+- Bounty pressure from crime
+- Extra recovery chains within budgets
+- Betrayal network lite only if law/content requires
+
+Out of scope: Ops, Holding, campaign spine, economy redesign.
+
+Accept: crime in patrolled space ≠ lawless; recovery still works; all standing writes via StandingService; tests + save.
+Then playtest brief for Elliot gate: where to commit crime, where law is soft, status moment checks. He passes/fails.
+```
+
+#### S5 — Standard + Hard split
+
+**Session A — Standard (ship layer):**
+
+```
+You are the implementer for Draywar Steam phase S5 ship layer only (not the wallet split).
+
+Elliot does not program.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN Phase S5 + §8.1, §22.
+
+Scope:
+- Weapons/equipment data + install/remove
+- Balance both hulls for long careers
+- Money sinks via outfitting
+- Perf measurement hook for densest scene (do not raise 20-ship budget without evidence)
+- Screenshot-floor notes: what still looks gray-box
+
+Out of scope: WalletService split (separate Hard session), Ops, campaign.
+
+Accept: both careers viable into mid-game in tests/balance constants. Playtest brief for ship fantasy gate. State must list wallet split as still required before S6.
+```
+
+**Session B — Hard (wallet split before S6):**
+
+```
+You are the implementer for the WalletService split required before Draywar S6. Hard-tier.
+
+Elliot does not program.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN §5.3 + Phase S5/S6 notes, save schema, §22.
+
+Job: Split money/debt vs fuel vs hull-condition/combat fail-state out of the god WalletService so Ops retainers and ship equipment do not collide. Preserve saves (optional sections/migrations as required — ask Elliot only if schema policy blocks you; prefer optional sections). All tests green; no behavior regressions in fees/upkeep/loan/hull death.
+
+Out of scope: Ops features themselves, new game systems.
+
+When done: commit, push, state says wallet split complete; S6 unblocked.
+```
+
+#### S6 — Standard (Hard if split incomplete)
+
+```
+You are the implementer for Draywar Steam phase S6 only (Operations).
+
+Elliot does not program. If docs/state.md says WalletService split is NOT done, STOP and tell Elliot to run the S5 Session B Hard prompt first.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN Phase S6 + §8.2, §22.
+
+Scope: hire/fire, upkeep, orders, warehouse, dashboard, standing-gated charters, operation save section, interact with economy + radiant.
+
+Accept: small operation loop works in tests; playtest brief for Ops feel gate. No empire sim. Ship budget rules still apply.
+```
+
+#### S7 — Content (framework can be Standard first)
+
+**Session A — Standard (framework):**
+
+```
+You are the implementer for Draywar S7 campaign framework only (not final prose).
+
+Elliot does not program.
+
+Authority: AGENTS.md, docs/state.md, STEAM_PHASE_PLAN Phase S7 + §9, §22.
+
+Scope: campaign flags, mission data shape, thin journal UI, scaffolding for Act I–II, radiant integration hooks, standing-tier gates on spine so radiant cannot trivially skip debt pressure (design in data, no new standing law).
+
+Placeholder mission text is OK if marked PLACEHOLDER. Onboarding structure exists.
+
+Accept: framework tests + save campaign section. Then tell Elliot to open Content tier for Act I–II + onboarding prose (S7 Session B).
+```
+
+**Session B — Content (Acts I–II + onboarding copy):**
+
+```
+You are the content implementer for Draywar S7 Acts I–II and onboarding copy.
+
+Elliot does not program. He will cold-start playtest. You write data-driven mission/people/board text in the project’s content pipeline — real prose quality, Destination Tone (freighter captain, jurisdictional, no anime space opera). No invented standing rules; use existing Entities/People.
+
+Authority: STEAM_PHASE_PLAN §9 + Phase S7, DRAYWAR_DESTINATION_v2.md Tone/Fidelity, reputation doc for who can demand what, docs/state.md.
+
+Replace PLACEHOLDER spine beats for Act I–II. Onboarding doubles as Act I teaching flight+trade+standing+debt without a separate tutorial island.
+
+Out of scope: Act III, Holding ignition, rewriting systems code unless a content hook is missing (then minimal hook only).
+
+When data is in: playtest brief for cold start + freeroam balance gate. Do not pass the gate yourself.
+```
+
+#### S8 — Content + Standard systems
+
+**Session A — Standard/Hard (Holding systems):**
+
+```
+You are the implementer for Draywar S8 Holding systems (purchase path, debt gate, sandbox continue), not final climax prose.
+
+Elliot does not program.
+
+Authority: STEAM_PHASE_PLAN Phase S8 + §8.3, §9, state, AGENTS, §22.
+
+Scope: Holding candidates, milestones that pay toward Holding, debt-clear gate, purchase path, player Holding as Entity + status moment, sandbox continue after ignition flag, save fields.
+
+Leave ignition crisis mission text as structured beat with PLACEHOLDER if needed.
+
+Accept: mechanical path works; cannot ignite with debt; sandbox does not soft-lock.
+```
+
+**Session B — Content (ignition crisis):**
+
+```
+You are the content implementer for the Draywar S8 authored ignition climax.
+
+Elliot does not program. He judges endgame feel.
+
+Authority: STEAM_PHASE_PLAN §8.3 (ignition is a crisis mission, not a buy button), Destination structural rhyme (powers respond on ground the player owns), standing law, Tone filters.
+
+Write the crisis beat: a power contests the claim; resolution uses accumulated standings; epitaph from ledger; celebration. Data-driven mission content in pipeline.
+
+Playtest brief: exact path to climax, what standing setups to try, what failure of the rhyme looks like. He gates pass/fail.
+```
+
+#### S9 — Content primary
+
+```
+You are the implementer for Draywar S9 content complete toward 30h/80h.
+
+Elliot does not program. He and external playtesters judge dead air and hours. Use money telemetry from S2.
+
+Authority: STEAM_PHASE_PLAN Phase S9 + §10 budgets, state, §22, Tone filters.
+
+Scope: fill systems/stations/People/chains/spine counts toward budgets; names/lore where needed; balance using telemetry; writing production for remaining flashpoints. Stay within content budgets; loud-failure content pipeline.
+
+Do not claim 30h passed without Elliot + external evidence. When you think content is in: playtest brief + what to measure. He owns content-complete gate.
+```
+
+#### S10 — Standard
+
+```
+You are the implementer for Draywar S10 polish and launch prep.
+
+Elliot does not program. He is RC gate.
+
+Authority: STEAM_PHASE_PLAN Phase S10 + §11, state, §22.
+
+Scope: art/audio floor as available, UI polish, performance, accessibility (rebinds, sensitivity, FOV, colorblind-safe standing colors, controller decision if still open), Steamworks hooks, bug smash.
+
+No new pillars. No scope adds. Playtest brief for RC. He signs release candidate.
+```
+
+### 22.7 Mid-phase “switch to Hard” micro-prompt
+
+When §22.3 triggers mid-phase, the current agent pastes this for Elliot after its bug brief:
+
+```
+You are a Hard-tier debugger/implementer for Draywar. Elliot does not program.
+
+Read: AGENTS.md, docs/state.md, docs/STEAM_PHASE_PLAN.md §22, and the bug brief below.
+Fix ONLY the described failure. Do not expand scope or start a new phase.
+Preserve standing law, byte-deterministic saves where applicable, and EventBus catalog discipline.
+Ship tests that would have failed before the fix. Commit, push, update state.
+Bug brief:
+[AGENT FILLS IN: symptoms, files, failing tests, what was already tried]
+```
+
+### 22.8 What agents must not ask Elliot to do
+
+- Run `lint`, tests, Godot, git, or CI  
+- Paste stack traces into random tools  
+- “Just tweak this file”  
+- Pass their own feel gates  
+
+They **may** ask him to: play a build, say pass/fail, choose option A/B/C for product, approve a new dependency or schema when guardrails require it, recruit external playtesters, say **go** on the next phase.
