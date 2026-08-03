@@ -211,6 +211,9 @@ const REASON_DEBT_GRACE_EXPIRED: StringName = &"debt_grace_expired"
 ## E3.3: dock inspection found jurisdictional contraband for the controller.
 const REASON_CONTRABAND: StringName = &"contraband"
 
+## S6: ops charter breached (missed retainer upkeep); fire follows.
+const REASON_CHARTER_BREACH: StringName = &"charter_breach"
+
 ## E4.1: life-path teeth applied at career start (StandingService only).
 const REASON_LIFE_PATH: StringName = &"life_path"
 

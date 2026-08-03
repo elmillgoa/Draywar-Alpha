@@ -1,20 +1,16 @@
 class_name StationMenu
 extends CanvasLayer
 
-## Station menu — Path C B3 sections (jobs, services, trade, contacts).
-##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
-##
-## Undock, accept / turn in / abandon jobs, recovery talk / complete /
-## abandon / favor / betray, refuel and repair, buy/sell commodities.
-## All actions go through EventBus.
+## Station menu — jobs, services, outfitting, ops, trade, contacts (EventBus only).
 
 const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
 const StationOutfitUiScript = preload("res://src/ui/station/StationOutfitUi.gd")
+const StationOpsUiScript = preload("res://src/ui/station/StationOpsUi.gd")
 const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
 const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
 const StationLoanUiScript = preload("res://src/ui/station/StationLoanUi.gd")
 const StationNewsUiScript = preload("res://src/ui/station/StationNewsUi.gd")
+const Chrome = preload("res://src/ui/station/StationMenuChrome.gd")
 
 var _panel: PanelContainer = null
 var _title: Label = null
@@ -42,6 +38,7 @@ var _repay_btn: Button = null
 var _buy_fighter_btn: Button = null
 var _switch_hull_btn: Button = null
 var _outfit_box: VBoxContainer = null
+var _ops_box: VBoxContainer = null
 var _dock_fee_label: Label = null
 var _undock_btn: Button = null
 var _status_label: Label = null
@@ -82,6 +79,7 @@ func _ready() -> void:
 	EventBus.on_market_news.connect(_on_market_news)
 	EventBus.on_market_ticked.connect(_on_market_ticked)
 	EventBus.on_market_changed.connect(_on_market_changed)
+	StationOpsUiScript.connect_refresh(_request_ops_refresh)
 
 
 func _exit_tree() -> void:
@@ -110,6 +108,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_market_news, _on_market_news)
 	_disconnect(EventBus.on_market_ticked, _on_market_ticked)
 	_disconnect(EventBus.on_market_changed, _on_market_changed)
+	StationOpsUiScript.disconnect_refresh(_request_ops_refresh)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -200,21 +199,25 @@ func _build_ui() -> void:
 	)
 
 	# --- Jobs ---
-	_add_section_header(layout, BalanceEconomy.STATION_SECTION_JOBS)
+	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_JOBS)
 	_jobs_box = VBoxContainer.new()
 	_jobs_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	layout.add_child(_jobs_box)
 
-	_turn_in_job_btn = _make_button(layout, button_size, BalanceEconomy.STATION_TURN_IN_JOB_LABEL)
+	_turn_in_job_btn = Chrome.make_button(
+		layout, button_size, BalanceEconomy.STATION_TURN_IN_JOB_LABEL
+	)
 	_turn_in_job_btn.pressed.connect(_on_turn_in_job_pressed)
 	_turn_in_job_btn.visible = false
 
-	_abandon_job_btn = _make_button(layout, button_size, BalanceEconomy.STATION_ABANDON_JOB_LABEL)
+	_abandon_job_btn = Chrome.make_button(
+		layout, button_size, BalanceEconomy.STATION_ABANDON_JOB_LABEL
+	)
 	_abandon_job_btn.pressed.connect(_on_abandon_job_pressed)
 	_abandon_job_btn.visible = false
 
 	# --- Services ---
-	_add_section_header(layout, BalanceEconomy.STATION_SECTION_SERVICES)
+	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_SERVICES)
 	_dock_fee_label = Label.new()
 	_dock_fee_label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
 	_dock_fee_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -222,10 +225,10 @@ func _build_ui() -> void:
 	_dock_fee_label.visible = false
 	layout.add_child(_dock_fee_label)
 
-	_refuel_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REFUEL_LABEL)
+	_refuel_btn = Chrome.make_button(layout, button_size, BalanceEconomy.STATION_REFUEL_LABEL)
 	_refuel_btn.pressed.connect(_on_refuel_pressed)
 
-	_repair_btn = _make_button(layout, button_size, BalanceEconomy.STATION_REPAIR_LABEL)
+	_repair_btn = Chrome.make_button(layout, button_size, BalanceEconomy.STATION_REPAIR_LABEL)
 	_repair_btn.pressed.connect(_on_repair_pressed)
 
 	var loan_btns: Array[Button] = StationLoanUiScript.make_buttons(layout, button_size)
@@ -234,7 +237,7 @@ func _build_ui() -> void:
 	_borrow_btn.pressed.connect(_on_borrow_pressed)
 	_repay_btn.pressed.connect(_on_repay_pressed)
 
-	_buy_fighter_btn = _make_button(
+	_buy_fighter_btn = Chrome.make_button(
 		layout,
 		button_size,
 		BalanceEconomy.STATION_BUY_FIGHTER_FORMAT % BalanceEconomy.FIGHTER_PURCHASE_COST
@@ -242,14 +245,17 @@ func _build_ui() -> void:
 	_buy_fighter_btn.pressed.connect(_on_buy_fighter_pressed)
 	_buy_fighter_btn.visible = false
 
-	_switch_hull_btn = _make_button(layout, button_size, "Switch hull")
+	_switch_hull_btn = Chrome.make_button(layout, button_size, "Switch hull")
 	_switch_hull_btn.pressed.connect(_on_switch_hull_pressed)
 	_switch_hull_btn.visible = false
 
 	_outfit_box = StationOutfitUiScript.make_box(layout)
 
+	# --- Operations (S6 abstract fleet + warehouse) ---
+	_ops_box = StationOpsUiScript.make_box(layout)
+
 	# --- Trade ---
-	_add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
+	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
 	_trade_denied_label = Label.new()
 	_trade_denied_label.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_trade_denied_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -261,7 +267,7 @@ func _build_ui() -> void:
 	layout.add_child(_trade_box)
 
 	# --- Contacts / recovery foothold (B5 drama when deep negative) ---
-	_contacts_header = _add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
+	_contacts_header = Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
 	_contacts_list = VBoxContainer.new()
 	_contacts_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	layout.add_child(_contacts_list)
@@ -272,27 +278,27 @@ func _build_ui() -> void:
 	_recovery_hint.visible = false
 	layout.add_child(_recovery_hint)
 
-	_recovery_btn = _make_button(layout, button_size, "Talk")
+	_recovery_btn = Chrome.make_button(layout, button_size, "Talk")
 	_recovery_btn.pressed.connect(_on_recovery_pressed)
 	_recovery_btn.visible = false
 
-	_complete_recovery_btn = _make_button(
+	_complete_recovery_btn = Chrome.make_button(
 		layout, button_size, BalanceEconomy.STATION_COMPLETE_RECOVERY_LABEL
 	)
 	_complete_recovery_btn.pressed.connect(_on_complete_recovery_pressed)
 	_complete_recovery_btn.visible = false
 
-	_abandon_recovery_btn = _make_button(
+	_abandon_recovery_btn = Chrome.make_button(
 		layout, button_size, BalanceEconomy.STATION_ABANDON_RECOVERY_LABEL
 	)
 	_abandon_recovery_btn.pressed.connect(_on_abandon_recovery_pressed)
 	_abandon_recovery_btn.visible = false
 
-	_favor_btn = _make_button(layout, button_size, "Ask favor")
+	_favor_btn = Chrome.make_button(layout, button_size, "Ask favor")
 	_favor_btn.pressed.connect(_on_favor_pressed)
 	_favor_btn.visible = false
 
-	_betray_btn = _make_button(layout, button_size, "Betray")
+	_betray_btn = Chrome.make_button(layout, button_size, "Betray")
 	_betray_btn.pressed.connect(_on_betray_pressed)
 	_betray_btn.visible = false
 
@@ -309,48 +315,20 @@ func _build_ui() -> void:
 		),
 		BalanceFlight.STATION_MENU_BUTTON_HEIGHT
 	)
-	_undock_btn = _make_button(outer, undock_size, BalanceEconomy.STATION_UNDOCK_LABEL)
+	_undock_btn = Chrome.make_button(outer, undock_size, BalanceEconomy.STATION_UNDOCK_LABEL)
 	_undock_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_undock_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_undock_btn.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	_undock_btn.pressed.connect(_on_undock_pressed)
 
 
-## Undock control (tests / external readers). Always outside the scroll body.
 func undock_button() -> Button:
 	return _undock_btn
 
 
-func _add_section_header(parent: Control, text: String) -> Label:
-	var spacer: Control = Control.new()
-	spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_SECTION_SPACER)
-	parent.add_child(spacer)
-	var header: Label = Label.new()
-	header.add_theme_color_override("font_color", BalanceUi.ACCENT)
-	header.text = text
-	parent.add_child(header)
-	return header
-
-
-func _make_button(parent: Control, size: Vector2, text: String) -> Button:
-	var btn: Button = Button.new()
-	btn.text = text
-	btn.custom_minimum_size = size
-	parent.add_child(btn)
-	return btn
-
-
-func _content_name(id: StringName) -> String:
-	if ContentLibrary.has_item(id):
-		var item: ContentItem = ContentLibrary.item(id)
-		if item != null and not item.display_name.is_empty():
-			return item.display_name
-	return String(id)
-
-
 func _on_docked(station_id: StringName) -> void:
 	_docked_station_id = station_id
-	_title.text = _content_name(station_id)
+	_title.text = Chrome.content_name(station_id)
 	_refresh_flavor()
 	_set_status("")
 	# visible first so section refresh can show jobs/trade/services.
@@ -477,7 +455,7 @@ func _turn_in_block_reason() -> String:
 	if service != null and service.has_method(&"active_destination_station_id"):
 		dest_id = StationDockQueries.as_name(service.call(&"active_destination_station_id"))
 	if not String(dest_id).is_empty() and dest_id != _docked_station_id:
-		return BalanceEconomy.STATION_TURN_IN_WRONG_STATION_FORMAT % _content_name(dest_id)
+		return BalanceEconomy.STATION_TURN_IN_WRONG_STATION_FORMAT % Chrome.content_name(dest_id)
 	return BalanceEconomy.STATION_TURN_IN_FAILED
 
 
@@ -590,7 +568,7 @@ func _after_switch_hull(target: StringName) -> void:
 	if ships != null and ships.has_method(&"active_hull_id"):
 		var active: StringName = StationDockQueries.as_name(ships.call(&"active_hull_id"))
 		if active == target:
-			_set_status(BalanceEconomy.STATION_SWITCH_OK_FORMAT % _content_name(target))
+			_set_status(BalanceEconomy.STATION_SWITCH_OK_FORMAT % Chrome.content_name(target))
 		else:
 			_set_status(BalanceEconomy.STATION_SWITCH_FAILED)
 	_refresh_services()
@@ -663,6 +641,7 @@ func _on_wallet_changed(_credits: int) -> void:
 		_refresh_services()
 		# Deferred: a trade moves credits from inside a row's pressed handler.
 		call_deferred(&"_refresh_trade")
+		call_deferred(&"_refresh_ops")
 
 
 func _on_debt_changed(_debt_owed: int, _lender_id: StringName, _grace_docks_left: int) -> void:
@@ -684,6 +663,7 @@ func _on_cargo_changed() -> void:
 	if visible:
 		# Deferred: a trade fires this from inside a row's pressed handler.
 		call_deferred(&"_refresh_trade")
+		call_deferred(&"_refresh_ops")
 		_refresh_services()
 
 
@@ -730,6 +710,7 @@ func _refresh_all() -> void:
 	_refresh_contacts_list()
 	_refresh_recovery_buttons()
 	_refresh_services()
+	_refresh_ops()
 	_refresh_news()
 	_refresh_trade()
 
@@ -744,7 +725,9 @@ func _refresh_job_buttons() -> void:
 			BalanceFlight.STATION_MENU_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
 		)
 		for template_id: StringName in _offered_templates_for_dock():
-			var btn: Button = _make_button(_jobs_box, button_size, _accept_job_label(template_id))
+			var btn: Button = Chrome.make_button(
+				_jobs_box, button_size, _accept_job_label(template_id)
+			)
 			btn.pressed.connect(_on_accept_job_pressed.bind(template_id))
 	var can_turn_in: bool = mission_busy and _mission_can_complete_here()
 	_turn_in_job_btn.visible = can_turn_in and visible
@@ -793,7 +776,7 @@ func _refresh_recovery_buttons() -> void:
 	_recovery_btn.visible = offer_visible
 	if offer_visible:
 		_recovery_btn.text = (
-			BalanceStanding.STATION_RECOVERY_TALK_FORMAT % _content_name(_offer_person_id)
+			BalanceStanding.STATION_RECOVERY_TALK_FORMAT % Chrome.content_name(_offer_person_id)
 		)
 
 	_complete_recovery_btn.visible = recovery_busy and visible
@@ -802,7 +785,7 @@ func _refresh_recovery_buttons() -> void:
 			BalanceEconomy.STATION_CONTACT_LINE_FORMAT
 			% [
 				BalanceEconomy.STATION_COMPLETE_RECOVERY_LABEL,
-				_content_name(_active_recovery_person_id),
+				Chrome.content_name(_active_recovery_person_id),
 			]
 		)
 	else:
@@ -817,7 +800,7 @@ func _refresh_recovery_buttons() -> void:
 	_favor_btn.visible = favor_visible
 	if favor_visible:
 		_favor_btn.text = (
-			BalanceEconomy.STATION_ASK_FAVOR_FORMAT % _content_name(_favor_person_id)
+			BalanceEconomy.STATION_ASK_FAVOR_FORMAT % Chrome.content_name(_favor_person_id)
 		)
 
 	var betray_target: StringName = _active_recovery_person_id
@@ -830,7 +813,9 @@ func _refresh_recovery_buttons() -> void:
 	)
 	_betray_btn.visible = betray_visible
 	if betray_visible:
-		_betray_btn.text = BalanceEconomy.STATION_BETRAY_FORMAT % _content_name(betray_target)
+		_betray_btn.text = (
+			BalanceEconomy.STATION_BETRAY_FORMAT % Chrome.content_name(betray_target)
+		)
 		_active_recovery_person_id = betray_target
 
 
@@ -842,7 +827,7 @@ func _refresh_recovery_drama_header(deep_negative: bool, person_id: StringName) 
 		_contacts_header.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 		if _recovery_hint != null:
 			_recovery_hint.text = (
-				BalanceEconomy.STATION_RECOVERY_DRAMA_HINT_FORMAT % _content_name(person_id)
+				BalanceEconomy.STATION_RECOVERY_DRAMA_HINT_FORMAT % Chrome.content_name(person_id)
 			)
 			_recovery_hint.visible = true
 	else:
@@ -870,6 +855,21 @@ func _refresh_services() -> void:
 		_buy_fighter_btn, _switch_hull_btn, _ship_service(), visible
 	)
 	StationOutfitUiScript.refresh_box(_outfit_box, _ship_service(), _wallet_service(), visible)
+
+
+func _refresh_ops() -> void:
+	if _ops_box == null:
+		return
+	var tree: SceneTree = get_tree()
+	var ops: Node = null
+	if tree != null:
+		ops = tree.get_first_node_in_group(BalanceOps.GROUP_OPERATION_SERVICE)
+	StationOpsUiScript.refresh_box(_ops_box, ops, _cargo_service(), _docked_station_id, visible)
+
+
+func _request_ops_refresh() -> void:
+	if visible:
+		call_deferred(&"_refresh_ops")
 
 
 func _clear_trade_rows() -> void:

@@ -1155,3 +1155,136 @@ Weapons or equipment on a hull changed (install, remove, or load apply).
 
 **Emitted by** `ShipService`.
 **Listened to by** `PlayerShip` (reapply weapon/turn/afterburner), `StationMenu`.
+
+## Operations / warehouse (S6)
+
+### `on_ops_hire_requested(ship_type: StringName)`
+
+UI asked to hire an abstract ops ship type while docked.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ship_type` | `StringName` | Hireable type (`ops_hauler` / `ops_fighter`). |
+
+**Emitted by** `StationOpsUi` (via station menu buttons).
+**Listened to by** `OperationService`.
+
+### `on_ops_fire_requested(ops_ship_id: StringName)`
+
+UI asked to fire a hired abstract ops ship.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ops_ship_id` | `StringName` | Hired ship id (e.g. `ops_ship_1`). |
+
+**Emitted by** `StationOpsUi`.
+**Listened to by** `OperationService`.
+
+### `on_ops_order_requested(ops_ship_id: StringName, order: StringName, origin_station: StringName, dest_station: StringName, commodity_id: StringName)`
+
+UI asked to set an order on a hired ops ship.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ops_ship_id` | `StringName` | Hired ship id. |
+| `order` | `StringName` | `park` / `haul_route` / `escort_player`. |
+| `origin_station` | `StringName` | Haul origin (empty for park/escort). |
+| `dest_station` | `StringName` | Haul destination (empty for park/escort). |
+| `commodity_id` | `StringName` | Haul commodity (empty for park/escort). |
+
+**Emitted by** `StationOpsUi`.
+**Listened to by** `OperationService`.
+
+### `on_ops_warehouse_deposit_requested(commodity_id: StringName, quantity: int)`
+
+UI asked to move cargo from the player hold into the dock station warehouse.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `commodity_id` | `StringName` | Commodity content id. |
+| `quantity` | `int` | Units to deposit. |
+
+**Emitted by** `StationOpsUi`.
+**Listened to by** `OperationService`.
+
+### `on_ops_warehouse_withdraw_requested(commodity_id: StringName, quantity: int)`
+
+UI asked to move cargo from the dock station warehouse into the player hold.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `commodity_id` | `StringName` | Commodity content id. |
+| `quantity` | `int` | Units to withdraw. |
+
+**Emitted by** `StationOpsUi`.
+**Listened to by** `OperationService`.
+
+### `on_ops_ship_hired(ops_ship_id: StringName, ship_type: StringName, charter_entity: StringName)`
+
+An abstract ops ship was hired; credits already spent.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ops_ship_id` | `StringName` | New hired ship id. |
+| `ship_type` | `StringName` | Hireable type. |
+| `charter_entity` | `StringName` | Dock controller Entity id at hire. |
+
+**Emitted by** `OperationService`.
+**Listened to by** `StationMenu`.
+
+### `on_ops_ship_fired(ops_ship_id: StringName)`
+
+An abstract ops ship was fired or released after charter breach.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ops_ship_id` | `StringName` | Fired ship id. |
+
+**Emitted by** `OperationService`.
+**Listened to by** `StationMenu`.
+
+### `on_ops_order_changed(ops_ship_id: StringName, order: StringName)`
+
+Order field on a hired ship changed.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ops_ship_id` | `StringName` | Hired ship id. |
+| `order` | `StringName` | New order. |
+
+**Emitted by** `OperationService`.
+**Listened to by** `StationMenu`.
+
+### `on_ops_upkeep_paid(credits: int)`
+
+Fleet retainer upkeep credits paid this world-clock tick (may be partial).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `credits` | `int` | Whole credits spent this tick. |
+
+**Emitted by** `OperationService`.
+**Listened to by** `StationMenu` (refresh).
+
+### `on_ops_charter_breached(ops_ship_id: StringName, entity_id: StringName)`
+
+Charter breached after missed upkeep threshold; standing already written via
+StandingService; ship is fired after this signal.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `ops_ship_id` | `StringName` | Ship that breached. |
+| `entity_id` | `StringName` | Charter Entity that took the standing hit. |
+
+**Emitted by** `OperationService`.
+
+### `on_warehouse_changed(station_id: StringName)`
+
+Warehouse contents at a station changed (deposit / withdraw / load).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station whose warehouse changed. |
+
+**Emitted by** `OperationService`.
+**Listened to by** `StationMenu`.

@@ -330,3 +330,42 @@ signal on_outfit_uninstall_requested(item_id: StringName, slot_index: int)
 
 ## ShipService: weapons/equipment on a hull changed (install, remove, load).
 signal on_loadout_changed(hull_id: StringName)
+
+## UI: request hire of an abstract ops ship type while docked (S6).
+signal on_ops_hire_requested(ship_type: StringName)
+
+## UI: request fire of a hired ops ship (S6).
+signal on_ops_fire_requested(ops_ship_id: StringName)
+
+## UI: request order change on a hired ops ship (S6).
+signal on_ops_order_requested(
+	ops_ship_id: StringName,
+	order: StringName,
+	origin_station: StringName,
+	dest_station: StringName,
+	commodity_id: StringName
+)
+
+## UI: request warehouse deposit from cargo hold while docked (S6).
+signal on_ops_warehouse_deposit_requested(commodity_id: StringName, quantity: int)
+
+## UI: request warehouse withdraw into cargo hold while docked (S6).
+signal on_ops_warehouse_withdraw_requested(commodity_id: StringName, quantity: int)
+
+## OperationService: abstract ops ship hired.
+signal on_ops_ship_hired(ops_ship_id: StringName, ship_type: StringName, charter_entity: StringName)
+
+## OperationService: abstract ops ship fired / released.
+signal on_ops_ship_fired(ops_ship_id: StringName)
+
+## OperationService: order field changed on a hired ship.
+signal on_ops_order_changed(ops_ship_id: StringName, order: StringName)
+
+## OperationService: fleet upkeep credits paid this tick (may be partial).
+signal on_ops_upkeep_paid(credits: int)
+
+## OperationService: charter breached (standing already written via StandingService).
+signal on_ops_charter_breached(ops_ship_id: StringName, entity_id: StringName)
+
+## OperationService: warehouse contents at a station changed.
+signal on_warehouse_changed(station_id: StringName)

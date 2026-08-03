@@ -40,6 +40,7 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 
 	_merge_cargo_section(tree, sections)
 	_merge_ship_section(tree, sections)
+	_merge_operation_section(tree, sections)
 
 	var world_section: Dictionary = _world_section(tree)
 	if not world_section.is_empty():
@@ -77,6 +78,8 @@ static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_cargo_from_sections(tree, sections)
 	# D2: cargo applied after ship — re-clamp if hold is overweight for active.
 	_clamp_ship_to_cargo_fit(tree)
+	# S6: operation after cargo (warehouse deposit/withdraw uses hold state).
+	_apply_operation_from_sections(tree, sections)
 	_apply_mission_from_sections(tree, sections)
 	_apply_career_from_sections(sections)
 
@@ -185,6 +188,31 @@ static func _merge_ship_section(tree: SceneTree, sections: Dictionary) -> void:
 	if typeof(section) != TYPE_DICTIONARY:
 		return
 	sections[BalanceFlight.SAVE_SECTION_SHIP] = section
+
+
+## Always write when OperationService is present (empty fleet is valid state).
+static func _merge_operation_section(tree: SceneTree, sections: Dictionary) -> void:
+	var ops: Node = _node_in_group(tree, BalanceOps.GROUP_OPERATION_SERVICE)
+	if ops == null or not ops.has_method(&"to_section"):
+		return
+	var section: Variant = ops.call(&"to_section")
+	if typeof(section) != TYPE_DICTIONARY:
+		sections[BalanceOps.SAVE_SECTION_KEY] = {
+			BalanceOps.KEY_HIRED: [],
+			BalanceOps.KEY_WAREHOUSE: {},
+		}
+		return
+	sections[BalanceOps.SAVE_SECTION_KEY] = section
+
+
+static func _apply_operation_from_sections(tree: SceneTree, sections: Dictionary) -> void:
+	var ops: Node = _node_in_group(tree, BalanceOps.GROUP_OPERATION_SERVICE)
+	if ops == null:
+		return
+	if sections.has(BalanceOps.SAVE_SECTION_KEY) and ops.has_method(&"apply_section"):
+		ops.call(&"apply_section", sections[BalanceOps.SAVE_SECTION_KEY])
+	elif ops.has_method(&"reset"):
+		ops.call(&"reset")
 
 
 static func _apply_ship_from_sections(tree: SceneTree, sections: Dictionary) -> void:

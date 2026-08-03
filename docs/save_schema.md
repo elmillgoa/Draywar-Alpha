@@ -16,9 +16,10 @@ what is inside a section.
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
 **`standing`** (A2), **`world_clock`** (S1), **`market`** (S2), **`wallet`** (A5),
-**`cargo`** (B3), **`ship`** (E2.5), **`world`** (B2), **`mission`** (B2),
-**`boards`** (S3a), **`incidents`** (S3b), **`enforcement`** (S4), and
-**`career`** (E4.6) maps. Missing `standing` means all-neutral content defaults.
+**`cargo`** (B3), **`ship`** (E2.5), **`operation`** (S6), **`world`** (B2),
+**`mission`** (B2), **`boards`** (S3a), **`incidents`** (S3b), **`enforcement`**
+(S4), and **`career`** (E4.6) maps. Missing `standing` means all-neutral content
+defaults.
 Missing `world_clock` means elapsed game time starts at zero. Missing `market`
 means every station market is re-seeded from its station profile. Missing
 `boards` means job boards re-derive from the clock with no mid-cycle claims.
@@ -26,8 +27,9 @@ Missing `incidents` means security steps re-derive from the clock; offered
 prompts are never restored. Missing `enforcement` means no per-Entity heat.
 Missing `wallet` means starting credits/fuel/condition. Missing `cargo` means
 empty hold. Missing `ship` means Hauler only (starter owned, active Hauler).
-Missing `world` keeps the boot system/spawn. Missing `mission` means no active
-job. Missing `career` means no life-path ids on the captain sheet (old saves).
+Missing `operation` means empty fleet and empty warehouses. Missing `world`
+keeps the boot system/spawn. Missing `mission` means no active job. Missing
+`career` means no life-path ids on the captain sheet (old saves).
 Tests may still use a hostile probe fixture. New required career fields later
 bump the version with a migration step in `SaveMigrations.gd`.
 
@@ -147,6 +149,21 @@ sections. No envelope version bump.
 Missing section → Hauler only (owned `hull_courier`, active Hauler).
 Unknown / unowned active id falls back to Hauler. Starter ownership is always
 restored if omitted from the array. Missing `loadouts` → empty slots for owned hulls.
+
+### Optional section: `operation` (schema v1)
+
+Written by `OperationService.to_section()` / applied by `apply_section()` when
+an ops service is present (S6). Always gathered when the service exists (empty
+fleet is valid). Applied **after `cargo`** so warehouse deposit/withdraw stays
+coherent with the restored hold. No envelope version bump. Hired ships are
+abstract (no world spawn ids).
+
+| Key | Type | Meaning |
+|---|---|---|
+| `hired` | `Array` of `Dictionary` | Hired abstract ships (max 2). Each entry: `id`, `type` (`ops_hauler` / `ops_fighter`), `order` (`park` / `haul_route` / `escort_player`), `origin_station`, `dest_station`, `commodity_id`, `charter_entity`, `upkeep_misses`, `haul_progress_hours`, `home_station`. |
+| `warehouse` | `Dictionary` | station id string → { commodity id string → int qty }. Capacity is per-station volume (`BalanceOps.WAREHOUSE_CAPACITY`). |
+
+Missing section → empty fleet and empty warehouses.
 
 ### Optional section: `world` (schema v1)
 

@@ -38,3 +38,5 @@ const CATEGORY_MARKET: StringName = &"market"
 const CATEGORY_BOARD: StringName = &"board"
 const CATEGORY_SECURITY: StringName = &"security"
 const CATEGORY_WALLET_UPKEEP: StringName = &"wallet_upkeep"
+## Ops fleet upkeep + abstract haul progress (S6).
+const CATEGORY_OPS: StringName = &"ops"

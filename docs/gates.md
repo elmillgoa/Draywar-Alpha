@@ -709,3 +709,53 @@ play; spending on the ship feels like progress.
 
 **Notes:** Feel gate closed. Session B (wallet split) **done** 2026-08-03 — S6 unblocked on wallet.
 
+---
+
+## S6 — Ops feel: progression past solo courier
+
+**Criteria (plan):** player can run a small operation and feel progression past
+solo courier. Hire/fire, upkeep, orders, warehouse, standing-gated charters,
+save, market hauls.
+
+**Build:** S6 code complete on `main` (after this session’s commit). Start a
+**New Game**. Do **not** sign from headless green alone — this is a feel gate.
+
+### Playtest brief
+
+Full steps: **`docs/S6_OPS_PLAYTEST.md`**.
+
+Short path:
+
+1. New Game → dock Alpha Port. Need credits (~800 hire) and **Friendly** with
+   Reach Authority (hire gate). Console if needed: `credits set 5000` + standing.
+2. Station **Operations** — hire hauler; set haul order; advance time / jump so
+   a leg resolves; check wallet and that fleet line shows upkeep.
+3. Warehouse deposit/withdraw a few crates; save/load once.
+4. Hire second ship (escort); third hire should refuse. Fire one — upkeep drops.
+5. Optional: zero wallet, wait for breach (3 unpaid hours) — standing hit + ship
+   released.
+
+### What failure looks like
+
+1. Operations missing or dead buttons.
+2. Hire ignores standing / max 2.
+3. Haul never moves money or markets (or steals personal mission slot).
+4. Warehouse or fleet lost on load.
+5. Still feels like solo courier with a useless menu.
+
+Pass when: retainers + warehouse + abstract haul feel like a small company, not
+a second menu toy.
+
+### What to report back
+
+- **Pass or fail**, in your own words.
+- Did Operations read in the station menu?
+- Haul / warehouse / upkeep — did any of it feel real?
+- Escort is label-only this phase — did that bother you?
+
+### Attempt log
+
+- **2026-08-03** — S6 code complete (OperationService, station Ops UI, save
+  `operation`, 18 ops tests after adversary harden). Lint green; full suite
+  green. **Gate open, not signed.**
+

@@ -66,6 +66,14 @@ const REASON_DEBUG_CREDITS_SET: StringName = &"debug_credits_set"
 const REASON_OUTFIT_BUY: StringName = &"outfit_buy"
 ## Station outfitting uninstall refund (S5).
 const REASON_OUTFIT_SELL: StringName = &"outfit_sell"
+## Ops fleet hire retainer (S6).
+const REASON_OPS_HIRE: StringName = &"ops_hire"
+## Ops fleet fire (S6; refund may be zero).
+const REASON_OPS_FIRE: StringName = &"ops_fire"
+## Ops fleet hourly upkeep (S6).
+const REASON_OPS_UPKEEP: StringName = &"ops_upkeep"
+## Ops abstract haul net / leg pay (S6).
+const REASON_OPS_HAUL_PAY: StringName = &"ops_haul_pay"
 
 # --- Detail dictionary keys (StringName) --------------------------------------
 
