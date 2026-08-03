@@ -91,6 +91,18 @@ func validation_errors() -> PackedStringArray:
 				"`cargo_quantity` must be greater than zero for smuggle " + "contracts."
 			)
 
+	if kind == BalanceStanding.MISSION_KIND_ESCORT:
+		if String(destination_station_id).strip_edges().is_empty():
+			problems.append(
+				(
+					"`destination_station_id` is empty. Escort contracts name the "
+					+ "station where the freighter must arrive."
+				)
+			)
+		# target_system_id is optional for escort: when set it is the destination
+		# system (leg the freighter is on). Empty is valid; runtime ensure uses
+		# the active escort flag in every system until turn-in.
+
 	problems.append_array(_delta_problems(standing_complete, "standing_complete"))
 	problems.append_array(_delta_problems(standing_fail, "standing_fail"))
 	problems.append_array(_delta_problems(standing_abandon, "standing_abandon"))

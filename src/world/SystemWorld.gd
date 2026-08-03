@@ -26,6 +26,9 @@ func _ready() -> void:
 	EventBus.on_mission_accepted.connect(_on_mission_accepted_ensure_prey)
 	EventBus.on_undocked.connect(_on_undocked_ensure_prey)
 	EventBus.on_system_entered.connect(_on_system_entered_ensure_prey)
+	EventBus.on_mission_accepted.connect(_on_mission_accepted_ensure_escort)
+	EventBus.on_undocked.connect(_on_undocked_ensure_escort)
+	EventBus.on_system_entered.connect(_on_system_entered_ensure_escort)
 
 
 func _exit_tree() -> void:
@@ -35,6 +38,12 @@ func _exit_tree() -> void:
 		EventBus.on_undocked.disconnect(_on_undocked_ensure_prey)
 	if EventBus.on_system_entered.is_connected(_on_system_entered_ensure_prey):
 		EventBus.on_system_entered.disconnect(_on_system_entered_ensure_prey)
+	if EventBus.on_mission_accepted.is_connected(_on_mission_accepted_ensure_escort):
+		EventBus.on_mission_accepted.disconnect(_on_mission_accepted_ensure_escort)
+	if EventBus.on_undocked.is_connected(_on_undocked_ensure_escort):
+		EventBus.on_undocked.disconnect(_on_undocked_ensure_escort)
+	if EventBus.on_system_entered.is_connected(_on_system_entered_ensure_escort):
+		EventBus.on_system_entered.disconnect(_on_system_entered_ensure_escort)
 
 
 ## Builds the gray box for `system_id`. Safe to call once; call `clear_world`
@@ -56,6 +65,7 @@ func build() -> void:
 	# Bounty may already be active (save restore / accept before jump). If the
 	# one-shot build spawn is gone or never ran, place prey near the player.
 	_maybe_ensure_bounty_prey()
+	_maybe_ensure_escort_freighter()
 
 
 ## Remove placed meshes and traffic so `build()` can run for another system.
@@ -447,6 +457,22 @@ func _on_system_entered_ensure_prey(entered_id: StringName) -> void:
 	_maybe_ensure_bounty_prey()
 
 
+func _on_mission_accepted_ensure_escort(
+	_template_id: StringName, _offering_entity_id: StringName
+) -> void:
+	_maybe_ensure_escort_freighter()
+
+
+func _on_undocked_ensure_escort(_station_id: StringName) -> void:
+	_maybe_ensure_escort_freighter()
+
+
+func _on_system_entered_ensure_escort(entered_id: StringName) -> void:
+	if entered_id != system_id:
+		return
+	_maybe_ensure_escort_freighter()
+
+
 ## When an active bounty targets this system and the kill is still open, make
 ## sure a live hostile exists near the player (or a station). Does not invent
 ## standing rules; does not spawn after the objective is already ready.
@@ -454,6 +480,63 @@ func _maybe_ensure_bounty_prey() -> void:
 	if not _bounty_needs_prey_here():
 		return
 	ensure_hostile_near(_bounty_near_position())
+
+
+## Active escort: ensure a friendly freighter exists near the player (thin).
+## Re-spawns after jumps; death fails the mission via MissionEscortShip.
+## Public so headless tests can call the same path SystemWorld uses on accept /
+## undock / system enter without a full Main scene.
+func ensure_escort_freighter() -> void:
+	_maybe_ensure_escort_freighter()
+
+
+func _maybe_ensure_escort_freighter() -> void:
+	if not _escort_needs_freighter():
+		return
+	if _live_escort_count() > 0:
+		return
+	_spawn_escort_freighter(_bounty_near_position() + BalanceBoard.ESCORT_SPAWN_OFFSET)
+
+
+func _escort_needs_freighter() -> bool:
+	var mission: Node = _mission_service_node()
+	if mission == null or not mission.has_method(&"has_active"):
+		return false
+	if mission.call(&"has_active") != true:
+		return false
+	if not mission.has_method(&"active_kind"):
+		return false
+	var kind: StringName = StringName(str(mission.call(&"active_kind")))
+	if kind != BalanceStanding.MISSION_KIND_ESCORT:
+		return false
+	if mission.has_method(&"is_escort_alive") and mission.call(&"is_escort_alive") != true:
+		return false
+	return true
+
+
+func _live_escort_count() -> int:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return 0
+	var count: int = 0
+	for node: Node in tree.get_nodes_in_group(BalanceBoard.GROUP_MISSION_ESCORT):
+		if not is_instance_valid(node):
+			continue
+		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
+			continue
+		count += 1
+	return count
+
+
+func _spawn_escort_freighter(at: Vector3) -> void:
+	var ship: MissionEscortShip = MissionEscortShip.new()
+	ship.name = "MissionEscortShip"
+	ship.apply_role(BalanceCombat.ROLE_CIVILIAN)
+	ship.max_hp = BalanceBoard.ESCORT_HULL_HP
+	ship.hp = BalanceBoard.ESCORT_HULL_HP
+	ship.build_visual(BalanceBoard.ESCORT_COLOR)
+	ship.position = at
+	add_child(ship)
 
 
 ## True when MissionService has an open bounty for this system and hostiles are allowed.

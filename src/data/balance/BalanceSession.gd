@@ -35,6 +35,23 @@ const WORLD_KEY_DOCKED_STATION_ID: StringName = &"docked_station_id"
 const MISSION_KEY_TEMPLATE_ID: StringName = &"template_id"
 ## Optional: bounty kill objective met (bool). Missing = false. No schema bump.
 const MISSION_KEY_OBJECTIVE_MET: StringName = &"objective_met"
+## Optional S3a: true when the active job is a runtime/radiant offer snapshot.
+## Missing = false (legacy ContentLibrary template_id only).
+const MISSION_KEY_RUNTIME: StringName = &"runtime"
+## Runtime snapshot fields (present when runtime is true).
+const MISSION_KEY_KIND: StringName = &"kind"
+const MISSION_KEY_OFFERING_ENTITY_ID: StringName = &"offering_entity_id"
+const MISSION_KEY_PAY_CREDITS: StringName = &"pay_credits"
+const MISSION_KEY_STANDING_COMPLETE: StringName = &"standing_complete"
+const MISSION_KEY_STANDING_FAIL: StringName = &"standing_fail"
+const MISSION_KEY_STANDING_ABANDON: StringName = &"standing_abandon"
+const MISSION_KEY_DESTINATION_STATION_ID: StringName = &"destination_station_id"
+const MISSION_KEY_TARGET_SYSTEM_ID: StringName = &"target_system_id"
+const MISSION_KEY_CARGO_COMMODITY_ID: StringName = &"cargo_commodity_id"
+const MISSION_KEY_CARGO_QUANTITY: StringName = &"cargo_quantity"
+const MISSION_KEY_LABEL: StringName = &"label"
+## Escort: freighter still alive (bool). Missing on non-escort = ignored.
+const MISSION_KEY_ESCORT_ALIVE: StringName = &"escort_alive"
 
 # --- Canvas layers (above station 20 / HUD 10; below debug console 100) -----
 
@@ -145,6 +162,10 @@ const SHEET_JOB_STATUS_BOUNTY_READY: String = "Status  Ready to turn in"
 const SHEET_JOB_SMUGGLE_FORMAT: String = "Smuggle  %s → %s"
 const SHEET_JOB_SMUGGLE_NO_DEST_FORMAT: String = "Smuggle  %s"
 const SHEET_JOB_STATUS_SMUGGLE: String = "Status  Cargo must reach dest"
+## Captain sheet escort lines.
+const SHEET_JOB_ESCORT_FORMAT: String = "Escort  freighter → %s"
+const SHEET_JOB_ESCORT_NO_DEST: String = "Escort  freighter"
+const SHEET_JOB_STATUS_ESCORT: String = "Status  Keep freighter alive to dest"
 const SHEET_NO_JOB: String = "Job  — none —"
 const SHEET_STATUS_FORMAT: String = "Local  %s"
 const SHEET_STANDING_LINE_FORMAT: String = "%s  %s  (%s)"

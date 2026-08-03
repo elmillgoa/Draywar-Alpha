@@ -87,7 +87,8 @@ func _setup() -> Dictionary:
 	}
 
 
-func test_exactly_three_mission_kinds_in_content() -> void:
+func test_content_ships_classic_three_kinds_system_has_escort() -> void:
+	## ContentLibrary .tres may stay at three kinds; escort is radiant-first (S3a).
 	var kinds: Dictionary = {}
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY)
 	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceStanding.MISSION_CONTENT_CATEGORY])
@@ -95,10 +96,32 @@ func test_exactly_three_mission_kinds_in_content() -> void:
 		var contract: ContractType = ContentLibrary.item(id) as ContractType
 		assert_ne(contract, null)
 		kinds[contract.kind] = true
-	assert_eq(kinds.size(), 3, "exactly three mission kinds in content")
 	assert_true(kinds.has(BalanceStanding.MISSION_KIND_DELIVERY))
 	assert_true(kinds.has(BalanceStanding.MISSION_KIND_BOUNTY))
 	assert_true(kinds.has(BalanceStanding.MISSION_KIND_SMUGGLE))
+	assert_gte(kinds.size(), 3, "content ships at least the classic three kinds")
+	# Four system kinds the game can produce (content three + radiant escort).
+	var system_kinds: Array[StringName] = [
+		BalanceStanding.MISSION_KIND_DELIVERY,
+		BalanceStanding.MISSION_KIND_BOUNTY,
+		BalanceStanding.MISSION_KIND_SMUGGLE,
+		BalanceStanding.MISSION_KIND_ESCORT,
+	]
+	assert_eq(system_kinds.size(), 4)
+	var unique: Dictionary = {}
+	for kind: StringName in system_kinds:
+		assert_false(String(kind).is_empty(), "kind constant must be non-empty")
+		unique[String(kind)] = true
+	assert_eq(unique.size(), 4, "four distinct mission kinds including escort")
+	# Escort is a real ContractType kind (destination required), not a label-only constant.
+	var escort_ct: ContractType = ContractType.new()
+	escort_ct.id = &"fixture_escort_kind_check"
+	escort_ct.display_name = "Fixture escort"
+	escort_ct.offering_entity_id = ENTITY_REACH
+	escort_ct.kind = BalanceStanding.MISSION_KIND_ESCORT
+	escort_ct.pay_credits = 100
+	escort_ct.destination_station_id = STATION_BETA
+	assert_eq(escort_ct.validation_errors().size(), 0, "escort ContractType validates with dest")
 	var problems: PackedStringArray = ContentLibrary.problems()
 	assert_eq(problems.size(), 0, "content problems:\n  %s" % "\n  ".join(problems))
 

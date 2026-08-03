@@ -97,8 +97,9 @@ func test_each_controller_offers_at_least_two_contracts() -> void:
 			contract.kind == BalanceStanding.MISSION_KIND_DELIVERY
 			or contract.kind == BalanceStanding.MISSION_KIND_BOUNTY
 			or contract.kind == BalanceStanding.MISSION_KIND_SMUGGLE
+			or contract.kind == BalanceStanding.MISSION_KIND_ESCORT
 		)
-		assert_true(kind_ok, "%s kind is delivery, bounty, or smuggle" % id)
+		assert_true(kind_ok, "%s kind is delivery, bounty, smuggle, or escort" % id)
 		assert_true(ContentLibrary.has_item(contract.destination_station_id))
 		if contract.offering_entity_id == ENTITY_REACH:
 			reach_count += 1

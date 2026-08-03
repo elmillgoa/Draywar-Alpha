@@ -65,23 +65,13 @@ static func controller_tier(station_id: StringName) -> StringName:
 	return StandingService.tier_for(standing)
 
 
-## All contract templates offered by the dock controller (board stock).
+## Board offer instance ids for this dock (hand templates + radiant fills).
+## Returns BoardService offer ids, not a raw ContentLibrary dump (S3a).
 static func offered_templates(station_id: StringName) -> Array[StringName]:
 	var out: Array[StringName] = []
-	var controller_id: StringName = controller(station_id)
-	if String(controller_id).is_empty():
+	if String(station_id).is_empty():
 		return out
-	for id: StringName in ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY):
-		var item: ContentItem = ContentLibrary.item(id)
-		if item == null:
-			continue
-		var offering_raw: Variant = item.get("offering_entity_id")
-		if offering_raw == null:
-			continue
-		var offering: StringName = StringName(str(offering_raw))
-		if offering == controller_id:
-			out.append(id)
-	return out
+	return BoardService.offer_ids_for_station(station_id)
 
 
 static func favor_person(station_id: StringName) -> StringName:

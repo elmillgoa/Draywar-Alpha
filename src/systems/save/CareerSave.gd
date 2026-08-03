@@ -25,6 +25,9 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	# S2: market always written (stocks are live state even with an empty hold).
 	sections[BalanceMarket.SAVE_SECTION_KEY] = MarketService.to_section()
 
+	# S3a: board steps + mid-cycle claims (offers re-derive from step + market).
+	sections[BalanceBoard.SAVE_SECTION_KEY] = BoardService.to_section()
+
 	var wallet_section: Dictionary = _wallet_section(tree)
 	if not wallet_section.is_empty():
 		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
@@ -56,6 +59,8 @@ static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	# Market after the clock and before money/cargo: it resolves its own step
 	# count against the restored elapsed time, and trade prices off it.
 	_apply_market_from_sections(sections)
+	# Boards after market: radiant shortage reads match restored shelves.
+	_apply_boards_from_sections(sections)
 	_apply_wallet_from_sections(tree, sections)
 	# Ship before cargo so capacity path matches restored active hull.
 	_apply_ship_from_sections(tree, sections)
@@ -270,6 +275,14 @@ static func _apply_market_from_sections(sections: Dictionary) -> void:
 	else:
 		# Old saves / missing section → markets seeded from station profiles.
 		MarketService.reset()
+
+
+static func _apply_boards_from_sections(sections: Dictionary) -> void:
+	if sections.has(BalanceBoard.SAVE_SECTION_KEY):
+		BoardService.apply_section(sections[BalanceBoard.SAVE_SECTION_KEY])
+	else:
+		# Old saves / missing section → boards re-derive from clock at step 0+.
+		BoardService.reset()
 
 
 static func _apply_wallet_from_sections(tree: SceneTree, sections: Dictionary) -> void:

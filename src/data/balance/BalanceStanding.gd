@@ -109,6 +109,9 @@ const MISSION_KIND_BOUNTY: StringName = &"bounty"
 ## ContractType.kind value for E3.4 smuggle (load cargo, deliver still held).
 const MISSION_KIND_SMUGGLE: StringName = &"smuggle"
 
+## ContractType.kind value for S3a escort (freighter survives until dest turn-in).
+const MISSION_KIND_ESCORT: StringName = &"escort"
+
 ## Hostiles that must die in the target system before bounty turn-in.
 const BOUNTY_KILLS_REQUIRED: int = 1
 
@@ -377,6 +380,12 @@ const STATION_ACCEPT_SMUGGLE_LABEL: String = "Accept smuggle"
 ## Station menu: accept smuggle with destination display name.
 const STATION_ACCEPT_SMUGGLE_FORMAT: String = "Accept smuggle → %s"
 
+## Station menu: accept escort (no destination fallback).
+const STATION_ACCEPT_ESCORT_LABEL: String = "Accept escort"
+
+## Station menu: accept escort with destination display name.
+const STATION_ACCEPT_ESCORT_FORMAT: String = "Accept escort → %s"
+
 ## Station menu: talk to recovery contact when a step is available.
 const STATION_RECOVERY_TALK_FORMAT: String = "Talk to %s"
 
@@ -397,6 +406,15 @@ const HUD_MISSION_SMUGGLE_FORMAT: String = "SMUGGLE  %s → %s"
 
 ## HUD smuggle without destination (should not ship in content).
 const HUD_MISSION_SMUGGLE_NO_DEST_FORMAT: String = "SMUGGLE  %s"
+
+## HUD escort active; arg = destination station display name.
+const HUD_MISSION_ESCORT_FORMAT: String = "ESCORT  freighter → %s"
+
+## HUD escort without destination (should not ship).
+const HUD_MISSION_ESCORT_NO_DEST: String = "ESCORT  freighter"
+
+## HUD escort freighter already lost (should be rare — mission fails on death).
+const HUD_MISSION_ESCORT_LOST: String = "ESCORT  freighter lost"
 
 ## `recovery accept` / `favor` arg counts (tokens after the verb).
 const CONSOLE_RECOVERY_ACCEPT_ARGS: int = 2

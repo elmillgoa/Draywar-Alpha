@@ -314,15 +314,15 @@ func _content_name(id: StringName) -> String:
 	return String(id)
 
 
-## Commodity display name for an active smuggle template, or "cargo".
-func _smuggle_cargo_name(template_id: StringName) -> String:
-	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
-		return "cargo"
-	var item: ContentItem = ContentLibrary.item(template_id)
-	if item == null or not (item is ContractType):
-		return "cargo"
-	var contract: ContractType = item as ContractType
-	var cargo_id: StringName = contract.cargo_commodity_id
+## Commodity display name for an active smuggle job, or "cargo".
+func _smuggle_cargo_name(service: Node, template_id: StringName) -> String:
+	var cargo_id: StringName = &""
+	if service != null and service.has_method(&"active_cargo_commodity_id"):
+		cargo_id = _variant_to_name(service.call(&"active_cargo_commodity_id"))
+	if String(cargo_id).is_empty() and ContentLibrary.has_item(template_id):
+		var item: ContentItem = ContentLibrary.item(template_id)
+		if item is ContractType:
+			cargo_id = (item as ContractType).cargo_commodity_id
 	if String(cargo_id).is_empty():
 		return "cargo"
 	return _content_name(cargo_id)
@@ -442,68 +442,78 @@ func _refresh_mission_line() -> void:
 	if _mission_label == null:
 		return
 	var tree: SceneTree = get_tree()
-	if tree == null:
-		_mission_label.text = ""
-		return
-	var service: Node = tree.get_first_node_in_group(&"mission_service")
-	if service == null or not service.has_method(&"has_active"):
-		_mission_label.text = ""
-		return
-	if service.call(&"has_active") != true:
+	var service: Node = null
+	if tree != null:
+		service = tree.get_first_node_in_group(&"mission_service")
+	if (
+		service == null
+		or not service.has_method(&"has_active")
+		or service.call(&"has_active") != true
+	):
 		_mission_label.text = ""
 		return
 	var template_raw: Variant = service.call(&"active_template_id")
-	var template_id: StringName = &""
-	if typeof(template_raw) == TYPE_STRING_NAME:
-		template_id = template_raw
-	elif typeof(template_raw) == TYPE_STRING:
-		var ttext: String = template_raw
-		template_id = StringName(ttext)
+	var template_id: StringName = _variant_to_name(template_raw)
 	var kind: StringName = &""
 	if service.has_method(&"active_kind"):
 		kind = _variant_to_name(service.call(&"active_kind"))
+	_mission_label.text = _mission_line_text(service, kind, template_id)
+
+
+func _mission_line_text(service: Node, kind: StringName, template_id: StringName) -> String:
 	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
-		var objective_ready: bool = false
-		if service.has_method(&"is_objective_ready"):
-			objective_ready = service.call(&"is_objective_ready") == true
-		if objective_ready:
-			var dest_id: StringName = &""
-			if service.has_method(&"active_destination_station_id"):
-				dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
-			_mission_label.text = (
-				BalanceStanding.HUD_MISSION_BOUNTY_READY_FORMAT % _content_name(dest_id)
-			)
-		else:
-			var target_id: StringName = &""
-			if service.has_method(&"active_target_system_id"):
-				target_id = _variant_to_name(service.call(&"active_target_system_id"))
-			_mission_label.text = (
-				BalanceStanding.HUD_MISSION_BOUNTY_FORMAT % _content_name(target_id)
-			)
-		return
+		return _mission_line_bounty(service)
 	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
-		var cargo_name: String = _smuggle_cargo_name(template_id)
-		var smuggle_dest: StringName = &""
-		if service.has_method(&"active_destination_station_id"):
-			smuggle_dest = _variant_to_name(service.call(&"active_destination_station_id"))
-		if String(smuggle_dest).is_empty():
-			_mission_label.text = (BalanceStanding.HUD_MISSION_SMUGGLE_NO_DEST_FORMAT % cargo_name)
-		else:
-			_mission_label.text = (
-				BalanceStanding.HUD_MISSION_SMUGGLE_FORMAT
-				% [cargo_name, _content_name(smuggle_dest)]
-			)
-		return
+		return _mission_line_smuggle(service, template_id)
+	if kind == BalanceStanding.MISSION_KIND_ESCORT:
+		return _mission_line_escort(service)
 	var job_name: String = _content_name(template_id)
+	if service.has_method(&"active_display_label"):
+		var runtime_label: String = str(service.call(&"active_display_label"))
+		if not runtime_label.is_empty():
+			job_name = runtime_label
 	var dest_id: StringName = &""
 	if service.has_method(&"active_destination_station_id"):
 		dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
 	if String(dest_id).is_empty():
-		_mission_label.text = BalanceStanding.HUD_MISSION_NO_DEST_FORMAT % job_name
-	else:
-		_mission_label.text = (
-			BalanceStanding.HUD_MISSION_FORMAT % [job_name, _content_name(dest_id)]
-		)
+		return BalanceStanding.HUD_MISSION_NO_DEST_FORMAT % job_name
+	return BalanceStanding.HUD_MISSION_FORMAT % [job_name, _content_name(dest_id)]
+
+
+func _mission_line_bounty(service: Node) -> String:
+	var objective_ready: bool = false
+	if service.has_method(&"is_objective_ready"):
+		objective_ready = service.call(&"is_objective_ready") == true
+	if objective_ready:
+		var dest_id: StringName = &""
+		if service.has_method(&"active_destination_station_id"):
+			dest_id = _variant_to_name(service.call(&"active_destination_station_id"))
+		return BalanceStanding.HUD_MISSION_BOUNTY_READY_FORMAT % _content_name(dest_id)
+	var target_id: StringName = &""
+	if service.has_method(&"active_target_system_id"):
+		target_id = _variant_to_name(service.call(&"active_target_system_id"))
+	return BalanceStanding.HUD_MISSION_BOUNTY_FORMAT % _content_name(target_id)
+
+
+func _mission_line_smuggle(service: Node, template_id: StringName) -> String:
+	var cargo_name: String = _smuggle_cargo_name(service, template_id)
+	var smuggle_dest: StringName = &""
+	if service.has_method(&"active_destination_station_id"):
+		smuggle_dest = _variant_to_name(service.call(&"active_destination_station_id"))
+	if String(smuggle_dest).is_empty():
+		return BalanceStanding.HUD_MISSION_SMUGGLE_NO_DEST_FORMAT % cargo_name
+	return BalanceStanding.HUD_MISSION_SMUGGLE_FORMAT % [cargo_name, _content_name(smuggle_dest)]
+
+
+func _mission_line_escort(service: Node) -> String:
+	var escort_dest: StringName = &""
+	if service.has_method(&"active_destination_station_id"):
+		escort_dest = _variant_to_name(service.call(&"active_destination_station_id"))
+	if service.has_method(&"is_escort_alive") and service.call(&"is_escort_alive") != true:
+		return BalanceStanding.HUD_MISSION_ESCORT_LOST
+	if String(escort_dest).is_empty():
+		return BalanceStanding.HUD_MISSION_ESCORT_NO_DEST
+	return BalanceStanding.HUD_MISSION_ESCORT_FORMAT % _content_name(escort_dest)
 
 
 func _on_system_entered(system_id: StringName) -> void:

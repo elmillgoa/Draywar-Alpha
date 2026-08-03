@@ -323,7 +323,7 @@ func _refresh_job() -> void:
 			_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_BOUNTY_HUNT
 		return
 	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
-		var cargo_name: String = _smuggle_cargo_name(template_id)
+		var cargo_name: String = _smuggle_cargo_name(mission, template_id)
 		var smuggle_dest: StringName = &""
 		if mission.has_method(&"active_destination_station_id"):
 			smuggle_dest = _variant_to_name(mission.call(&"active_destination_station_id"))
@@ -335,7 +335,21 @@ func _refresh_job() -> void:
 			)
 		_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_SMUGGLE
 		return
+	if kind == BalanceStanding.MISSION_KIND_ESCORT:
+		var escort_dest: StringName = &""
+		if mission.has_method(&"active_destination_station_id"):
+			escort_dest = _variant_to_name(mission.call(&"active_destination_station_id"))
+		if String(escort_dest).is_empty():
+			_job_label.text = BalanceSession.SHEET_JOB_ESCORT_NO_DEST
+		else:
+			_job_label.text = (BalanceSession.SHEET_JOB_ESCORT_FORMAT % _content_name(escort_dest))
+		_job_status_label.text = BalanceSession.SHEET_JOB_STATUS_ESCORT
+		return
 	var job_name: String = _content_name(template_id)
+	if mission.has_method(&"active_display_label"):
+		var runtime_label: String = str(mission.call(&"active_display_label"))
+		if not runtime_label.is_empty():
+			job_name = runtime_label
 	var dest_id: StringName = &""
 	if mission.has_method(&"active_destination_station_id"):
 		dest_id = _variant_to_name(mission.call(&"active_destination_station_id"))
@@ -411,14 +425,14 @@ func _content_name(id: StringName) -> String:
 
 
 ## Commodity display name for an active smuggle template, or "cargo".
-func _smuggle_cargo_name(template_id: StringName) -> String:
-	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
-		return "cargo"
-	var item: ContentItem = ContentLibrary.item(template_id)
-	if item == null or not (item is ContractType):
-		return "cargo"
-	var contract: ContractType = item as ContractType
-	var cargo_id: StringName = contract.cargo_commodity_id
+func _smuggle_cargo_name(mission: Node, template_id: StringName) -> String:
+	var cargo_id: StringName = &""
+	if mission != null and mission.has_method(&"active_cargo_commodity_id"):
+		cargo_id = _variant_to_name(mission.call(&"active_cargo_commodity_id"))
+	if String(cargo_id).is_empty() and ContentLibrary.has_item(template_id):
+		var item: ContentItem = ContentLibrary.item(template_id)
+		if item is ContractType:
+			cargo_id = (item as ContractType).cargo_commodity_id
 	if String(cargo_id).is_empty():
 		return "cargo"
 	return _content_name(cargo_id)

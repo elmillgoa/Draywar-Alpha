@@ -80,3 +80,10 @@ ticker and the sector map all price against this one service; two writers would
 split truth about what a good costs and open a same-station money pump; it holds
 only market state (stocks, step count, shocks), not the hold, the wallet or
 world layout.
+
+### `BoardService` -> `res://src/systems/board/BoardService.gd`
+
+Station job boards and radiant offer generation for the whole sector. Station
+menus and mission accept all list work against this one service; two writers
+would split which jobs exist this restock cycle; it holds only board step count
+and mid-cycle claimed offer ids (offers re-derive from market + clock).

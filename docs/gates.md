@@ -61,6 +61,18 @@ You start docked at **Alpha Port** with 500 credits and a 20-crate hold.
   equivalence, byte-deterministic market save, both money-pump directions, no dead
   commodities, and the tick budget (0.44 ms against 2.0 ms). **Gate open, not signed.**
 
+### Attempt 1 — 2026-08-03
+
+**Verdict: signed — S2 economy feel passes.**
+
+**Elliot (verbatim / option selected):**
+
+> S2 has been completed.
+> Pass — S2 signed, start S3a
+
+**Notes:** Feel gate closed. S3a (radiant work surface) authorized. S3 human gate
+(“not a thin menu loop”) remains after S3b.
+
 ---
 
 ## A1 — Flight feel

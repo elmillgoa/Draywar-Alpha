@@ -5,24 +5,16 @@ extends RefCounted
 
 
 static func accept_job_label(template_id: StringName) -> String:
-	if String(template_id).is_empty() or not ContentLibrary.has_item(template_id):
+	if String(template_id).is_empty():
 		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
-	var item: ContentItem = ContentLibrary.item(template_id)
-	var kind: StringName = _as_name(item.get("kind"))
-	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
-		var target_id: StringName = _as_name(item.get("target_system_id"))
-		if String(target_id).is_empty():
-			return BalanceStanding.STATION_ACCEPT_BOUNTY_LABEL
-		return BalanceStanding.STATION_ACCEPT_BOUNTY_FORMAT % _content_name(target_id)
-	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
-		var smuggle_dest: StringName = _as_name(item.get("destination_station_id"))
-		if String(smuggle_dest).is_empty():
-			return BalanceStanding.STATION_ACCEPT_SMUGGLE_LABEL
-		return BalanceStanding.STATION_ACCEPT_SMUGGLE_FORMAT % _content_name(smuggle_dest)
-	var dest_id: StringName = _as_name(item.get("destination_station_id"))
-	if String(dest_id).is_empty():
-		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
-	return BalanceStanding.STATION_ACCEPT_JOB_TO_FORMAT % _content_name(dest_id)
+	# ContentLibrary hand template (console / legacy id).
+	if ContentLibrary.has_item(template_id):
+		return _label_from_content(template_id)
+	# Board runtime offer (hand board row or radiant).
+	var offer: Dictionary = BoardService.get_offer(template_id)
+	if not offer.is_empty():
+		return _label_from_offer(offer)
+	return BalanceStanding.STATION_ACCEPT_JOB_LABEL
 
 
 static func clear_box(box: VBoxContainer) -> void:
@@ -58,6 +50,41 @@ static func refresh_contacts(
 		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		contacts_list.add_child(line)
+
+
+static func _label_from_content(template_id: StringName) -> String:
+	var item: ContentItem = ContentLibrary.item(template_id)
+	if item == null:
+		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
+	var kind: StringName = _as_name(item.get("kind"))
+	return _label_for_kind(
+		kind, _as_name(item.get("destination_station_id")), _as_name(item.get("target_system_id"))
+	)
+
+
+static func _label_from_offer(offer: Dictionary) -> String:
+	var kind: StringName = StringName(str(offer.get(BalanceBoard.OFFER_KEY_KIND, &"")))
+	var dest: StringName = StringName(str(offer.get(BalanceBoard.OFFER_KEY_DESTINATION, &"")))
+	var target: StringName = StringName(str(offer.get(BalanceBoard.OFFER_KEY_TARGET_SYSTEM, &"")))
+	return _label_for_kind(kind, dest, target)
+
+
+static func _label_for_kind(kind: StringName, dest_id: StringName, target_id: StringName) -> String:
+	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
+		if String(target_id).is_empty():
+			return BalanceStanding.STATION_ACCEPT_BOUNTY_LABEL
+		return BalanceStanding.STATION_ACCEPT_BOUNTY_FORMAT % _content_name(target_id)
+	if kind == BalanceStanding.MISSION_KIND_SMUGGLE:
+		if String(dest_id).is_empty():
+			return BalanceStanding.STATION_ACCEPT_SMUGGLE_LABEL
+		return BalanceStanding.STATION_ACCEPT_SMUGGLE_FORMAT % _content_name(dest_id)
+	if kind == BalanceStanding.MISSION_KIND_ESCORT:
+		if String(dest_id).is_empty():
+			return BalanceStanding.STATION_ACCEPT_ESCORT_LABEL
+		return BalanceStanding.STATION_ACCEPT_ESCORT_FORMAT % _content_name(dest_id)
+	if String(dest_id).is_empty():
+		return BalanceStanding.STATION_ACCEPT_JOB_LABEL
+	return BalanceStanding.STATION_ACCEPT_JOB_TO_FORMAT % _content_name(dest_id)
 
 
 static func _content_name(id: StringName) -> String:

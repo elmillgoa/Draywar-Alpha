@@ -16,17 +16,18 @@ what is inside a section.
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
 **`standing`** (A2), **`world_clock`** (S1), **`market`** (S2), **`wallet`** (A5),
-**`cargo`** (B3), **`ship`** (E2.5), **`world`** (B2), **`mission`** (B2), and
-**`career`** (E4.6)
+**`cargo`** (B3), **`ship`** (E2.5), **`world`** (B2), **`mission`** (B2),
+**`boards`** (S3a), and **`career`** (E4.6)
 maps. Missing `standing` means all-neutral content defaults. Missing
 `world_clock` means elapsed game time starts at zero. Missing `market` means
-every station market is re-seeded from its station profile. Missing `wallet` means
-starting credits/fuel/condition. Missing `cargo` means empty hold. Missing
-`ship` means Hauler only (starter owned, active Hauler). Missing `world` keeps
-the boot system/spawn. Missing `mission` means no active job. Missing `career`
-means no life-path ids on the captain sheet (old saves). Tests may still use a
-hostile probe fixture. New required career fields later bump the version with a
-migration step in `SaveMigrations.gd`.
+every station market is re-seeded from its station profile. Missing `boards`
+means job boards re-derive from the clock with no mid-cycle claims. Missing
+`wallet` means starting credits/fuel/condition. Missing `cargo` means empty
+hold. Missing `ship` means Hauler only (starter owned, active Hauler). Missing
+`world` keeps the boot system/spawn. Missing `mission` means no active job.
+Missing `career` means no life-path ids on the captain sheet (old saves). Tests
+may still use a hostile probe fixture. New required career fields later bump
+the version with a migration step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -149,20 +150,50 @@ restore is not required (free-fly at saved position is OK).
 
 Missing section → boot system and spawn. No envelope version bump.
 
-### Optional section: `mission` (schema v1)
+### Optional section: `boards` (schema v1)
 
-Written by `MissionService.to_section()` when a mission is active (B2).
-Applied by `MissionService.apply_section()` (restores active template; emits
-`on_mission_accepted` so HUD refreshes).
+Written by `BoardService.to_section()` / applied by `apply_section()` via
+`CareerSave` (S3a). Always gathered when saving a career. No envelope version
+bump. Applied **after `market` and before `wallet`/`cargo`** so radiant
+shortage reads match restored shelves. Offer rows themselves are **not**
+saved — they re-derive from content + market + step.
 
 | Key | Type | Meaning |
 |---|---|---|
-| `template_id` | `String` | Active contract template content id. |
-| `objective_met` | `bool` | Optional (E1.3). True when a bounty kill gate is done. Missing = false. |
+| `steps_done` | `int` | Board restock steps applied since career start (`floor(elapsed / BOARD_STEP_SECONDS)`). |
+| `claimed` | `Dictionary` | Station id string → Array of claimed offer id strings for the current restock cycle. |
 
-Smuggle (E3.4) does **not** add mission keys. Cargo for the job lives in the
-`cargo` section. Restore applies cargo first, then mission without re-loading
-crates (so save/load does not double the hold).
+Missing section → boards re-derive from the clock; no mid-cycle claims.
+`steps_done` clamps to `floor(elapsed_seconds / BOARD_STEP_SECONDS)`.
+
+### Optional section: `mission` (schema v1)
+
+Written by `MissionService.to_section()` when a mission is active (B2 / S3a).
+Applied by `MissionService.apply_section()` (restores active template or
+runtime snapshot; emits `on_mission_accepted` so HUD refreshes).
+
+| Key | Type | Meaning |
+|---|---|---|
+| `template_id` | `String` | Active contract template content id, **or** board offer instance id for radiant/hand board rows. |
+| `objective_met` | `bool` | Optional (E1.3). True when a bounty kill gate is done. Missing = false. |
+| `runtime` | `bool` | Optional (S3a). True when the job is a board snapshot (not ContentLibrary). Missing = false. |
+| `kind` | `String` | Runtime only. Mission kind (`delivery` / `bounty` / `smuggle` / `escort`). |
+| `offering_entity_id` | `String` | Runtime only. Offering Entity id. |
+| `pay_credits` | `int` | Runtime only. Credits on complete. |
+| `standing_complete` | `float` | Runtime only. Standing delta on complete. |
+| `standing_fail` | `float` | Runtime only. Standing delta on fail. |
+| `standing_abandon` | `float` | Runtime only. Standing delta on abandon. |
+| `destination_station_id` | `String` | Runtime only. Turn-in station. |
+| `target_system_id` | `String` | Runtime only. Bounty kill system / escort dest system. |
+| `cargo_commodity_id` | `String` | Runtime only. Smuggle commodity. |
+| `cargo_quantity` | `int` | Runtime only. Smuggle units. |
+| `label` | `String` | Runtime only. Plain-English board label. |
+| `escort_alive` | `bool` | Optional (S3a). Escort freighter still alive. Missing on non-escort ignored; missing on escort = true. |
+
+Smuggle (E3.4) cargo still lives in the `cargo` section. Restore applies cargo
+first, then mission without re-loading crates (so save/load does not double the
+hold). Runtime radiant missions restore from the snapshot keys above — they do
+**not** require the offer to still be on the board.
 
 Missing section → no active mission. No envelope version bump.
 

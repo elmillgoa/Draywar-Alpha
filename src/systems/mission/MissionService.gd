@@ -1,16 +1,19 @@
 class_name MissionService
 extends Node
 
-## One active mission max; outcomes move Entity standing — Alpha A3 / E1.3 / E3.4.
+## One active mission max; outcomes move Entity standing — Alpha A3 / E1.3 / E3.4 / S3a.
 ##
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A3, docs/BETA_E1_LEGIBLE_SECTOR.md E1.3
-## E3.4 smuggle: docs/BETA_E3_ECONOMY.md. Law: docs/reputation_and_standing.md §7
+## E3.4 smuggle: docs/BETA_E3_ECONOMY.md. S3a radiant/escort: STEAM_PHASE_PLAN S3a.
+## Law: docs/reputation_and_standing.md §7
 ##
 ## Not a standing writer. Completes/fails/abandons call StandingService.
 ## Child of Main (not an autoload). Optional save section `mission` (B2).
 ## Delivery: turn in at destination. Bounty: kill in target system, then turn in.
 ## Smuggle: accept loads cargo; complete needs dest + cargo still held; abandon
-## leaves cargo. Reach contraband inspection still applies to munitions holds.
+## leaves cargo. Escort: freighter survives until dest turn-in (S3a).
+## Accept works for ContentLibrary template ids **and** BoardService runtime
+## offer ids (radiant/hand board rows). One active mission preserved.
 ## Console: `mission list|accept|complete|fail|abandon|status`.
 
 const MISSION: StringName = &"mission"
@@ -34,6 +37,10 @@ var _state: StringName = STATE_NONE
 var _bounty_kills: int = 0
 ## Last station from on_docked — backup if group docking lookup fails mid-frame.
 var _last_docked_station_id: StringName = &""
+## Runtime/radiant snapshot when the active job is not a ContentLibrary id.
+var _runtime_offer: Dictionary = {}
+## Escort freighter still alive (only meaningful for escort kind).
+var _escort_alive: bool = true
 
 
 func _ready() -> void:
@@ -82,7 +89,7 @@ func _on_hostile_killed(system_id: StringName, _victim_entity_id: StringName) ->
 		return
 	if is_objective_ready():
 		return
-	var template: ContractType = _template(_active_template_id)
+	var template: ContractType = _active_contract()
 	if template == null or template.kind != BalanceStanding.MISSION_KIND_BOUNTY:
 		return
 	var target: StringName = _normalize_id(template.target_system_id)
@@ -90,7 +97,6 @@ func _on_hostile_killed(system_id: StringName, _victim_entity_id: StringName) ->
 	if String(target).is_empty() or target != here:
 		return
 	_bounty_kills += 1
-	# Cap at required; turn-in still needs the destination dock.
 	if _bounty_kills > BalanceStanding.BOUNTY_KILLS_REQUIRED:
 		_bounty_kills = BalanceStanding.BOUNTY_KILLS_REQUIRED
 
@@ -100,16 +106,21 @@ func has_active() -> bool:
 	return _state == STATE_ACTIVE and not String(_active_template_id).is_empty()
 
 
-## Active template id, or empty.
+## Active template / offer id, or empty.
 func active_template_id() -> StringName:
 	return _active_template_id
 
 
-## Active contract kind (delivery, bounty, …), or empty.
+## True when the active job was accepted from a board runtime snapshot.
+func is_runtime_mission() -> bool:
+	return has_active() and not _runtime_offer.is_empty()
+
+
+## Active contract kind (delivery, bounty, smuggle, escort), or empty.
 func active_kind() -> StringName:
 	if not has_active():
 		return &""
-	var template: ContractType = _template(_active_template_id)
+	var template: ContractType = _active_contract()
 	if template == null:
 		return &""
 	return template.kind
@@ -119,25 +130,74 @@ func active_kind() -> StringName:
 func active_target_system_id() -> StringName:
 	if not has_active():
 		return &""
-	var template: ContractType = _template(_active_template_id)
+	var template: ContractType = _active_contract()
 	if template == null:
 		return &""
 	return _normalize_id(template.target_system_id)
 
 
+## Smuggle cargo commodity for the active mission, or empty.
+func active_cargo_commodity_id() -> StringName:
+	if not has_active():
+		return &""
+	var template: ContractType = _active_contract()
+	if template == null:
+		return &""
+	return _normalize_id(template.cargo_commodity_id)
+
+
+## Plain-English label for HUD / sheet (runtime label or content display name).
+func active_display_label() -> String:
+	if not has_active():
+		return ""
+	if not _runtime_offer.is_empty():
+		var label: String = str(_runtime_offer.get(BalanceBoard.OFFER_KEY_LABEL, ""))
+		if not label.is_empty():
+			return label
+	if ContentLibrary.has_item(_active_template_id):
+		var item: ContentItem = ContentLibrary.item(_active_template_id)
+		if item != null and not item.display_name.is_empty():
+			return item.display_name
+	return String(_active_template_id)
+
+
 ## True when the kill/objective gate is satisfied (delivery always true).
 ## Smuggle: cargo qty for the template commodity must still be in the hold.
+## Escort: freighter still alive.
 func is_objective_ready() -> bool:
 	if not has_active():
 		return false
-	var template: ContractType = _template(_active_template_id)
+	var template: ContractType = _active_contract()
 	if template == null:
 		return false
 	if template.kind == BalanceStanding.MISSION_KIND_BOUNTY:
 		return _bounty_kills >= BalanceStanding.BOUNTY_KILLS_REQUIRED
 	if template.kind == BalanceStanding.MISSION_KIND_SMUGGLE:
 		return _hold_has_smuggle_cargo(template)
+	if template.kind == BalanceStanding.MISSION_KIND_ESCORT:
+		return _escort_alive
 	return true
+
+
+## Escort freighter still counted alive (tests / world ensure).
+func is_escort_alive() -> bool:
+	if not has_active():
+		return false
+	if active_kind() != BalanceStanding.MISSION_KIND_ESCORT:
+		return false
+	return _escort_alive
+
+
+## World / escort hull: freighter was destroyed → fail with standing delta.
+func notify_escort_destroyed() -> void:
+	if not has_active():
+		return
+	if active_kind() != BalanceStanding.MISSION_KIND_ESCORT:
+		return
+	if not _escort_alive:
+		return
+	_escort_alive = false
+	fail()
 
 
 ## Clear active mission without standing change (tests / reset).
@@ -145,16 +205,22 @@ func reset() -> void:
 	_active_template_id = &""
 	_state = STATE_NONE
 	_bounty_kills = 0
+	_runtime_offer = {}
+	_escort_alive = true
 
 
 ## Optional save section (schema v1). Empty when no active mission.
-## Optional objective_met key when a bounty kill is done (no schema bump).
 func to_section() -> Dictionary:
 	if not has_active():
 		return {}
 	var section: Dictionary = {BalanceSession.MISSION_KEY_TEMPLATE_ID: String(_active_template_id)}
 	if is_objective_ready() and active_kind() == BalanceStanding.MISSION_KIND_BOUNTY:
 		section[BalanceSession.MISSION_KEY_OBJECTIVE_MET] = true
+	if not _runtime_offer.is_empty():
+		section[BalanceSession.MISSION_KEY_RUNTIME] = true
+		_write_runtime_keys(section)
+	if active_kind() == BalanceStanding.MISSION_KIND_ESCORT:
+		section[BalanceSession.MISSION_KEY_ESCORT_ALIVE] = _escort_alive
 	return section
 
 
@@ -170,14 +236,17 @@ func apply_section(raw: Variant) -> void:
 	var template_id: StringName = StringName(str(data[BalanceSession.MISSION_KEY_TEMPLATE_ID]))
 	if String(template_id).is_empty():
 		return
-	var template: ContractType = _template(template_id)
-	if template == null:
-		return
-	# Skip cargo load on restore — hold already has inventory from cargo section.
-	if not _accept_internal(template_id, false):
+	var is_runtime: bool = data.get(BalanceSession.MISSION_KEY_RUNTIME, false) == true
+	if is_runtime:
+		var offer: Dictionary = _offer_from_save(data, template_id)
+		if not _accept_runtime(offer, false):
+			return
+	elif not _accept_internal(template_id, false):
 		return
 	if data.get(BalanceSession.MISSION_KEY_OBJECTIVE_MET, false) == true:
 		_bounty_kills = BalanceStanding.BOUNTY_KILLS_REQUIRED
+	if active_kind() == BalanceStanding.MISSION_KIND_ESCORT:
+		_escort_alive = data.get(BalanceSession.MISSION_KEY_ESCORT_ALIVE, true) == true
 
 
 ## Every loaded contract template id (sorted by ContentLibrary).
@@ -185,8 +254,8 @@ func list_template_ids() -> Array[StringName]:
 	return ContentLibrary.ids_in(BalanceStanding.MISSION_CONTENT_CATEGORY)
 
 
-## Accept a template. Fails if one is already active, id unknown, or (smuggle)
-## free volume cannot hold the cargo load.
+## Accept a template id or board offer id. Fails if one is already active,
+## id unknown, or (smuggle) free volume cannot hold the cargo load.
 func accept(template_id: StringName) -> bool:
 	return _accept_internal(template_id, true)
 
@@ -194,7 +263,38 @@ func accept(template_id: StringName) -> bool:
 func _accept_internal(template_id: StringName, load_smuggle_cargo: bool) -> bool:
 	if has_active():
 		return false
-	var template: ContractType = _template(template_id)
+	# ContentLibrary path (legacy hand jobs + console by content id).
+	var template: ContractType = _library_template(template_id)
+	if template != null:
+		return _accept_contract(template_id, template, {}, load_smuggle_cargo)
+	# Board runtime offer path (hand board rows + radiant).
+	var offer: Dictionary = BoardService.get_offer(template_id)
+	if offer.is_empty():
+		return false
+	if not _accept_runtime(offer, load_smuggle_cargo):
+		return false
+	BoardService.claim_offer(template_id)
+	return true
+
+
+func _accept_runtime(offer: Dictionary, load_smuggle_cargo: bool) -> bool:
+	if has_active() or offer.is_empty():
+		return false
+	var contract: ContractType = MissionOffer.contract_from_offer(offer)
+	if contract == null:
+		return false
+	var offer_id: StringName = _normalize_id(offer.get(BalanceBoard.OFFER_KEY_ID, &""))
+	if String(offer_id).is_empty():
+		return false
+	return _accept_contract(offer_id, contract, offer.duplicate(true), load_smuggle_cargo)
+
+
+func _accept_contract(
+	offer_id: StringName,
+	template: ContractType,
+	runtime_snapshot: Dictionary,
+	load_smuggle_cargo: bool
+) -> bool:
 	if template == null:
 		return false
 	if (
@@ -203,10 +303,12 @@ func _accept_internal(template_id: StringName, load_smuggle_cargo: bool) -> bool
 		and not _try_load_smuggle_cargo(template)
 	):
 		return false
-	_active_template_id = template_id
+	_active_template_id = offer_id
 	_state = STATE_ACTIVE
 	_bounty_kills = 0
-	EventBus.on_mission_accepted.emit(template_id, template.offering_entity_id)
+	_runtime_offer = runtime_snapshot
+	_escort_alive = true
+	EventBus.on_mission_accepted.emit(offer_id, template.offering_entity_id)
 	return true
 
 
@@ -216,7 +318,7 @@ func can_complete_at_station(station_id: StringName) -> bool:
 		return false
 	if not is_objective_ready():
 		return false
-	var template: ContractType = _template(_active_template_id)
+	var template: ContractType = _active_contract()
 	if template == null:
 		return false
 	var dest: StringName = _normalize_id(template.destination_station_id)
@@ -230,14 +332,13 @@ func can_complete_at_station(station_id: StringName) -> bool:
 func active_destination_station_id() -> StringName:
 	if not has_active():
 		return &""
-	var template: ContractType = _template(_active_template_id)
+	var template: ContractType = _active_contract()
 	if template == null:
 		return &""
 	return _normalize_id(template.destination_station_id)
 
 
 ## Complete at a known station (station menu path — no silent fail on dock lookup).
-## Returns the outcome report; REPORT_KEY_ATTRIBUTED true means the job closed.
 func try_complete_at(station_id: StringName) -> Dictionary:
 	var empty: Dictionary = {
 		BalanceStanding.REPORT_KEY_ATTRIBUTED: false,
@@ -254,8 +355,6 @@ func try_complete_at(station_id: StringName) -> Dictionary:
 
 
 ## Complete the active mission → positive standing + credits with offering Entity.
-## Bounty requires the kill objective first; smuggle needs cargo still held;
-## delivery has no extra gate.
 func complete() -> Dictionary:
 	if has_active() and not is_objective_ready():
 		return {
@@ -310,7 +409,6 @@ func _docked_station_id() -> StringName:
 			var from_service: StringName = _normalize_id(station_raw)
 			if not String(from_service).is_empty():
 				return from_service
-	# Fallback: last on_docked (same source StationMenu uses for Turn In visibility).
 	return _last_docked_station_id
 
 
@@ -331,7 +429,7 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 		return empty
 
 	var template_id: StringName = _active_template_id
-	var template: ContractType = _template(template_id)
+	var template: ContractType = _active_contract()
 	if template == null:
 		reset()
 		return empty
@@ -350,7 +448,6 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 		reason = BalanceStanding.REASON_MISSION_FAIL
 		outcome = OUTCOME_FAILED
 
-	# Smuggle complete removes the cargo load; abandon/fail leave it (locked D).
 	if succeeded and not abandoned and template.kind == BalanceStanding.MISSION_KIND_SMUGGLE:
 		if not _remove_smuggle_cargo(template):
 			return empty
@@ -359,7 +456,6 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 	var pay: int = 0
 	if succeeded and not abandoned:
 		var gross: int = maxi(0, template.pay_credits)
-		# Net after E3.2 garnish (if any); station turn-in shows what the player got.
 		pay = _pay_credits(gross)
 
 	if abandoned:
@@ -381,8 +477,6 @@ func _finish(succeeded: bool, abandoned: bool) -> Dictionary:
 	}
 
 
-## Pay job credits through the wallet garnish path when present (E3.2).
-## Returns net credits the player received.
 func _pay_credits(amount: int) -> int:
 	var net: int = 0
 	if amount <= 0:
@@ -412,13 +506,115 @@ func _variant_to_int(value: Variant) -> int:
 	return 0
 
 
-func _template(template_id: StringName) -> ContractType:
+func _library_template(template_id: StringName) -> ContractType:
 	if not ContentLibrary.has_item(template_id):
 		return null
 	var item: ContentItem = ContentLibrary.item(template_id)
 	if item is ContractType:
 		return item as ContractType
 	return null
+
+
+## Active contract from ContentLibrary or the runtime snapshot.
+func _active_contract() -> ContractType:
+	if not has_active():
+		return null
+	if not _runtime_offer.is_empty():
+		return MissionOffer.contract_from_offer(_runtime_offer)
+	return _library_template(_active_template_id)
+
+
+func _write_runtime_keys(section: Dictionary) -> void:
+	var offer: Dictionary = _runtime_offer
+	section[BalanceSession.MISSION_KEY_KIND] = str(offer.get(BalanceBoard.OFFER_KEY_KIND, ""))
+	section[BalanceSession.MISSION_KEY_OFFERING_ENTITY_ID] = str(
+		offer.get(BalanceBoard.OFFER_KEY_OFFERING_ENTITY, "")
+	)
+	section[BalanceSession.MISSION_KEY_PAY_CREDITS] = _dict_int(
+		offer, BalanceBoard.OFFER_KEY_PAY, 0
+	)
+	section[BalanceSession.MISSION_KEY_STANDING_COMPLETE] = _dict_float(
+		offer, BalanceBoard.OFFER_KEY_STANDING_COMPLETE, BalanceStanding.MISSION_COMPLETE_DELTA
+	)
+	section[BalanceSession.MISSION_KEY_STANDING_FAIL] = _dict_float(
+		offer, BalanceBoard.OFFER_KEY_STANDING_FAIL, BalanceStanding.MISSION_FAIL_DELTA
+	)
+	section[BalanceSession.MISSION_KEY_STANDING_ABANDON] = _dict_float(
+		offer, BalanceBoard.OFFER_KEY_STANDING_ABANDON, BalanceStanding.MISSION_ABANDON_DELTA
+	)
+	section[BalanceSession.MISSION_KEY_DESTINATION_STATION_ID] = str(
+		offer.get(BalanceBoard.OFFER_KEY_DESTINATION, "")
+	)
+	section[BalanceSession.MISSION_KEY_TARGET_SYSTEM_ID] = str(
+		offer.get(BalanceBoard.OFFER_KEY_TARGET_SYSTEM, "")
+	)
+	section[BalanceSession.MISSION_KEY_CARGO_COMMODITY_ID] = str(
+		offer.get(BalanceBoard.OFFER_KEY_CARGO_COMMODITY, "")
+	)
+	section[BalanceSession.MISSION_KEY_CARGO_QUANTITY] = _dict_int(
+		offer, BalanceBoard.OFFER_KEY_CARGO_QUANTITY, 0
+	)
+	section[BalanceSession.MISSION_KEY_LABEL] = str(offer.get(BalanceBoard.OFFER_KEY_LABEL, ""))
+
+
+func _offer_from_save(data: Dictionary, template_id: StringName) -> Dictionary:
+	return {
+		BalanceBoard.OFFER_KEY_ID: template_id,
+		BalanceBoard.OFFER_KEY_KIND: StringName(str(data.get(BalanceSession.MISSION_KEY_KIND, ""))),
+		BalanceBoard.OFFER_KEY_OFFERING_ENTITY:
+		StringName(str(data.get(BalanceSession.MISSION_KEY_OFFERING_ENTITY_ID, ""))),
+		BalanceBoard.OFFER_KEY_PAY: _dict_int(data, BalanceSession.MISSION_KEY_PAY_CREDITS, 0),
+		BalanceBoard.OFFER_KEY_STANDING_COMPLETE:
+		_dict_float(
+			data,
+			BalanceSession.MISSION_KEY_STANDING_COMPLETE,
+			BalanceStanding.MISSION_COMPLETE_DELTA
+		),
+		BalanceBoard.OFFER_KEY_STANDING_FAIL:
+		_dict_float(
+			data, BalanceSession.MISSION_KEY_STANDING_FAIL, BalanceStanding.MISSION_FAIL_DELTA
+		),
+		BalanceBoard.OFFER_KEY_STANDING_ABANDON:
+		_dict_float(
+			data, BalanceSession.MISSION_KEY_STANDING_ABANDON, BalanceStanding.MISSION_ABANDON_DELTA
+		),
+		BalanceBoard.OFFER_KEY_DESTINATION:
+		StringName(str(data.get(BalanceSession.MISSION_KEY_DESTINATION_STATION_ID, ""))),
+		BalanceBoard.OFFER_KEY_TARGET_SYSTEM:
+		StringName(str(data.get(BalanceSession.MISSION_KEY_TARGET_SYSTEM_ID, ""))),
+		BalanceBoard.OFFER_KEY_CARGO_COMMODITY:
+		StringName(str(data.get(BalanceSession.MISSION_KEY_CARGO_COMMODITY_ID, ""))),
+		BalanceBoard.OFFER_KEY_CARGO_QUANTITY:
+		_dict_int(data, BalanceSession.MISSION_KEY_CARGO_QUANTITY, 0),
+		BalanceBoard.OFFER_KEY_LABEL: str(data.get(BalanceSession.MISSION_KEY_LABEL, "")),
+		BalanceBoard.OFFER_KEY_SOURCE: BalanceBoard.OFFER_SOURCE_RADIANT,
+	}
+
+
+func _dict_int(data: Dictionary, key: StringName, default_value: int) -> int:
+	if not data.has(key):
+		return default_value
+	var raw: Variant = data[key]
+	if typeof(raw) == TYPE_INT:
+		var as_int: int = raw
+		return as_int
+	if typeof(raw) == TYPE_FLOAT:
+		var as_float: float = raw
+		return int(as_float)
+	return default_value
+
+
+func _dict_float(data: Dictionary, key: StringName, default_value: float) -> float:
+	if not data.has(key):
+		return default_value
+	var raw: Variant = data[key]
+	if typeof(raw) == TYPE_FLOAT:
+		var as_float: float = raw
+		return as_float
+	if typeof(raw) == TYPE_INT:
+		var as_int: int = raw
+		return float(as_int)
+	return default_value
 
 
 func _cargo_service() -> Node:
@@ -428,7 +624,6 @@ func _cargo_service() -> Node:
 	return tree.get_first_node_in_group(&"cargo_service")
 
 
-## True when hold has at least the smuggle template quantity of its commodity.
 func _hold_has_smuggle_cargo(template: ContractType) -> bool:
 	if template == null:
 		return false
@@ -443,7 +638,6 @@ func _hold_has_smuggle_cargo(template: ContractType) -> bool:
 	return have >= qty
 
 
-## Load smuggle cargo into the hold. Fails when free volume is too small.
 func _try_load_smuggle_cargo(template: ContractType) -> bool:
 	if template == null:
 		return false
@@ -461,7 +655,6 @@ func _try_load_smuggle_cargo(template: ContractType) -> bool:
 	return cargo.call(&"add", commodity_id, qty) == true
 
 
-## Remove smuggle cargo on successful turn-in. Fails if hold is short.
 func _remove_smuggle_cargo(template: ContractType) -> bool:
 	if template == null:
 		return false
@@ -529,6 +722,17 @@ func _run(args: PackedStringArray) -> void:
 
 
 func _run_list() -> void:
+	var docked: StringName = _docked_station_id()
+	if not String(docked).is_empty():
+		var board_ids: Array[StringName] = BoardService.offer_ids_for_station(docked)
+		if not board_ids.is_empty():
+			_say("Board at %s:" % docked)
+			for oid: StringName in board_ids:
+				var offer: Dictionary = BoardService.get_offer(oid)
+				var label: String = str(offer.get(BalanceBoard.OFFER_KEY_LABEL, String(oid)))
+				var kind: String = str(offer.get(BalanceBoard.OFFER_KEY_KIND, ""))
+				_say("  %s  [%s]  %s" % [oid, kind, label])
+			return
 	var ids: Array[StringName] = list_template_ids()
 	if ids.is_empty():
 		_say("No mission templates loaded.")
@@ -569,6 +773,15 @@ func _run_status() -> void:
 			)
 		)
 		return
+	if kind == BalanceStanding.MISSION_KIND_ESCORT:
+		var escort_state: String = "alive" if _escort_alive else "lost"
+		_say(
+			(
+				"Active mission: %s (escort freighter %s → %s)"
+				% [active_template_id(), escort_state, active_destination_station_id()]
+			)
+		)
+		return
 	_say("Active mission: %s" % active_template_id())
 
 
@@ -583,8 +796,7 @@ func _run_accept(args: PackedStringArray) -> void:
 	if not accept(template_id):
 		_say("Cannot accept '%s' (unknown or invalid)." % template_id)
 		return
-	var item: ContentItem = ContentLibrary.item(template_id)
-	var label: String = item.display_name if item != null else String(template_id)
+	var label: String = active_display_label()
 	_say(BalanceStanding.CONSOLE_MISSION_ACCEPTED_FORMAT % [template_id, label])
 
 
