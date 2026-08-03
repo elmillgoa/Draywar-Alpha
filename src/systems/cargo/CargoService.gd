@@ -27,6 +27,7 @@ var _inventory: Dictionary = {}  # StringName commodity_id → int qty
 
 func _ready() -> void:
 	add_to_group(&"cargo_service")
+	ServiceRegistry.register_resettable(reset)
 	EventBus.on_trade_buy_requested.connect(_on_buy_requested)
 	EventBus.on_trade_sell_requested.connect(_on_sell_requested)
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
@@ -35,6 +36,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	ServiceRegistry.unregister_resettable(reset)
 	if EventBus.on_trade_buy_requested.is_connected(_on_buy_requested):
 		EventBus.on_trade_buy_requested.disconnect(_on_buy_requested)
 	if EventBus.on_trade_sell_requested.is_connected(_on_sell_requested):
@@ -190,10 +192,27 @@ func is_restricted_for_controller(commodity_id: StringName, controller: StringNa
 	return commodity.is_contraband_for(controller)
 
 
+## True when the hold has any goods restricted for this controller Entity.
+func has_restricted_for_controller(controller: StringName) -> bool:
+	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
+		return false
+	for key: Variant in _inventory:
+		var commodity_id: StringName = _as_name(key)
+		if quantity(commodity_id) <= 0:
+			continue
+		if is_restricted_for_controller(commodity_id, controller):
+			return true
+	return false
+
+
 ## Fee-charging dock inspection (E3.3). Call only from real docks — not session
 ## restore. If hold has goods restricted for the controller: fine (partial if
 ## broke), standing hit via StandingService, optional seize-all. Returns a
 ## result dictionary for tests / UI.
+##
+## S3b same-trip rule: when space customs already cooperated this undocked
+## flight, IncidentService.should_skip_dock_inspect is true — skip once so we
+## do not fine/seize twice for the same restricted load.
 func inspect_on_dock() -> Dictionary:
 	var empty: Dictionary = {
 		&"found": false,
@@ -205,10 +224,42 @@ func inspect_on_dock() -> Dictionary:
 	}
 	if not _is_docked():
 		return empty
+	if IncidentService.should_skip_dock_inspect():
+		IncidentService.consume_dock_inspect_skip()
+		return empty
 	var controller: StringName = _dock_controller()
 	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
 		return empty
+	return _apply_contraband_enforcement(controller, _docked_station_id())
 
+
+## Space customs / non-dock enforcement for restricted cargo (S3b).
+## Reuses the same fine + standing + seize law as dock inspect. Does not
+## require being docked. station_id is report-only (may be empty).
+func inspect_for_controller(controller: StringName, station_id: StringName = &"") -> Dictionary:
+	var empty: Dictionary = {
+		&"found": false,
+		&"fine_paid": 0,
+		&"standing_delta": 0.0,
+		&"entity_id": &"",
+		&"station_id": &"",
+		&"seized_units": 0,
+	}
+	if String(controller).is_empty() or controller == Station.CONTROLLER_NOBODY:
+		return empty
+	return _apply_contraband_enforcement(controller, station_id)
+
+
+## Shared restricted-cargo enforcement (dock or space customs).
+func _apply_contraband_enforcement(controller: StringName, station_id: StringName) -> Dictionary:
+	var empty: Dictionary = {
+		&"found": false,
+		&"fine_paid": 0,
+		&"standing_delta": 0.0,
+		&"entity_id": &"",
+		&"station_id": &"",
+		&"seized_units": 0,
+	}
 	var restricted_ids: Array[StringName] = []
 	var restricted_units: int = 0
 	for key: Variant in _inventory:
@@ -243,7 +294,6 @@ func inspect_on_dock() -> Dictionary:
 		BalanceStanding.REASON_CONTRABAND,
 		false
 	)
-	var station_id: StringName = _docked_station_id()
 	var station_name: String = _content_display_name(station_id)
 	var entity_name: String = _content_display_name(controller)
 	var line: String = ""

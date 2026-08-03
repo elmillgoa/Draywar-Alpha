@@ -2,9 +2,9 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S3a done 2026-08-03. S3b next** — space life + news
-(incidents, news feed v1, traffic purpose lite). Maturity = **tech demo**.
-Elliot = playtest + ideas only; LLMs program everything.
+**Current position:** **S3b done 2026-08-03. S3 feel gate open (not signed)** —
+space life + news shipped; Elliot playtest + external playtest planning next.
+Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
 |-----|------|
@@ -12,7 +12,7 @@ Elliot = playtest + ideas only; LLMs program everything.
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2 economy feel signed; next Steam gate = **S3b** |
+| `docs/gates.md` | E6.6 signed; S2 signed; **S3 feel gate open (not signed)** |
 
 ## Phase progress
 
@@ -22,65 +22,64 @@ Elliot = playtest + ideas only; LLMs program everything.
 | **S0** Plan freeze | **done** |
 | Outside review | **absorbed** → plan v1.1 |
 | Plan v1.2 model routing | **done** |
-| **S1** World clock & sim foundation | **done** 2026-08-03 — lint + 595 tests green |
+| **S1** World clock & sim foundation | **done** 2026-08-03 |
 | **S2** Economy simulator | **done** 2026-08-03 — headless + feel gate signed |
-| **S3a** Radiant work surface | **done** 2026-08-03 — lint + 699 tests green |
-| S3b–S10 | queued (S3 human gate after S3b) |
+| **S3a** Radiant work surface | **done** 2026-08-03 |
+| **S3b** Space life + news | **done** 2026-08-03 — gate open, not signed |
+| S4–S10 | queued |
 
 ## What the game can do now
 
-- Everything from the tech-demo shell and S1/S2 economy, **plus:**
-- **Living job boards** at every controlled dock. Boards restock on the world
-  clock (same step math as the market: jump away-time and live time match).
-- **Hand jobs + radiant fills.** A dock lists a mix of authored contracts and
-  generated work driven by market shortages, local policing, and risk legs.
-- **Escort jobs** end-to-end: accept → freighter appears in space → keep it
-  alive → turn in at destination. Freighter death fails the job (standing hit).
-- Accept works for **board offer ids** and legacy content template ids; one
-  active mission still enforced. Radiant missions save/load fully.
-- Courier / bounty / smuggle content jobs still work.
+- Everything from S3a (living boards, radiant jobs, escort), **plus:**
+- **Opportunistic incidents** in free flight (distress, intercept, customs light).
+  Separate from the one-mission slot. Help on distress promotes to a short
+  mission when free; if a mission is already active, help still pays a small
+  credit reward without clobbering the job.
+- **Customs light** in patrolled space when you hold restricted cargo: cooperate
+  reuses the existing contraband fine/seize path; same trip does not double-punish
+  at the dock.
+- **News feed thickened** — market shortage/glut plus policing lines and real
+  incident echoes on one ticker; flight toast while undocked.
+- **Traffic purpose lite** — some freighters dock/undock cycle; when a station is
+  short, one freighter retasks toward it. Escort freighter death still only fails
+  escort missions (ambient traffic does not).
 
-- **Not yet:** incidents, full news system, traffic purpose rewrite, Ops,
-  campaign, Holding, black market (law change deferred), S3 feel gate.
+- **Not yet:** Ops, campaign, inventing standing law, black market, S4 full patrol,
+  S3 feel gate signed.
 
 ## Next session starts here
 
-1. Start **S3b**: opportunistic incidents (separate from the one-mission slot),
-   news/rumor feed v1, traffic purpose lite.
-2. **Do not** call the S3 human gate done until after S3b.
-3. Out of S3b scope: Ops, campaign, inventing standing law, black market.
-4. Design of record for economy still `docs/economy_sim.md`.
+1. **Elliot S3 feel gate** — playtest brief in `docs/gates.md` (S3 section).
+2. After gate: plan **external strangers** touch before trusting 30h claims.
+3. Then S4 (enforcement & standing career surface) per plan — Hard tier.
+4. Out of scope until authorized: Ops, campaign, standing law invention.
 
 ### Locked decisions
 
 - All 11 Fable amendments accepted (plan v1.1).
 - Combat: world clock always runs; combat caps time-scale to 1x only.
-- Space events: incidents separate from MissionService (S3b).
+- Space events: incidents separate from MissionService (S3b) — promote optional.
 - S1: `JUMP_AWAY_HOURS = 8.0`; bulk advance emits bus; live frames use category subscribers only.
-- S3a: boards deterministic (no RNG); escort freighter is thin (spawn + die), not convoy AI.
+- S3a: boards deterministic (no RNG); escort freighter is thin (spawn + die).
+- S3b: distress help with active mission = wallet pay only (no standing invent);
+  offered incidents expire on load; customs same-trip skip after cooperate.
 
 ## Standing decisions
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; product still thin until S3b+.
+- E6.6 signed; S2 signed; S3 gate open.
 
 ## Session history
 
-- **2026-08-03 (S3a)** — Radiant work surface. BoardService autoload, WorldClock
-  restock steps, RadiantJobGenerator (market + policing), MissionService runtime
-  offers + save, escort kind + MissionEscortShip, UI labels. Adversary holes
-  closed (board accept, escort spawn/death, market pay, CareerSave). 699 tests.
-  S3 gate not signed.
+- **2026-08-03 (S3b)** — Space life + news. IncidentService autoload, distress/
+  intercept/customs, promote-to-mission path, MarketNews thickened, traffic
+  purpose lite, FlightHUD news/incident toast, save steps-only expire-on-load.
+  S3 gate playtest brief written; **not signed**.
+- **2026-08-03 (S3a)** — Radiant work surface. BoardService, RadiantJobGenerator,
+  escort, MissionService runtime. 699 tests. S3 gate not signed.
 - **2026-08-03 (S2 gate)** — Elliot signed economy feel; S3a authorized.
-- **2026-08-03 (S2)** — Economy simulator. MarketService, per-station stock pricing,
-  marginal ladder, production/consumption/freight on the world clock, trade UI with
-  quantity + reason, news ticker, money telemetry, `market` save section. 677 tests.
-  Adversary pass caught a live sell-then-buy money pump and a production taper that
-  was silently starving 25 markets. Feel gate handed to Elliot.
-- **2026-08-03 (S1)** — WorldClock, upkeep on clock, registry, CI, encoding; 595 tests; S2 Hard handoff.
-- **2026-08-02 (wrap)** — Planning closed; plan v1.2; S1 ready on go.
-- **2026-08-02 (v1.2)** — Model routing + kickoff prompts.
-- **2026-08-02 (plan absorb)** — Fable → v1.1 amendments.
-- **2026-08-02 (S0)** — Steam plan accepted.
+- **2026-08-03 (S2)** — Economy simulator. 677 tests. Feel gate signed.
+- **2026-08-03 (S1)** — WorldClock; 595 tests.
+- **2026-08-02** — Plan freeze / v1.1 / v1.2 routing.
 - **2026-07-31–08-02** — E1–E6 closed.

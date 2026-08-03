@@ -45,12 +45,57 @@ static func price_reason(tables: MarketSeed.Tables, row: int, now_seconds: float
 ## The current sector headline. Picks the markets furthest off target, then
 ## rotates through them with the step counter so a long session does not stare
 ## at one line forever. Deterministic: no RNG anywhere.
+##
+## S3b: security/policing lines and real incident echoes share the same feed
+## (one rotation pool). Market shortage/glut still dominates when present.
 static func headline(tables: MarketSeed.Tables, steps_done: int) -> String:
+	return compose_headline(tables, steps_done, 0, [])
+
+
+## Sector feed: market + policing + optional incident echoes (S3b).
+## `security_steps` rotates policing; `incident_echoes` are real event lines.
+static func compose_headline(
+	tables: MarketSeed.Tables, market_steps: int, security_steps: int, incident_echoes: Array
+) -> String:
+	var lines: Array[String] = []
 	var pool: PackedInt32Array = _sharpest_rows(tables)
-	if pool.is_empty():
+	for i: int in pool.size():
+		lines.append(_line_for(tables, pool[i]))
+	_append_policing_lines(lines)
+	for raw: Variant in incident_echoes:
+		var echo: String = str(raw)
+		if not echo.is_empty():
+			lines.append(echo)
+	if lines.is_empty():
 		return BalanceMarket.NEWS_QUIET
-	var pick: int = posmod(steps_done, pool.size())
-	return _line_for(tables, pool[pick])
+	var mix: int = market_steps + security_steps
+	var pick: int = posmod(mix, lines.size())
+	return lines[pick]
+
+
+## One policing/threat line per known system (deterministic order).
+static func _append_policing_lines(lines: Array[String]) -> void:
+	var system_ids: Array[StringName] = ContentLibrary.ids_in(&"star_systems")
+	var sorted_ids: Array[StringName] = []
+	for sid: StringName in system_ids:
+		sorted_ids.append(sid)
+	sorted_ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	for system_id: StringName in sorted_ids:
+		if not ContentLibrary.has_item(system_id):
+			continue
+		var item: ContentItem = ContentLibrary.item(system_id)
+		if not (item is StarSystem):
+			continue
+		var system: StarSystem = item as StarSystem
+		var place: String = system.display_name
+		if place.is_empty():
+			place = String(system_id)
+		if system.policing == StarSystem.POLICED_BY_PATROLS:
+			lines.append(BalanceIncident.NEWS_PATROLLED_FORMAT % place)
+		elif system.policing == StarSystem.POLICED_BY_CONTESTED:
+			lines.append(BalanceIncident.NEWS_CONTESTED_FORMAT % place)
+		elif system.policing == StarSystem.POLICED_BY_NOBODY:
+			lines.append(BalanceIncident.NEWS_LAWLESS_FORMAT % place)
 
 
 ## Rows furthest off target, worst first, capped at NEWS_ROTATION_POOL.

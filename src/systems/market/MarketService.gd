@@ -260,11 +260,11 @@ func price_reason(station_id: StringName, commodity_id: StringName) -> String:
 	return MarketNews.price_reason(_tables, row, WorldClock.elapsed_seconds())
 
 
-## The current sector headline for the ticker.
+## The current sector headline for the ticker (market + policing + incidents).
 func news_line() -> String:
 	catch_up()
 	if _news_line.is_empty() and _tables != null:
-		_news_line = MarketNews.headline(_tables, _steps_done)
+		_news_line = _compose_news()
 	return _news_line
 
 
@@ -353,11 +353,25 @@ func _announce(row: int, station_id: StringName, commodity_id: StringName) -> vo
 func _refresh_news() -> void:
 	if _tables == null:
 		return
-	var line: String = MarketNews.headline(_tables, _steps_done)
+	var line: String = _compose_news()
 	if line == _news_line:
 		return
 	_news_line = line
 	EventBus.on_market_news.emit(line)
+
+
+## S3b: one feed for shortage/glut, policing, and real incident echoes.
+func _compose_news() -> String:
+	if _tables == null:
+		return BalanceMarket.NEWS_QUIET
+	var security_steps: int = 0
+	var echoes: Array = []
+	# IncidentService is an autoload (no class_name) — bare name is correct.
+	security_steps = IncidentService.steps_done()
+	var echo_list: Array[String] = IncidentService.news_echoes()
+	for line: String in echo_list:
+		echoes.append(line)
+	return MarketNews.compose_headline(_tables, _steps_done, security_steps, echoes)
 
 
 func _quote(units: int, total: int, capped: bool, reason: StringName) -> Dictionary:

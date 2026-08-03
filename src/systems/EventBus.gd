@@ -254,6 +254,23 @@ signal on_market_ticked(steps_applied: int, elapsed_seconds: float)
 ## MarketService: a new one-line sector headline is available for the ticker.
 signal on_market_news(line: String)
 
+## IncidentService: a new opportunistic space incident is offered (not a mission).
+signal on_incident_offered(
+	incident_id: StringName, kind: StringName, system_id: StringName, prompt: String
+)
+
+## IncidentService: HUD / console prompt for the offered incident.
+signal on_incident_prompt(incident_id: StringName, kind: StringName, prompt: String)
+
+## IncidentService: incident left the offered set (resolved / expired / promoted).
+signal on_incident_resolved(
+	incident_id: StringName,
+	kind: StringName,
+	system_id: StringName,
+	outcome: StringName,
+	promoted: bool
+)
+
 ## Any money path: credits moved, tagged by activity for the telemetry log.
 signal on_money_event(
 	reason: StringName, credits_delta: int, credits_after: int, detail: Dictionary

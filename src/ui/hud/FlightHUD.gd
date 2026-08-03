@@ -74,6 +74,8 @@ func _ready() -> void:
 	EventBus.on_hostile_killed.connect(_on_hostile_killed)
 	EventBus.on_kill_attributed.connect(_on_kill_attributed)
 	EventBus.on_kill_unattributed.connect(_on_kill_unattributed)
+	EventBus.on_market_news.connect(_on_market_news_toast)
+	EventBus.on_incident_prompt.connect(_on_incident_prompt)
 	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
 	EventBus.on_hostile_damaged.connect(_on_hostile_damaged)
 	EventBus.on_player_damaged.connect(_on_player_damaged_flash)
@@ -103,6 +105,8 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_hostile_killed, _on_hostile_killed)
 	_disconnect(EventBus.on_kill_attributed, _on_kill_attributed)
 	_disconnect(EventBus.on_kill_unattributed, _on_kill_unattributed)
+	_disconnect(EventBus.on_market_news, _on_market_news_toast)
+	_disconnect(EventBus.on_incident_prompt, _on_incident_prompt)
 	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
 	_disconnect(EventBus.on_hostile_damaged, _on_hostile_damaged)
 	_disconnect(EventBus.on_player_damaged, _on_player_damaged_flash)
@@ -677,6 +681,24 @@ func _show_kill_toast(line: String) -> void:
 		return
 	_kill_toast_label.text = line
 	_kill_toast_left = BalanceStanding.HUD_KILL_TOAST_SECONDS
+
+
+## S3b: sector news toast while free-flying (same slot as kill toast).
+func _on_market_news_toast(line: String) -> void:
+	if String(_docked_station_id).is_empty() == false:
+		return
+	if line.is_empty():
+		return
+	_show_kill_toast(line)
+
+
+## S3b: incident prompt while free-flying.
+func _on_incident_prompt(_incident_id: StringName, _kind: StringName, prompt: String) -> void:
+	if String(_docked_station_id).is_empty() == false:
+		return
+	if prompt.is_empty():
+		return
+	_show_kill_toast(prompt)
 
 
 ## Current kill-feedback toast text (tests / external readers).

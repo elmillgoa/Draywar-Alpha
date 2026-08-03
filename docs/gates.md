@@ -523,3 +523,59 @@ Not a re-open of E1‚ÄìE5. Refuse ‚Üí iterate E6.1‚ÄìE6.5 only. Sign ‚Üí E6 close
 > I have played and E6 is technically closed. It just still feels super thin. I wouldn't even call what we have an Alpha or Beta. If anything it is a super early tech demonstration Alpha.
 
 **Notes (product, not E6 reopen):** Maturity reframe + Steam product bar raised same session ‚Äî see `docs/PRODUCT_DIRECTION.md`. Campaign through Holding ‚Üí sandbox; real economy sim; 30h / 80h targets; ‚Äúspace Skyrim.‚Äù
+
+---
+
+## S3 ó Living activity density: not a thin menu loop
+
+**Criteria (plan):** in a 60ñ90 min free session, the player finds varied work
+without exhausting only a fixed board. Gate after **S3b** (S3a alone is not enough).
+
+**Build:** S3b complete on this branch/session. Start a **New Game**. Do not sign
+from headless green alone ó this is a feel gate.
+
+### How to find radiant vs incidents
+
+| Activity | Where | What you do |
+|----------|--------|-------------|
+| **Hand / radiant board jobs** | Dock ? station **Jobs** board | Accept a haul, bounty, escort, or smuggle row. Boards restock on the world clock (jump away and come back; the list changes). |
+| **Distress** | Free flight in a system | A toast/prompt: freighter in trouble. **Help** or **Ignore**. Help with no active job ? short rescue haul mission. Help while already on a job ? small credit reward; your mission stays. |
+| **Intercept** | Free flight | Hostile pressure prompt. Submit (pay a cut) or resist (small payoff). Does **not** need the mission slot. |
+| **Customs light** | Patrolled space (e.g. Alpha) with **restricted cargo** in hold (e.g. munitions under Reach) | Scan prompt. Cooperate ? fine/seize using existing contraband law; flee ? walk away. If you cooperated, the **same undocked trip** will not fine you again at the next dock for that load. |
+| **News** | Station ticker **and** flight toast while undocked | Shortage/glut, patrol chatter, and echoes of real incidents. |
+| **Traffic purpose** | Look at freighters in space | Some approach pads and leave (dock cycle). When a dock is short, a freighter may push toward that station. |
+
+Console / debug (if needed for the brief, not required for pass): incident respond paths are driven from service APIs in headless tests; in play, prompts surface on the flight HUD toast.
+
+### What "thin menu loop" failure looks like
+
+Fail the gate if any of these are true for you after ~an hour:
+
+1. **Only the board** ó you never get work or pressure that is not a dock menu row (no space events, no reason to undock except travel to turn in).
+2. **Board goes dead** ó after a few accepts the list feels empty forever and restock is invisible.
+3. **Incidents feel like the mission slot** ó helping a distress always blocks or steals your current job, or you cannot help while employed.
+4. **Space is wallpaper** ó freighters never look like they are going somewhere; news never names a real shortage or incident you just saw.
+5. **Double-punish customs** ó you cooperate with a scan in space, then the same load is seized again the moment you dock with no undock in between.
+
+Pass when: you can chain board work **and** space incidents **and** see the sector talk (news/traffic) without the session collapsing into "dock ? click job ? undock ? dock".
+
+### What to report back
+
+- **Pass or fail**, in your own words.
+- Did you find work that was **not** on the station board?
+- Did distress-with-a-job-active feel fair?
+- Did customs / restricted cargo feel readable?
+- Anything that felt like a cheat, a dead end, or noise?
+
+### External playtest (after this gate)
+
+Do **not** call the 30h career claim honest until strangers touch the build.
+Plan who, how many, and what is measured (time-to-first-fun, did they undock for
+non-board reasons, did they quit at the menu loop). Agents do not run that plan
+for you ó schedule it after you sign S3.
+
+### Attempt log
+
+- **2026-08-03** ó S3b code complete. Headless proxies for varied activity classes
+  green. **Gate open, not signed.**
+

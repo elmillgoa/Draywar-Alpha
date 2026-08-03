@@ -26,6 +26,7 @@ WorldClock="*res://src/systems/time/WorldClock.gd"
 StandingService="*res://src/systems/standing/StandingService.gd"
 MarketService="*res://src/systems/market/MarketService.gd"
 BoardService="*res://src/systems/board/BoardService.gd"
+IncidentService="*res://src/systems/incident/IncidentService.gd"
 
 [debug]
 

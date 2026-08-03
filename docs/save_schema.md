@@ -17,17 +17,19 @@ what is inside a section.
 Debug `save`/`load` and menu save write `sections` that may include optional
 **`standing`** (A2), **`world_clock`** (S1), **`market`** (S2), **`wallet`** (A5),
 **`cargo`** (B3), **`ship`** (E2.5), **`world`** (B2), **`mission`** (B2),
-**`boards`** (S3a), and **`career`** (E4.6)
+**`boards`** (S3a), **`incidents`** (S3b), and **`career`** (E4.6)
 maps. Missing `standing` means all-neutral content defaults. Missing
 `world_clock` means elapsed game time starts at zero. Missing `market` means
 every station market is re-seeded from its station profile. Missing `boards`
 means job boards re-derive from the clock with no mid-cycle claims. Missing
-`wallet` means starting credits/fuel/condition. Missing `cargo` means empty
-hold. Missing `ship` means Hauler only (starter owned, active Hauler). Missing
-`world` keeps the boot system/spawn. Missing `mission` means no active job.
-Missing `career` means no life-path ids on the captain sheet (old saves). Tests
-may still use a hostile probe fixture. New required career fields later bump
-the version with a migration step in `SaveMigrations.gd`.
+`incidents` means security steps re-derive from the clock; offered prompts are
+never restored. Missing `wallet` means starting credits/fuel/condition. Missing
+`cargo` means empty hold. Missing `ship` means Hauler only (starter owned,
+active Hauler). Missing `world` keeps the boot system/spawn. Missing `mission`
+means no active job. Missing `career` means no life-path ids on the captain
+sheet (old saves). Tests may still use a hostile probe fixture. New required
+career fields later bump the version with a migration step in
+`SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -165,6 +167,24 @@ saved — they re-derive from content + market + step.
 
 Missing section → boards re-derive from the clock; no mid-cycle claims.
 `steps_done` clamps to `floor(elapsed_seconds / BOARD_STEP_SECONDS)`.
+
+### Optional section: `incidents` (schema v1)
+
+Written by `IncidentService.to_section()` / applied by `apply_section()` via
+`CareerSave` (S3b). Always gathered when saving a career. No envelope version
+bump. Applied after `boards`.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `steps_done` | `int` | Security / incident evaluation steps applied since career start (`floor(elapsed / INCIDENT_STEP_SECONDS)`). |
+
+**Policy:** offered incidents **expire on load**. Mid-flight prompts depend on
+live ships and player location; a reload clears the offered set and only
+restores the step counter for news continuity. Do not add offered rows to the
+section without a world-prop restore plan.
+
+Missing section → security steps re-derive from the clock; no offered prompts.
+`steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`.
 
 ### Optional section: `mission` (schema v1)
 

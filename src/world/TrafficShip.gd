@@ -13,6 +13,8 @@ var role_id: StringName = BalanceCombat.ROLE_CIVILIAN
 var victim_entity_id: StringName = BalanceCombat.VICTIM_ENTITY_ID
 var max_hp: float = BalanceCombat.TRAFFIC_HULL_HP_CIVILIAN
 var hp: float = BalanceCombat.TRAFFIC_HULL_HP_CIVILIAN
+## S3b purpose lite (orbit / dock_cycle / shortage_run) — display + parent drive.
+var purpose_id: StringName = BalanceIncident.PURPOSE_ORBIT
 
 var _dead: bool = false
 var _body_mat: StandardMaterial3D = null
@@ -36,6 +38,19 @@ func _process(delta: float) -> void:
 	_hit_flash_left = maxf(0.0, _hit_flash_left - dt)
 	if _hit_flash_left <= 0.0:
 		_refresh_materials()
+
+
+## S3b: purpose tag for traffic AI lite (parent NpcTraffic drives motion).
+func set_purpose(new_purpose: StringName) -> void:
+	if String(new_purpose).is_empty():
+		purpose_id = BalanceIncident.PURPOSE_ORBIT
+	else:
+		purpose_id = new_purpose
+
+
+## Current purpose id (tests / HUD).
+func get_purpose() -> StringName:
+	return purpose_id
 
 
 ## Copy role stats (HP, colour, mass class). Safe before add_child.

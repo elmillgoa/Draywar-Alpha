@@ -28,6 +28,9 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	# S3a: board steps + mid-cycle claims (offers re-derive from step + market).
 	sections[BalanceBoard.SAVE_SECTION_KEY] = BoardService.to_section()
 
+	# S3b: incident security steps only (offered incidents expire on load).
+	sections[BalanceIncident.SAVE_SECTION_KEY] = IncidentService.to_section()
+
 	var wallet_section: Dictionary = _wallet_section(tree)
 	if not wallet_section.is_empty():
 		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
@@ -61,6 +64,8 @@ static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_market_from_sections(sections)
 	# Boards after market: radiant shortage reads match restored shelves.
 	_apply_boards_from_sections(sections)
+	# Incidents after boards: security step continuity; offers expire on load.
+	_apply_incidents_from_sections(sections)
 	_apply_wallet_from_sections(tree, sections)
 	# Ship before cargo so capacity path matches restored active hull.
 	_apply_ship_from_sections(tree, sections)
@@ -283,6 +288,14 @@ static func _apply_boards_from_sections(sections: Dictionary) -> void:
 	else:
 		# Old saves / missing section → boards re-derive from clock at step 0+.
 		BoardService.reset()
+
+
+static func _apply_incidents_from_sections(sections: Dictionary) -> void:
+	if sections.has(BalanceIncident.SAVE_SECTION_KEY):
+		IncidentService.apply_section(sections[BalanceIncident.SAVE_SECTION_KEY])
+	else:
+		# Old saves / missing section → security steps re-derive from clock.
+		IncidentService.reset()
 
 
 static func _apply_wallet_from_sections(tree: SceneTree, sections: Dictionary) -> void:

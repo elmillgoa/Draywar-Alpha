@@ -87,3 +87,11 @@ Station job boards and radiant offer generation for the whole sector. Station
 menus and mission accept all list work against this one service; two writers
 would split which jobs exist this restock cycle; it holds only board step count
 and mid-cycle claimed offer ids (offers re-derive from market + clock).
+
+### `IncidentService` -> `res://src/systems/incident/IncidentService.gd`
+
+Opportunistic space incidents (distress, intercept, customs light) for the
+sector. Flight prompts and promote-to-mission all go through this one service;
+two writers would split which events exist this security step; it holds only
+security step count, offered incident prompts, and news echoes (not missions —
+those stay on MissionService after promote).

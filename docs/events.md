@@ -982,8 +982,51 @@ A new one-line sector headline is available for the ticker.
 |---|---|---|
 | `line` | `String` | Headline text. |
 
-**Emitted by** `MarketService` when the headline changes.
-**Listened to by** the station menu news ticker.
+**Emitted by** `MarketService` when the headline changes; also `IncidentService`
+when a real incident echo is pushed (S3b shared feed).
+**Listened to by** the station menu news ticker; FlightHUD toast while free-flying (S3b).
+
+### `on_incident_offered(incident_id: StringName, kind: StringName, system_id: StringName, prompt: String)`
+
+A new opportunistic space incident is available (not a mission).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `incident_id` | `StringName` | Instance id for respond/resolve. |
+| `kind` | `StringName` | `distress` / `intercept` / `customs`. |
+| `system_id` | `StringName` | System where the incident is offered. |
+| `prompt` | `String` | Plain-English prompt line. |
+
+**Emitted by** `IncidentService` when an offer is created under the ship budget.
+**Listened to by** FlightHUD / future UI.
+
+### `on_incident_prompt(incident_id: StringName, kind: StringName, prompt: String)`
+
+HUD/console prompt for an offered incident (same moment as offered, or refresh).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `incident_id` | `StringName` | Instance id. |
+| `kind` | `StringName` | Incident kind. |
+| `prompt` | `String` | Prompt text. |
+
+**Emitted by** `IncidentService`.
+**Listened to by** FlightHUD toast while free-flying.
+
+### `on_incident_resolved(incident_id: StringName, kind: StringName, system_id: StringName, outcome: StringName, promoted: bool)`
+
+Incident left the offered set (player respond, expire, or promote).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `incident_id` | `StringName` | Instance id. |
+| `kind` | `StringName` | Incident kind. |
+| `system_id` | `StringName` | System of the incident. |
+| `outcome` | `StringName` | `resolved` / `expired` / `promoted`. |
+| `promoted` | `bool` | True when distress became a MissionService job. |
+
+**Emitted by** `IncidentService`.
+**Listened to by** (optional UI).
 
 ### `on_money_event(reason: StringName, credits_delta: int, credits_after: int, detail: Dictionary)`
 

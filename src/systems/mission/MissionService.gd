@@ -277,6 +277,12 @@ func _accept_internal(template_id: StringName, load_smuggle_cargo: bool) -> bool
 	return true
 
 
+## Accept a runtime offer snapshot without BoardService.claim_offer.
+## Used by board accept (after claim), incident promote, and tests.
+func accept_runtime_offer(offer: Dictionary, load_smuggle_cargo: bool = true) -> bool:
+	return _accept_runtime(offer, load_smuggle_cargo)
+
+
 func _accept_runtime(offer: Dictionary, load_smuggle_cargo: bool) -> bool:
 	if has_active() or offer.is_empty():
 		return false
