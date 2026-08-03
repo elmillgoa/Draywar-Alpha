@@ -1056,7 +1056,22 @@ Fine and standing hit already applied (standing via StandingService only).
 | `standing_delta` | `float` | Applied standing change for that Entity. |
 
 **Emitted by** `CargoService` (`inspect_on_dock`, real docks only).
-**Listened to by** (optional UI toast; console line also emitted).
+**Listened to by** `EnforcementService` (S4 heat from contraband in patrolled/contested
+space) and optional UI toast; console line also emitted.
+
+### `on_heat_changed(entity_id: StringName, heat: float, reason: StringName)`
+
+Per-Entity enforcement heat changed (S4). **Not** a standing mutation — heat is
+patrol pressure only. Standing still moves only through StandingService.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `entity_id` | `StringName` | Entity that would enforce (e.g. Reach). |
+| `heat` | `float` | New heat after the change (0..HEAT_MAX). |
+| `reason` | `StringName` | `heat_kill` / `heat_customs_flee` / `heat_contraband` / `heat_decay` / `heat_set`. |
+
+**Emitted by** `EnforcementService` only.
+**Listened to by** (optional UI / telemetry).
 
 ## Hull ownership / switch (E2.5)
 

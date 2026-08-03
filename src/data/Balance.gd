@@ -29,8 +29,8 @@ const CONTENT_BUDGET: Dictionary[StringName, int] = {
 	&"hulls": 2,
 	&"weapons": 12,
 	&"equipment": 10,
-	## E4.4: two personal recovery chains (Mendi/Reach + Jax/Drift). Ceiling, not target.
-	&"recovery_chains": 2,
+	## S4: four personal recovery chains (Mendi/Reach, Jax/Drift, Wren/Haulers, Kade/Fringe).
+	&"recovery_chains": 4,
 	## E4.1: 3 axes × 3 options (origin / trade / mark). Ceiling is the set size.
 	&"life_path_options": 9,
 }

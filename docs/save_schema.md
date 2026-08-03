@@ -17,19 +17,19 @@ what is inside a section.
 Debug `save`/`load` and menu save write `sections` that may include optional
 **`standing`** (A2), **`world_clock`** (S1), **`market`** (S2), **`wallet`** (A5),
 **`cargo`** (B3), **`ship`** (E2.5), **`world`** (B2), **`mission`** (B2),
-**`boards`** (S3a), **`incidents`** (S3b), and **`career`** (E4.6)
-maps. Missing `standing` means all-neutral content defaults. Missing
-`world_clock` means elapsed game time starts at zero. Missing `market` means
-every station market is re-seeded from its station profile. Missing `boards`
-means job boards re-derive from the clock with no mid-cycle claims. Missing
-`incidents` means security steps re-derive from the clock; offered prompts are
-never restored. Missing `wallet` means starting credits/fuel/condition. Missing
-`cargo` means empty hold. Missing `ship` means Hauler only (starter owned,
-active Hauler). Missing `world` keeps the boot system/spawn. Missing `mission`
-means no active job. Missing `career` means no life-path ids on the captain
-sheet (old saves). Tests may still use a hostile probe fixture. New required
-career fields later bump the version with a migration step in
-`SaveMigrations.gd`.
+**`boards`** (S3a), **`incidents`** (S3b), **`enforcement`** (S4), and
+**`career`** (E4.6) maps. Missing `standing` means all-neutral content defaults.
+Missing `world_clock` means elapsed game time starts at zero. Missing `market`
+means every station market is re-seeded from its station profile. Missing
+`boards` means job boards re-derive from the clock with no mid-cycle claims.
+Missing `incidents` means security steps re-derive from the clock; offered
+prompts are never restored. Missing `enforcement` means no per-Entity heat.
+Missing `wallet` means starting credits/fuel/condition. Missing `cargo` means
+empty hold. Missing `ship` means Hauler only (starter owned, active Hauler).
+Missing `world` keeps the boot system/spawn. Missing `mission` means no active
+job. Missing `career` means no life-path ids on the captain sheet (old saves).
+Tests may still use a hostile probe fixture. New required career fields later
+bump the version with a migration step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
 
@@ -185,6 +185,23 @@ section without a world-prop restore plan.
 
 Missing section → security steps re-derive from the clock; no offered prompts.
 `steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`.
+
+### Optional section: `enforcement` (schema v1)
+
+Written by `EnforcementService.to_section()` / applied by `apply_section()` via
+`CareerSave` (S4). Always gathered when saving a career. No envelope version
+bump. Applied **after `incidents`**. Heat is **not** standing — standing stays
+in the `standing` section and only moves through StandingService.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `heat` | `Dictionary` | Entity id string → float heat (0..HEAT_MAX). Missing id = 0. |
+| `steps_done` | `int` | Security steps applied for heat decay (same cadence as incidents: `floor(elapsed / INCIDENT_STEP_SECONDS)`). |
+
+Missing section → no heat; decay steps re-derive from the clock on next catch-up.
+`steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`.
+Unknown entity ids in `heat` are kept as raw floats (dropped only if non-finite
+or ≤ 0 after clamp).
 
 ### Optional section: `mission` (schema v1)
 

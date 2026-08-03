@@ -2,8 +2,8 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S3b done 2026-08-03. S3 feel gate open (not signed)** —
-space life + news shipped; Elliot playtest + external playtest planning next.
+**Current position:** **S4 code complete 2026-08-03** — Enforcement & standing
+career surface. Lint green, **726 tests**. Feel gate **open, not signed**.
 Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
@@ -12,7 +12,7 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2 signed; **S3 feel gate open (not signed)** |
+| `docs/gates.md` | E6.6 signed; S2–S3 signed; **S4 feel gate open** |
 
 ## Phase progress
 
@@ -25,34 +25,33 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 | **S1** World clock & sim foundation | **done** 2026-08-03 |
 | **S2** Economy simulator | **done** 2026-08-03 — headless + feel gate signed |
 | **S3a** Radiant work surface | **done** 2026-08-03 |
-| **S3b** Space life + news | **done** 2026-08-03 — lint + 717 tests; gate open, not signed |
-| S4–S10 | queued |
+| **S3b** Space life + news | **done** 2026-08-03 — gate signed |
+| **S4** Enforcement & standing surface | **code done** 2026-08-03 — feel gate open |
+| S5–S10 | queued |
 
 ## What the game can do now
 
-- Everything from S3a (living boards, radiant jobs, escort), **plus:**
-- **Opportunistic incidents** in free flight (distress, intercept, customs light).
-  Separate from the one-mission slot. Help on distress promotes to a short
-  mission when free; if a mission is already active, help still pays a small
-  credit reward without clobbering the job.
-- **Customs light** in patrolled space when you hold restricted cargo: cooperate
-  reuses the existing contraband fine/seize path; same trip does not double-punish
-  at the dock.
-- **News feed thickened** — market shortage/glut plus policing lines and real
-  incident echoes on one ticker; flight toast while undocked.
-- **Traffic purpose lite** — some freighters dock/undock cycle; when a station is
-  short, one freighter retasks toward it. Escort freighter death still only fails
-  escort missions (ambient traffic does not).
+- Everything from S3 (living boards, radiant jobs, escort, incidents, news,
+  traffic purpose), **plus:**
+- **Per-Entity heat** (not global wanted). Crime in patrolled space raises heat
+  on the enforcer (e.g. Reach in Alpha). Lawless (Gamma) adds **no** heat.
+- **Customs flee** raises heat; **[1]/[2]** answer free-flight incident prompts.
+- **Pressure / hunt** in patrolled systems only — more intercepts; high heat can
+  force a patrol-response intercept ("you are wanted here").
+- **Four recovery chains** — Mendi/Reach, Jax/Drift, Wren/Haulers, Kade/Fringe.
+- **Network betrayal lite** — betraying a contact nicks their network personally
+  (small hit; does not close them).
+- Standing still only via StandingService. Status moment unchanged.
 
-- **Not yet:** Ops, campaign, inventing standing law, black market, S4 full patrol,
-  S3 feel gate signed.
+- **Not yet:** Ops, Holding, campaign spine, economy redesign, inventing standing
+  law, S4 feel gate signed.
 
 ## Next session starts here
 
-1. **Blocked on Elliot:** S3 feel gate — playtest brief in `docs/gates.md` (S3 section).
-   New Game; ~60–90 min. Do **not** start S4 until pass/fail is recorded.
-2. If **pass**: mark gate in `docs/gates.md`, set S3 done, plan external strangers,
-   then open **Hard-tier** chat for S4 (`docs/STEAM_PHASE_PLAN.md` §22.6 S4).
+1. **Blocked on Elliot:** S4 feel gate — playtest brief in `docs/gates.md` (S4
+   section). New Game; try crime in Alpha vs Gamma; customs [1]/[2]; recovery.
+2. If **pass**: mark gate in `docs/gates.md`, set S4 done, then open next phase
+   per `docs/STEAM_PHASE_PLAN.md` §22.
 3. If **fail**: fix only what he named; re-run lint + tests; hand gate back.
 4. Out of scope until authorized: Ops, campaign, standing law invention.
 
@@ -65,25 +64,26 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 - S3a: boards deterministic (no RNG); escort freighter is thin (spawn + die).
 - S3b: distress help with active mission = wallet pay only (no standing invent);
   offered incidents expire on load; customs same-trip skip after cooperate.
+- S4: heat per-Entity; pressure/hunt only in patrolled; no standing writes from
+  EnforcementService; recovery budget 4.
 
 ## Standing decisions
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2 signed; S3 gate open.
+- E6.6 signed; S2–S3 signed; S4 gate open.
 
 ## Session history
 
-- **2026-08-03 (wrap)** — S2 signed + full S3 code (a+b) pushed; S3 feel gate open.
-  Lint green, 717 tests, `main` @ `95f5249`. Next: Elliot S3 playtest.
-- **2026-08-03 (S3b)** — Space life + news. IncidentService autoload, distress/
-  intercept/customs, promote-to-mission path, MarketNews thickened, traffic
-  purpose lite, FlightHUD news/incident toast, save steps-only expire-on-load.
-  S3 gate playtest brief written; **not signed**.
-- **2026-08-03 (S3a)** — Radiant work surface. BoardService, RadiantJobGenerator,
-  escort, MissionService runtime. 699 tests. S3 gate not signed.
-- **2026-08-03 (S2 gate)** — Elliot signed economy feel; S3a authorized.
-- **2026-08-03 (S2)** — Economy simulator. 677 tests. Feel gate signed.
-- **2026-08-03 (S1)** — WorldClock; 595 tests.
+- **2026-08-03 (S4)** — EnforcementService + BalanceEnforcement; heat from kill /
+  customs flee / contraband; pressure/hunt in IncidentService; customs [1]/[2]
+  on FlightHUD; Wren + Kade recovery chains; network betrayal lite; save section
+  `enforcement`. S4 feel gate open, not signed.
+- **2026-08-03 (wrap)** — S2 signed + full S3 code (a+b) pushed; S3 feel gate
+  later signed same day.
+- **2026-08-03 (S3b)** — Space life + news. IncidentService, MarketNews, traffic.
+- **2026-08-03 (S3a)** — Radiant work surface.
+- **2026-08-03 (S2)** — Economy simulator. Feel gate signed.
+- **2026-08-03 (S1)** — WorldClock.
 - **2026-08-02** — Plan freeze / v1.1 / v1.2 routing.
 - **2026-07-31–08-02** — E1–E6 closed.

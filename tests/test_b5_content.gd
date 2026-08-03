@@ -124,7 +124,7 @@ func test_grain_pays_more_where_it_is_scarce_than_where_it_is_grown() -> void:
 
 func test_recovery_chain_and_station_surfaces_favor_person() -> void:
 	var chains: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(chains.size(), 2, "E4.4: Mendi + Jax")
+	assert_eq(chains.size(), 4, "S4: four recovery chains")
 	assert_true(ContentLibrary.has_item(CHAIN_MENDI))
 	var chain: RecoveryChain = ContentLibrary.item(CHAIN_MENDI) as RecoveryChain
 	assert_ne(chain, null)

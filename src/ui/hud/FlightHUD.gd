@@ -47,6 +47,9 @@ var _dock_fade_left: float = 0.0
 var _dock_fade_peak: float = 0.0
 var _dock_fade_base: Color = Color.TRANSPARENT
 var _kill_toast_left: float = 0.0
+## S4: active free-flight incident for [1]/[2] response keys.
+var _active_incident_id: StringName = &""
+var _active_incident_kind: StringName = &""
 
 
 func _ready() -> void:
@@ -76,6 +79,7 @@ func _ready() -> void:
 	EventBus.on_kill_unattributed.connect(_on_kill_unattributed)
 	EventBus.on_market_news.connect(_on_market_news_toast)
 	EventBus.on_incident_prompt.connect(_on_incident_prompt)
+	EventBus.on_incident_resolved.connect(_on_incident_resolved)
 	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
 	EventBus.on_hostile_damaged.connect(_on_hostile_damaged)
 	EventBus.on_player_damaged.connect(_on_player_damaged_flash)
@@ -107,6 +111,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_kill_unattributed, _on_kill_unattributed)
 	_disconnect(EventBus.on_market_news, _on_market_news_toast)
 	_disconnect(EventBus.on_incident_prompt, _on_incident_prompt)
+	_disconnect(EventBus.on_incident_resolved, _on_incident_resolved)
 	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
 	_disconnect(EventBus.on_hostile_damaged, _on_hostile_damaged)
 	_disconnect(EventBus.on_player_damaged, _on_player_damaged_flash)
@@ -625,6 +630,7 @@ func _on_docked(station_id: StringName) -> void:
 	_dock_prompt_id = &""
 	_gate_dest_id = &""
 	_prompt_label.text = ""
+	_clear_active_incident()
 	_refresh_status_line()
 	_start_dock_fade(BalanceUi.DOCK_FADE_COLOR)
 
@@ -692,13 +698,43 @@ func _on_market_news_toast(line: String) -> void:
 	_show_kill_toast(line)
 
 
-## S3b: incident prompt while free-flying.
-func _on_incident_prompt(_incident_id: StringName, _kind: StringName, prompt: String) -> void:
+## S3b / S4: incident prompt while free-flying; track id/kind for [1]/[2].
+func _on_incident_prompt(incident_id: StringName, kind: StringName, prompt: String) -> void:
 	if String(_docked_station_id).is_empty() == false:
 		return
 	if prompt.is_empty():
 		return
+	_active_incident_id = incident_id
+	_active_incident_kind = kind
 	_show_kill_toast(prompt)
+
+
+func _on_incident_resolved(
+	incident_id: StringName,
+	_kind: StringName,
+	_system_id: StringName,
+	_outcome: StringName,
+	_promoted: bool
+) -> void:
+	if incident_id == _active_incident_id:
+		_clear_active_incident()
+
+
+func _clear_active_incident() -> void:
+	_active_incident_id = &""
+	_active_incident_kind = &""
+
+
+## S4: map incident kind + primary/secondary to a choice (tests / input).
+static func choice_for_incident_action(kind: StringName, primary: bool) -> StringName:
+	if primary:
+		return BalanceEnforcement.primary_choice_for_kind(kind)
+	return BalanceEnforcement.secondary_choice_for_kind(kind)
+
+
+## Active free-flight incident id (tests / external readers).
+func active_incident_id() -> StringName:
+	return _active_incident_id
 
 
 ## Current kill-feedback toast text (tests / external readers).
@@ -706,6 +742,35 @@ func kill_toast_text() -> String:
 	if _kill_toast_label == null:
 		return ""
 	return _kill_toast_label.text
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _can_respond_to_incident():
+		return
+	if event.is_action_pressed(BalanceEnforcement.ACTION_INCIDENT_A):
+		_respond_active_incident(true)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(BalanceEnforcement.ACTION_INCIDENT_B):
+		_respond_active_incident(false)
+		get_viewport().set_input_as_handled()
+
+
+func _can_respond_to_incident() -> bool:
+	if String(_docked_station_id).is_empty() == false:
+		return false
+	if String(_active_incident_id).is_empty():
+		return false
+	return true
+
+
+func _respond_active_incident(primary: bool) -> void:
+	if not _can_respond_to_incident():
+		return
+	var choice: StringName = choice_for_incident_action(_active_incident_kind, primary)
+	if String(choice).is_empty():
+		return
+	var incident_id: StringName = _active_incident_id
+	IncidentService.respond(incident_id, choice)
 
 
 func _process(delta: float) -> void:

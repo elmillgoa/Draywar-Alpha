@@ -120,7 +120,7 @@ const MISSION_CONTENT_CATEGORY: StringName = &"contract_types"
 
 # --- Personal recovery (A4) ------------------------------------------------
 
-## Content category for RecoveryChain resources. E4.4 ceiling is 2.
+## Content category for RecoveryChain resources. S4 ceiling is 4.
 const RECOVERY_CONTENT_CATEGORY: StringName = &"recovery_chains"
 
 ## Alpha chain step count bounds (law §5: short chain of further jobs).
@@ -157,6 +157,10 @@ const RECOVERY_ABANDON_PERSONAL_DELTA: float = -6.0
 ## Betrayal: close the Person, dump personal standing, mild Entity hit.
 const RECOVERY_BETRAYAL_PERSONAL_DELTA: float = -40.0
 const RECOVERY_BETRAYAL_ENTITY_DELTA: float = -5.0
+
+## S4: small personal hit for each network contact of a betrayed Person.
+## Does **not** close network persons. One hop only — no multi-hop.
+const RECOVERY_NETWORK_BETRAYAL_PERSONAL_DELTA: float = -8.0
 
 ## Close reasons (tags for close_person / save).
 const RECOVERY_CLOSE_REASON_BETRAYAL: StringName = &"betrayal"
@@ -198,6 +202,8 @@ const REASON_RECOVERY_COMPLETE: StringName = &"recovery_complete"
 const REASON_RECOVERY_FAIL: StringName = &"recovery_fail"
 const REASON_RECOVERY_ABANDON: StringName = &"recovery_abandon"
 const REASON_RECOVERY_BETRAYAL: StringName = &"recovery_betrayal"
+## S4: network contact felt the betrayal (personal only; person stays open).
+const REASON_RECOVERY_NETWORK_BETRAYAL: StringName = &"recovery_network_betrayal"
 const REASON_RECOVERY_FAVOR: StringName = &"recovery_favor"
 ## E3.2: emergency loan grace expired (Free Haulers Entity only).
 const REASON_DEBT_GRACE_EXPIRED: StringName = &"debt_grace_expired"

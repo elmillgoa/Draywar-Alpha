@@ -22,6 +22,10 @@ const ACTION_FIRE: StringName = &"fire_weapon"
 const ACTION_TARGET_LOCK: StringName = &"target_lock"
 ## Sector chart (M) — E5.5.
 const ACTION_SECTOR_MAP: StringName = &"sector_map"
+## Incident primary choice (1) — S4. Same id as BalanceEnforcement.ACTION_INCIDENT_A.
+const ACTION_INCIDENT_A: StringName = BalanceEnforcement.ACTION_INCIDENT_A
+## Incident secondary choice (2) — S4.
+const ACTION_INCIDENT_B: StringName = BalanceEnforcement.ACTION_INCIDENT_B
 
 
 ## Ensures every flight action exists with its default key. Idempotent.
@@ -37,6 +41,8 @@ static func ensure_actions() -> void:
 	_bind_mouse(ACTION_FIRE, BalanceCombat.FIRE_MOUSE_BUTTON)
 	_bind(ACTION_TARGET_LOCK, BalanceCombat.TARGET_LOCK_KEY)
 	_bind(ACTION_SECTOR_MAP, KEY_M)
+	_bind(ACTION_INCIDENT_A, KEY_1)
+	_bind(ACTION_INCIDENT_B, KEY_2)
 
 
 static func _bind(action: StringName, physical_key: Key) -> void:

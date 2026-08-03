@@ -94,4 +94,12 @@ Opportunistic space incidents (distress, intercept, customs light) for the
 sector. Flight prompts and promote-to-mission all go through this one service;
 two writers would split which events exist this security step; it holds only
 security step count, offered incident prompts, and news echoes (not missions —
-those stay on MissionService after promote).
+those stay on MissionService after promote). Reads heat pressure/hunt from
+`EnforcementService` for intercept frequency and patrol-response spawns (S4).
+
+### `EnforcementService` -> `res://src/systems/enforcement/EnforcementService.gd`
+
+Per-Entity heat for patrol pressure (S4). Not standing and never writes
+standing. Heat accrues on attributed crime in patrolled/contested space, customs
+flee, and contraband seizure; decays on security steps. IncidentService asks it
+for pressure/hunt in patrolled systems only.

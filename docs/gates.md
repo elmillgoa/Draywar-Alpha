@@ -578,4 +578,61 @@ for you — schedule it after you sign S3.
 
 - **2026-08-03** — S3b code complete. Headless proxies for varied activity classes
   green (717 tests). **Gate open, not signed.**
+- **2026-08-03** — Elliot approved S3 in session ("I approve S3"). **Gate signed.**
+
+**Verdict: signed — S3 living activity density passes.**
+
+**Signed by:** Elliot  
+**Date:** 2026-08-03  
+**Verbatim:**
+> I approve S3
+
+**Notes:** Feel gate closed. S3 phase done. External stranger playtest still to schedule (not a code gate). S4 authorized.
+
+---
+
+## S4 — Jurisdictional identity: crime feels local, recovery still works
+
+**Criteria (plan):** crime in patrolled space is not the same as crime in
+lawless space; heat/pressure stays per-Entity (no global wanted bar); status
+moment still shows local controller standing; personal recovery still works.
+
+**Build:** S4 code complete. Start a **New Game**. Do **not** sign from headless
+green alone — this is a feel gate. **Not signed.**
+
+### How to raise heat / feel the difference
+
+| Action | Where | What you should feel |
+|--------|--------|----------------------|
+| **Kill with witnesses / patrols** | Alpha (patrolled, Reach) | Standing falls with Reach (existing law). **Heat** rises on Reach. After enough heat, intercepts come more often; high heat can force a **patrol response** prompt ("you are wanted here"). Keys **[1] resist** / **[2] submit**. |
+| **Flee customs** | Alpha free flight with munitions (or other Reach-restricted cargo) | Toast: customs scan. **[1] cooperate** / **[2] flee**. Flee raises Reach heat without the dock fine path. |
+| **Cooperate customs** | Same | Fine/seize via existing contraband law; same-trip dock skip still applies. Does **not** use the flee-heat path. |
+| **Crime in Gamma** | Gamma (lawless, Fringe) | Kills without evidence often **not** attributed. Even when attributed, **heat does not rise** for lawless space — law has no teeth. Pressure/hunt flags stay off in Gamma even if some Entity has high heat numbers from elsewhere. |
+| **Status moment** | Jump or dock | Local controller standing line still shows on system/station entry. Must not vanish. |
+| **Recovery** | Dock + talk / console recovery | Mendi (Reach), Jax (Drift), **Wren (Free Haulers)**, **Kade (Fringe)** — four chains. Bootstrap Friendly personal, accept deniable first step, complete. Betrayal of a contact also nicks their network personally (small hit; does not close the network). |
+
+### What failure looks like
+
+Fail the gate if any of these are true for you:
+
+1. **Global wanted** — every system feels equally "hot" after one crime; Alpha and Gamma play the same.
+2. **Lawless has teeth** — Gamma starts hunting you with patrol-response pressure the way Alpha does.
+3. **Status moment gone** — system/station entry no longer shows local standing.
+4. **Recovery broken** — cannot open or complete a deniable step on Wren or Kade (or the old Mendi/Jax paths).
+5. **Customs unreadable** — no way to answer the scan without a debug console ([1]/[2] missing or useless).
+
+Pass when: Alpha crime makes Reach care and press you there; Gamma stays soft; standing status still reads; recovery still gives a climb path.
+
+### What to report back
+
+- **Pass or fail**, in your own words.
+- Did Alpha vs Gamma feel different after crime?
+- Did patrol response / customs [1][2] feel readable?
+- Did status moment and recovery still work?
+
+### Attempt log
+
+- **2026-08-03** — S4 code complete (EnforcementService heat, customs loop keys,
+  recovery budget 4, network betrayal lite). Headless tests added. **Gate open,
+  not signed.**
 

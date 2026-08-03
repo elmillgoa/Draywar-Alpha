@@ -302,29 +302,61 @@ func _try_spawn_for_system(system_id: StringName, step: int) -> void:
 	for kind: StringName in kinds:
 		if _offered.size() >= BalanceIncident.MAX_OFFERED:
 			return
-		if not BalanceIncident.kind_fires(kind, system_id, step):
+		if not _kind_should_fire(kind, system_id, step):
 			continue
 		if not _cooldown_ok(system_id, kind, step):
 			continue
 		if not _kind_allowed_in_system(kind, system_id):
 			continue
 		_spawn_kind(kind, system_id, step, false)
+	# S4: high heat in patrolled space can force a patrol-response intercept.
+	_try_hunt_patrol_response(system_id, step)
 
 
-func _spawn_kind(kind: StringName, system_id: StringName, step: int, force: bool) -> StringName:
-	if not force and not BalanceIncident.kind_fires(kind, system_id, step):
+## S4: when hunt heat is high in a patrolled system, force one intercept with
+## patrol-response copy (respects MAX_OFFERED, ship budget, hunt cooldown).
+func _try_hunt_patrol_response(system_id: StringName, step: int) -> void:
+	if not EnforcementService.is_hunt(system_id):
+		return
+	if not EnforcementService.hunt_cooldown_ok(system_id, step):
+		return
+	if _offered.size() >= BalanceIncident.MAX_OFFERED:
+		return
+	if not _kind_allowed_in_system(BalanceIncident.KIND_INTERCEPT, system_id):
+		return
+	var id: StringName = _spawn_kind(BalanceIncident.KIND_INTERCEPT, system_id, step, true, true)
+	if not String(id).is_empty():
+		EnforcementService.record_hunt_spawn(system_id, step)
+
+
+## Fire rules: base mix modulus, or pressure-boosted intercept frequency.
+func _kind_should_fire(kind: StringName, system_id: StringName, step: int) -> bool:
+	if kind == BalanceIncident.KIND_INTERCEPT and EnforcementService.is_pressure(system_id):
+		var salt: int = BalanceIncident.SALT_INTERCEPT
+		var pressure_mod: int = BalanceEnforcement.FIRE_MOD_INTERCEPT_PRESSURE
+		var mod_n: int = maxi(1, pressure_mod)
+		var mix: int = BalanceIncident.mix4(String(system_id).hash(), step, salt, 0)
+		return (mix % mod_n) == 0
+	return BalanceIncident.kind_fires(kind, system_id, step)
+
+
+func _spawn_kind(
+	kind: StringName, system_id: StringName, step: int, force: bool, patrol_response: bool = false
+) -> StringName:
+	if not force and not _kind_should_fire(kind, system_id, step):
 		return &""
 	if not _kind_allowed_in_system(kind, system_id):
 		return &""
-	var offer: Dictionary = _build_offer(kind, system_id, step)
+	var offer: Dictionary = _build_offer(kind, system_id, step, patrol_response)
 	if offer.is_empty():
 		return &""
 	var slots: int = _dict_int(offer, BalanceIncident.KEY_SHIP_SLOTS, 0)
 	if would_exceed_ship_budget(slots):
 		return &""
-	var id_raw: String = str(offer.get(BalanceIncident.KEY_ID, ""))
-	if id_raw.is_empty() or _offered.has(id_raw):
+	var id_raw: String = _resolve_offer_id(offer, system_id, step, patrol_response)
+	if id_raw.is_empty():
 		return &""
+	offer[BalanceIncident.KEY_ID] = id_raw
 	_offered[id_raw] = offer
 	_record_kind_step(system_id, kind, step)
 	_push_news_echo(kind, system_id)
@@ -334,10 +366,31 @@ func _spawn_kind(kind: StringName, system_id: StringName, step: int, force: bool
 	return StringName(id_raw)
 
 
-func _build_offer(kind: StringName, system_id: StringName, step: int) -> Dictionary:
+## Pick a free offer id (retags hunt responses if a natural id collides).
+func _resolve_offer_id(
+	offer: Dictionary, system_id: StringName, step: int, patrol_response: bool
+) -> String:
+	var id_raw: String = str(offer.get(BalanceIncident.KEY_ID, ""))
+	if id_raw.is_empty():
+		return ""
+	if not _offered.has(id_raw):
+		return id_raw
+	if not patrol_response:
+		return ""
+	var alt: String = "inc_patrol_%s_%d" % [String(system_id), step]
+	if _offered.has(alt):
+		return ""
+	return alt
+
+
+func _build_offer(
+	kind: StringName, system_id: StringName, step: int, patrol_response: bool = false
+) -> Dictionary:
 	if String(system_id).is_empty():
 		return {}
 	var id_str: String = "inc_%s_%s_%d" % [String(kind), String(system_id), step]
+	if patrol_response:
+		id_str = "inc_patrol_%s_%d" % [String(system_id), step]
 	var slots: int = BalanceIncident.SHIPS_CUSTOMS
 	var label: String = BalanceIncident.LABEL_CUSTOMS
 	var prompt: String = BalanceIncident.PROMPT_CUSTOMS
@@ -347,8 +400,14 @@ func _build_offer(kind: StringName, system_id: StringName, step: int) -> Diction
 		prompt = BalanceIncident.PROMPT_DISTRESS
 	elif kind == BalanceIncident.KIND_INTERCEPT:
 		slots = BalanceIncident.SHIPS_INTERCEPT
-		label = BalanceIncident.LABEL_INTERCEPT
-		prompt = BalanceIncident.PROMPT_INTERCEPT
+		if patrol_response:
+			label = BalanceEnforcement.LABEL_PATROL_RESPONSE
+			prompt = BalanceEnforcement.PROMPT_PATROL_RESPONSE
+		else:
+			label = BalanceIncident.LABEL_INTERCEPT
+			prompt = BalanceIncident.PROMPT_INTERCEPT
+
+	prompt = BalanceEnforcement.prompt_with_controls(kind, prompt)
 
 	var dest: StringName = _pick_destination(system_id, step)
 	var entity: StringName = _controller_for_system(system_id)
@@ -369,6 +428,7 @@ func _build_offer(kind: StringName, system_id: StringName, step: int) -> Diction
 		BalanceIncident.KEY_DESTINATION: dest,
 		BalanceIncident.KEY_OFFERING_ENTITY: entity,
 		BalanceIncident.KEY_PAY: pay,
+		BalanceEnforcement.KEY_PATROL_RESPONSE: patrol_response,
 	}
 
 
@@ -437,6 +497,14 @@ func _resolve_intercept(offer: Dictionary, choice: StringName, result: Dictionar
 
 func _resolve_customs(offer: Dictionary, choice: StringName, result: Dictionary) -> Dictionary:
 	if choice == BalanceIncident.CHOICE_FLEE or choice == BalanceIncident.CHOICE_IGNORE:
+		# S4: fleeing customs raises heat on the offering (enforcing) Entity.
+		var flee_entity: StringName = StringName(
+			str(offer.get(BalanceIncident.KEY_OFFERING_ENTITY, &""))
+		)
+		if not String(flee_entity).is_empty():
+			var flee_heat: float = BalanceEnforcement.HEAT_CUSTOMS_FLEE
+			var flee_reason: StringName = BalanceEnforcement.REASON_HEAT_CUSTOMS_FLEE
+			EnforcementService.add_heat(flee_entity, flee_heat, flee_reason)
 		result[&"outcome"] = BalanceIncident.STATE_RESOLVED
 		result[&"promoted"] = false
 		result[&"pay_credits"] = 0

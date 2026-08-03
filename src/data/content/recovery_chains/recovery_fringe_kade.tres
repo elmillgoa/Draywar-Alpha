@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="RecoveryChain" load_steps=7 format=3]
+
+; S4 — Fringe Collective recovery foothold. Spur Runner Kade (low rank) offers
+; deniable work so a player hated by the Fringe can climb back.
+; Same law as Mendi/Jax: Friendly personal required; deniable first step;
+; StandingService only. Rank influence: low-rank → tiny Entity deltas.
+
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryChain.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryStep.gd" id="2"]
+
+[sub_resource type="Resource" id="step_spur_drop"]
+script = ExtResource("2")
+id = &"step_spur_drop"
+display_name = "Spur-edge package drop"
+personal_standing_delta = 12.0
+entity_standing_delta = 2.0
+requires_prior_success = false
+
+[sub_resource type="Resource" id="step_rim_word"]
+script = ExtResource("2")
+id = &"step_rim_word"
+display_name = "A word on the rim"
+personal_standing_delta = 10.0
+entity_standing_delta = 2.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_cover_spur"]
+script = ExtResource("2")
+id = &"step_cover_spur"
+display_name = "Cover a short spur run"
+personal_standing_delta = 8.0
+entity_standing_delta = 3.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_fringe_token"]
+script = ExtResource("2")
+id = &"step_fringe_token"
+display_name = "A fringe token that sticks"
+personal_standing_delta = 8.0
+entity_standing_delta = 4.0
+requires_prior_success = true
+
+[resource]
+script = ExtResource("1")
+id = &"recovery_fringe_kade"
+display_name = "Kade's Spur Path"
+person_id = &"person_gc_kade"
+entity_id = &"entity_gamma_collective"
+steps = Array[ExtResource("2")]([SubResource("step_spur_drop"), SubResource("step_rim_word"), SubResource("step_cover_spur"), SubResource("step_fringe_token")])

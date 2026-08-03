@@ -221,6 +221,9 @@ func betray(person_id: StringName = &"") -> Dictionary:
 
 	StandingService.close_person(target, BalanceStanding.RECOVERY_CLOSE_REASON_BETRAYAL)
 
+	# S4: one-hop network betrayal — small personal hit only; do not close them.
+	_apply_network_betrayal_hits(target)
+
 	if has_active():
 		var active_chain: RecoveryChain = _chain(_active_chain_id)
 		if active_chain != null and active_chain.person_id == target:
@@ -492,6 +495,29 @@ func _step(chain: RecoveryChain, step_id: StringName) -> RecoveryStep:
 		if step != null and step.id == step_id:
 			return step
 	return null
+
+
+## S4: after closing a betrayed Person, apply a small personal hit to each
+## network contact. Does not close them. One hop only (Person.network_person_ids).
+func _apply_network_betrayal_hits(betrayed_person_id: StringName) -> void:
+	if String(betrayed_person_id).is_empty():
+		return
+	if not ContentLibrary.has_item(betrayed_person_id):
+		return
+	var item: ContentItem = ContentLibrary.item(betrayed_person_id)
+	if not (item is Person):
+		return
+	var person: Person = item as Person
+	for contact_id: StringName in person.network_person_ids:
+		if String(contact_id).is_empty() or contact_id == betrayed_person_id:
+			continue
+		if StandingService.is_person_closed(contact_id):
+			continue
+		StandingService.apply_person_delta(
+			contact_id,
+			BalanceStanding.RECOVERY_NETWORK_BETRAYAL_PERSONAL_DELTA,
+			BalanceStanding.REASON_RECOVERY_NETWORK_BETRAYAL
+		)
 
 
 func _empty_report() -> Dictionary:

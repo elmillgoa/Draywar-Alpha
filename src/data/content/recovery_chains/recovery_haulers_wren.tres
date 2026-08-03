@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="RecoveryChain" load_steps=7 format=3]
+
+; S4 — Free Haulers recovery foothold. Grease Wren (low rank) offers deniable
+; work so a player hated by Free Haulers can climb back.
+; Same law as Mendi/Jax: Friendly personal required; deniable first step;
+; StandingService only. Rank influence: low-rank → tiny Entity deltas.
+
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryChain.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryStep.gd" id="2"]
+
+[sub_resource type="Resource" id="step_side_bay"]
+script = ExtResource("2")
+id = &"step_side_bay"
+display_name = "Side-bay handoff"
+personal_standing_delta = 12.0
+entity_standing_delta = 2.0
+requires_prior_success = false
+
+[sub_resource type="Resource" id="step_manifest_whisper"]
+script = ExtResource("2")
+id = &"step_manifest_whisper"
+display_name = "Whisper on the manifest"
+personal_standing_delta = 10.0
+entity_standing_delta = 2.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_cover_shift_haulers"]
+script = ExtResource("2")
+id = &"step_cover_shift_haulers"
+display_name = "Cover a short bay shift"
+personal_standing_delta = 8.0
+entity_standing_delta = 3.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_hauler_chit"]
+script = ExtResource("2")
+id = &"step_hauler_chit"
+display_name = "A hauler chit that sticks"
+personal_standing_delta = 8.0
+entity_standing_delta = 4.0
+requires_prior_success = true
+
+[resource]
+script = ExtResource("1")
+id = &"recovery_haulers_wren"
+display_name = "Wren's Side Bay"
+person_id = &"person_fh_wren"
+entity_id = &"entity_free_haulers"
+steps = Array[ExtResource("2")]([SubResource("step_side_bay"), SubResource("step_manifest_whisper"), SubResource("step_cover_shift_haulers"), SubResource("step_hauler_chit")])

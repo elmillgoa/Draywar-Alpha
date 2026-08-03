@@ -285,6 +285,9 @@ signal on_contraband_seized(
 	standing_delta: float
 )
 
+## EnforcementService: per-Entity heat changed (S4). Not standing.
+signal on_heat_changed(entity_id: StringName, heat: float, reason: StringName)
+
 ## PlayerShip / HostileNpc: weapon discharged (travel bolt spawn).
 signal on_weapon_fired
 

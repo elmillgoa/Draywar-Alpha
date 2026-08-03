@@ -96,11 +96,14 @@ func _bootstrap_friendly_mendi() -> void:
 
 
 func test_exactly_two_chains_under_budget() -> void:
+	# Name kept for history; S4 raised live set + budget to 4.
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(ids.size(), 2, "E4.4 ships exactly two recovery chains")
+	assert_eq(ids.size(), 4, "S4 ships four recovery chains")
 	assert_eq(ids.size(), Balance.CONTENT_BUDGET[BalanceStanding.RECOVERY_CONTENT_CATEGORY])
 	assert_true(ContentLibrary.has_item(CHAIN_MENDI))
 	assert_true(ContentLibrary.has_item(CHAIN_JAX))
+	assert_true(ContentLibrary.has_item(&"recovery_haulers_wren"))
+	assert_true(ContentLibrary.has_item(&"recovery_fringe_kade"))
 	var problems: PackedStringArray = ContentLibrary.problems()
 	assert_eq(problems.size(), 0, "content problems:\n  %s" % "\n  ".join(problems))
 
