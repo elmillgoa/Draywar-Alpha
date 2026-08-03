@@ -1,9 +1,10 @@
 # Draywar Steam 1.0 — Product Plan
 
 **Date:** 2026-08-02  
-**Status:** Draft for Elliot sign-off (plan mode)  
-**Authority after sign-off:** this plan + `docs/PRODUCT_DIRECTION.md` + Destination Fidelity/Tone + standing law  
-**Does not authorize code** until Elliot accepts (or amends) this plan.
+**Version:** 1.1 (Fable outside-review amendments absorbed 2026-08-02)  
+**Status:** Accepted build queue (S0 done). S1 code only when Elliot says go.  
+**Authority:** this plan + `docs/PRODUCT_DIRECTION.md` + Destination Fidelity/Tone + standing law  
+**Review source:** `docs/OUTSIDE_REVIEW_2026-08-02.md` (read-only; findings folded in below)
 
 ---
 
@@ -112,12 +113,23 @@ New single owner (name flexible; recommend **`MarketService`**):
 - Owns runtime market state; only writer of stocks/prices  
 - Emits EventBus signals: market changed, shortage, price shock  
 - `CargoService` asks MarketService for quote and commits trades through it  
-- `WalletService` stays money/fuel/debt only  
+- `WalletService` stays money/fuel/debt only (split hull-condition out before S6 — see §12 S5/S6)  
 - Static mul tables in `BalanceEconomy` become **seed / fallback**, then retire as primary once sim is live  
 
-**World clock:** reuse `TimeScale` / scaled time. Tick markets while undocked; advance a **compressed away-time** on jump and long dock rest so the sector moves when you’re busy elsewhere. Docked trading remains immediate.
+**Pricing is per-station, not per-system.** Today’s code is system-keyed and throws the station away when pricing; S2 must invert that. Station content needs **economic identity** (profile fields) and **real world positions** (end all-stations-at-offset-zero stacking). Two stations in one system can and should show different prices for the same good.
 
-**Save:** optional section `market` (or `economy`) — station_id → commodity stocks + last tick. Prefer optional keys first; required fields only with migration if unavoidable.
+**World clock (S1 — not a TimeScale reuse):** a real **`WorldClock`** (or equivalent service) that:
+
+- Owns **accumulated game time** (elapsed seconds / ticks) independent of the player ship and of world load/unload  
+- Exposes tick categories consumers subscribe to (market, board, security, upkeep)  
+- Exposes explicit **advance N hours** for away-time (jump; later long dock rest)  
+- Persists in the save (clock lives with sim state — market section may carry it from day one)  
+- **Combat policy (locked 2026-08-02):** world clock **always advances**. Combat only caps player time-scale UI to **1x** (no 4x/16x during combat). Combat does **not** freeze the sector economy.  
+- Wallet **upkeep moves onto the world clock** (stop using the player ship’s physics update as the economy heartbeat)
+
+Tick markets while undocked; advance compressed away-time on jump (and later long dock rest). Docked trading remains immediate.
+
+**Save:** optional section `market` (or `economy`) — world clock + station_id → commodity stocks + last tick. Prefer optional keys first; required fields only with migration if unavoidable.
 
 ### 5.4 Commodities
 
@@ -140,7 +152,12 @@ Captain must answer without a wiki:
 - “Why?” (short reason: shortage / war demand / production hub)  
 - “Where might this sell?” (hints from map or trade board, not spoiler GPS for every unit)
 
-Station Trade UI + optional sector market blurb / news line.
+**S2 gate surfaces (not deferred to S3):**
+
+- Station Trade UI with **quantity control** (not 1-unit-per-click only)  
+- **Visible reason line** on prices  
+- **One-line news ticker** (minimal “why the sector is moving”) so the sim is legible while docked  
+- Optional later: personal **trade log** of prices the player observed (stale until revisit) — strong Tone fit; S2 or S3 if capacity allows  
 
 ### 5.6 Acceptance criteria (economy pillar)
 
@@ -150,6 +167,12 @@ Station Trade UI + optional sector market blurb / news line.
 - Save/load restores market state  
 - Headless tests: production tick, player dent, weight cap, contraband path still legal  
 - Human gate: “I can plan a trade route and feel the market fight back”  
+- **Long-run stability:** 10,000 ticks across all systems with no player → every stock stays in band; no price zero/explode/NaN  
+- **Away-time equivalence:** jump compressed time ≈ equivalent live ticks within tolerance  
+- **Determinism:** same seed + same actions → byte-identical market save section  
+- **No same-station money pump:** buy-then-sell at one station is always a net loss  
+- **No dead commodities:** every commodity has ≥1 profitable route somewhere in the live sector at boot  
+- **Tick cost budget:** full sector market tick under a named millisecond budget (measure; no vibes)  
 
 ### 5.7 Explicit non-goals (economy 1.0)
 
@@ -266,7 +289,8 @@ Destination ladder kept: **Claim → Power → Supply → Protect → People →
 | Candidates | ≥2 rocks/stations purchasable |
 | Gates | **Debt clear** required for purchase/ignition (Elliot) + enough credits + milestones |
 | Holding as Entity | Register player Holding; status moment on entry |
-| Ignition | Epitaph from standing ledger; celebration beat |
+| **Ignition climax** | **Authored crisis mission**, not a bare purchase: a power contests the claim; player’s accumulated standings resolve the standoff; then epitaph + celebration. Buy/claim alone is not the final beat. |
+| Act III money | Milestone work should **pay toward** Holding (price reduction or financing unlock) so late-game is not pure credit farm |
 | After | **Sandbox** — free career, markets/jobs/Ops continue; Holding may offer passive hooks thin (dock, storage) without full empire sim |
 | Deferred | Running a full post-ignition faction wargame |
 
@@ -357,41 +381,68 @@ Phases are sequential. Each ends with definition-of-done + tests + `docs/state.m
 
 ### Phase S1 — World clock & sim foundation
 
-**Job:** Time and save hooks every later sim needs.
+**Job:** Real time owner + infrastructure every later sim needs. **Not** “reuse TimeScale as the clock.”
 
-- World clock API (tick categories: market, board, security)  
-- Away-time on jump  
-- Save section scaffolding for sim state  
+- **WorldClock service:** owns accumulated game time; ticks independent of player ship and world load/unload  
+- Tick categories / subscribers (market, board, security, **wallet upkeep**)  
+- Explicit **advance N hours** (jump away-time; long dock rest may hook later)  
+- **Combat policy:** clock always runs; combat caps time-scale to 1x only  
+- Save: clock + empty/scaffolded sim sections round-trip  
 - EventBus signals catalogued  
+- **Service lifecycle registry** (or resettable convention): career-reset no longer depends only on a hand-maintained name list in the main scene  
+- **CI:** suite runs automatically on push (GitHub Actions or equivalent)  
+- **Test-support helpers:** shared “build seeded world / advance N days” scaffolding under tests support (folder is empty today — fill it)  
+- **Housekeeping:** fix text-encoding corruption in shipped UI strings + `docs/gates.md` (garbled em-dashes)
 
-**Accept:** clock advances deterministically in tests; save round-trip empty sim sections.
+**Accept:**
+
+- Clock advances deterministically in tests (including multi-frame vs chunk equivalence pattern already used elsewhere)  
+- Away-time advance moves the same accumulators  
+- Save round-trip of clock + empty sim sections  
+- Upkeep no longer depends on player-ship physics as the only heartbeat  
+- CI green on push for the suite  
+- Career reset path covers new services without forgetting a name string  
+
+**No human feel gate on S1.** First Steam play gate is S2.
 
 ### Phase S2 — Economy simulator *(pillar)*
 
-**Job:** Living markets.
+**Job:** Living markets the player can see and poke without UI friction.
 
-- MarketService + station economic profiles  
+- MarketService + **per-station** economic profiles (station-keyed prices — invert system-only pricing)  
+- Station data: economic fields + **real positions** (no stacked zero-offset stations)  
 - Stock, production, consumption, price curves, player weight  
 - Wire CargoService trade through market  
-- Trade UI shows stock + reason line  
+- Trade UI: **stock + reason line + quantity control**  
+- **One-line news ticker** (minimal visibility of sim motion; full rumor layer can thicken in S3)  
 - Seed content for all live stations  
+- **Money-event telemetry log** (local CSV or equivalent of credit events by activity — balance fuel for S9)  
+- Headless criteria in §5.6 including stability / equivalence / exploit / tick budget tests  
 
-**Accept:** criteria in §5.6  
-**Gate [Elliot]:** trade route feel / market fights back  
+**Accept:** criteria in §5.6 (including new kill-shot tests)  
+**Gate [Elliot]:** trade route feel / market fights back — judged with quantity UI + visible reason, not 1-unit theater  
 
 ### Phase S3 — Living activity density *(pillar)*
 
-**Job:** Hours of things to do without Ops yet.
+**Job:** Hours of things to do without Ops yet. **Split into two sub-slices; gate after the second.**
 
-- Radiant job generator fed by market + security  
+**S3a — Radiant work surface**
+
+- Radiant job generator fed by market + security (design for variety: stakes, standing entanglement, chained consequences — not only “another haul row”)  
 - Escort job kind  
-- Board restock  
-- Opportunistic space events (distress, intercept, customs light)  
-- News/rumor feed v1  
-- Traffic purpose lite  
+- Board restock on world clock  
+
+**S3b — Space life + news**
+
+- Opportunistic **incidents** (distress, intercept, customs light) — **not** full MissionService missions by default  
+  - **Locked 2026-08-02:** incidents are a lightweight concept separate from the one-active-mission slot; accepting an incident may promote it to a mission  
+- News/rumor feed v1 (thicken S2 ticker if needed)  
+- Traffic purpose lite (dock/undock + a few purposeful freighters when news says a shortage exists)  
 
 **Accept:** in a 60–90 min free session, player finds varied work without exhausting a fixed 12-row board  
-**Gate [Elliot]:** “not a thin menu loop”  
+**Gate [Elliot]:** “not a thin menu loop” (after S3b)  
+
+**External playtest checkpoint (after S3 gate):** first strangers touch the build. Plan who/how many and what is measured before calling the 30h path honest.  
 
 ### Phase S4 — Enforcement & standing career surface
 
@@ -413,7 +464,9 @@ Phases are sequential. Each ends with definition-of-done + tests + `docs/state.m
 - Weapons/equipment data + install/remove  
 - Balance both hulls for 10+ hour play  
 - Money sinks tied to outfitting  
-- Perf pass under denser events  
+- Perf pass under denser events (**measure** densest system: full hostiles + market ticking — 60fps budget needs an instrument)  
+- **Before S6 starts:** schedule **WalletService split** (money/debt vs fuel vs hull-condition / combat fail-state) so Ops retainers and ship equipment do not collide in one 700-line god service  
+- **Screenshot / Steam-page floor (S5–S6 window):** capsule-ready presentation milestone pulled forward from S10 — wishlists need months; do not wait for polish phase to first look shippable  
 
 **Accept:** both careers (hauler-first, fighter-first) viable into mid-game  
 **Gate [Elliot]:** ship fantasy not bored  
@@ -426,32 +479,35 @@ Phases are sequential. Each ends with definition-of-done + tests + `docs/state.m
 - Standing-gated charters  
 - Save section  
 - Economy + radiant interact with fleet hauls  
+- Wallet split complete enough that Ops payees are not bolted into hull-condition code  
 
 **Accept:** player can run a small operation and feel progression past solo courier  
 **Gate [Elliot]:** Ops feel  
 
 ### Phase S7 — Campaign framework + Acts I–II content
 
-**Job:** Spine exists and first half is playable.
+**Job:** Spine exists and first half is playable; new players survive the first two hours.
 
 - Campaign flags, mission data shape, UI journal thin  
 - Act I–II authored beats (debt, annexation fallout, first real choice of lane)  
-- Integrate radiant around spine  
+- Integrate radiant around spine (standing-tier gates on spine beats so radiant income cannot trivially skip debt pressure — design before writing)  
+- **Onboarding:** Act I beats double as tutorial for flight + trade + standing + debt; add a “new player cold start” check to the gate  
 
-**Accept:** new player can follow spine ~half campaign without console  
-**Gate [Elliot]:** story/ freeroam balance  
+**Accept:** new player can follow spine ~half campaign without console; cold start does not refund-bait in the first 2h  
+**Gate [Elliot]:** story / freeroam balance + cold start  
 
 ### Phase S8 — Holding + Act III + climax + sandbox continue
 
 **Job:** Campaign complete path and epilogue.
 
-- Holding candidates, milestones, purchase, ignition, epitaph  
+- Holding candidates, milestones, purchase path  
 - Debt-clear gate  
-- Act III crisis beats  
+- Act III crisis beats (milestones pay toward Holding — see §8.3)  
+- **Authored ignition crisis mission** (power contests claim; standings resolve) + epitaph + celebration  
 - Sandbox continue (no soft-lock, markets/Ops live)  
 
-**Accept:** debt clear + Holding buy ends campaign; continue play free  
-**Gate [Elliot]:** endgame feel + structural rhyme  
+**Accept:** debt clear + Holding ignition (crisis resolved) ends campaign; continue play free  
+**Gate [Elliot]:** endgame feel + structural rhyme (“powers respond”)  
 
 ### Phase S9 — Content complete (real Beta)
 
@@ -461,17 +517,18 @@ Phases are sequential. Each ends with definition-of-done + tests + `docs/state.m
 - People / chains / flashpoints  
 - Spine complete count  
 - Names/lore pass where approved  
-- Balance economy + combat + pay  
+- Balance economy + combat + pay (use S2 money telemetry)  
+- **Writing production:** spine + chains + People need an owner/schedule; dialog/conversation data shape if menus are not enough — S9 is the most likely schedule blowout; plan for it to run long  
 
-**Accept:** measured playtests hit ~30h main path without dead air; completionist hooks exist  
+**Accept:** measured playtests (including external) hit ~30h main path without dead air; completionist hooks exist  
 **Gate [Elliot]:** content complete  
 
 ### Phase S10 — Production polish + launch prep
 
 **Job:** Steam-ready presentation and packaging.
 
-- Art/audio floor, UI, performance, accessibility  
-- Steamworks hooks as needed  
+- Art/audio floor, UI, performance, accessibility (rebinds, sensitivity, FOV, colorblind-safe standing colors, controller yes/no — decide early if still open)  
+- Steamworks hooks as needed; page should already be live from S5–S6 screenshot floor  
 - Bug smash from Alpha/Beta debt  
 **Gate [Elliot]:** release candidate  
 
@@ -486,10 +543,10 @@ Not a promise — a planning envelope:
 | Foundation + economy + living activity | S1–S3 | 3–5 weeks |
 | Enforcement + ship + Ops | S4–S6 | 3–5 weeks |
 | Campaign + Holding | S7–S8 | 3–5 weeks |
-| Content complete | S9 | 4–8 weeks |
+| Content complete | S9 | 4–8 weeks *(plan for this to double — writing + 30h balance)* |
 | Polish / RC | S10 | 3–6 weeks |
 
-**Order-of-magnitude: ~4–7 months** to a serious 1.0 candidate at this bar, not “a few weeks.” Weeks get you **real Alpha (core complete)** if focused (through ~S6–S8 thin). Full 30/80 + polish is longer. Scope cuts only by Elliot.
+**Order-of-magnitude: ~4–7 months** to a serious 1.0 candidate at this bar, not “a few weeks.” Weeks get you **real Alpha (core complete)** if focused (through ~S6–S8 thin). Full 30/80 + polish is longer. **Do not schedule external commitments against the end date.** Scope cuts only by Elliot.
 
 ---
 
@@ -525,23 +582,30 @@ Not a promise — a planning envelope:
 
 | Risk | Mitigation |
 |------|------------|
-| Economy too abstract / spreadsheety | Readable reasons + human gate S2 |
-| Economy too gameable | Player weight caps + NPC flow + tests |
+| Economy too abstract / spreadsheety | Reason line + ticker + quantity UI in S2 gate; human gate S2 |
+| Economy too gameable | Player weight caps + NPC flow + kill-shot tests (sec 5.6) |
+| Player ship was the sim heartbeat | WorldClock owns time; upkeep moves off ship physics (S1) |
+| Per-system prices vs per-station model | Explicit S2 inversion + station economic identity/positions |
+| S3 overload (six systems thin) | S3a / S3b split; gate after S3b |
 | Ops + traffic blow 60 fps | Fleet budget; reduce ambient when fleet active; measure before raise |
-| Campaign fights freeroam | Spine optional timing; radiant always available |
+| Campaign fights freeroam | Spine optional timing; radiant always available; standing gates on spine |
+| Climax is a purchase | Authored ignition crisis mission (S8) |
 | Scope fantasy vs months | S0 sign-off; cut only at phase boundaries with Elliot |
-| Content writing bottleneck | Data-driven missions; thin VO; prioritize spine prose |
-| Calling tech demo “Alpha” again | Maturity language in state.md only |
+| Content writing bottleneck | Data-driven missions; thin VO; prioritize spine prose; S9 may double |
+| Calling tech demo "Alpha" again | Maturity language in state.md only |
+| Regressions invisible after S2 | CI on push from S1; money telemetry from S2 |
+| Career state leaks across saves | Service lifecycle registry in S1 |
 
 ---
 
-## 17. Immediate next steps after plan accept
+## 17. Immediate next steps (post-review absorb)
 
-1. Copy accepted plan → `docs/STEAM_PHASE_PLAN.md` (project authority)  
-2. Patch `docs/state.md` next-work = **S1**  
-3. Journal: plan accepted  
-4. Open S1 implementation session with `/work` (or equivalent) — **subagents build**  
+1. Plan v1.1 written into this file (done when this section is current)  
+2. `docs/state.md` → review absorbed; **S1 ready when Elliot says go**  
+3. Journal: review outcome + locked decisions  
+4. **Only after Elliot says go:** open S1 implementation session with `/work` — **subagents build**  
 5. Do **not** start Ops/Holding/campaign code before S1–S2 foundations  
+6. Do **not** start S1 until go (planning complete ≠ code authorized)
 
 ---
 
@@ -553,10 +617,12 @@ Not a promise — a planning envelope:
 | Map | Hand-built dense; grow to ~8–10 systems in content phase |
 | Economy | Full MarketService sim (S2) before Ops/Holding |
 | Procgen | Jobs, events, market noise — not star map |
-| First code phase | S1 world clock → S2 economy → S3 activity |
-| Real Alpha | End of S8 thin (core loops) or end of S6+campaign framework if Holding thin-gated — **plan marks real Alpha at S8 accept** (all core pillars including Holding path) |
+| First code phase | S1 WorldClock → S2 economy → S3a/S3b activity |
+| Combat + time | Clock always runs; combat caps speed to 1x (locked) |
+| Space events | Incidents ≠ MissionService by default (locked) |
+| Real Alpha | **plan marks real Alpha at S8 accept** (all core pillars including Holding path) |
 | Real Beta | S9 accept |
-| Timeline honesty | Months for 1.0; weeks for early core pillars only |
+| Timeline honesty | Months for 1.0; weeks for early core pillars only; S9 may double |
 
 ---
 
@@ -566,10 +632,13 @@ Defaults used in this plan unless you change them:
 
 1. **Ship fuel vs fuel-cells commodity** — stay separate for 1.0 (simpler); optional link later  
 2. **Active missions** — still one personal mission; fleet jobs are Ops orders, not second player mission  
-3. **Holding after ignition** — passive dock/storage only; no empire management  
-4. **Early Access** — not assumed; plan aims at full 1.0 candidate (EA can be a later cut of S9)  
+3. **Incidents** — lightweight; may promote to mission on accept (locked 2026-08-02)  
+4. **Holding after ignition** — passive dock/storage only; no empire management  
+5. **Early Access** — not assumed; plan aims at full 1.0 candidate (EA can be a later cut of S9)  
+6. **Player trade log** (observed prices) — optional S2/S3 if capacity; not blocking  
+7. **Controller support** — decide yes/no by S5 screenshot floor, not at S10  
 
-If any default is wrong, say so at sign-off; we amend before S1.
+If any default is wrong, say so before S1 go; we amend the plan first.
 
 ---
 
@@ -577,10 +646,33 @@ If any default is wrong, say so at sign-off; we amend before S1.
 
 | Field | Value |
 |-------|--------|
-| Plan version | 1.0 draft 2026-08-02 |
-| Elliot accept | **accepted 2026-08-02** |
-| Amendments | _none yet_ |
+| Plan version | **1.1** (2026-08-02) |
+| Elliot accept (v1.0) | **accepted 2026-08-02** |
+| Outside review | Fable, 2026-08-02 — `docs/OUTSIDE_REVIEW_2026-08-02.md` |
+| Amendments (v1.1) | **All 11 Fable amendments accepted** 2026-08-02 — see §21 |
+| Combat/time policy | Clock always runs; combat caps to 1x |
+| Incident vs mission | Incidents separate; may promote to mission |
 
-**Accept means:** this becomes the build queue; freestyle post-E6 work stops; S1 is next.
+**v1.1 accept means:** amended plan is the build queue; S1 is next **when Elliot says go**.
 
-**Refuse / amend means:** list changes; plan revised before any Steam-phase code.
+**Code still requires explicit go** for S1 — absorbing review is not a build order.
+
+---
+
+## 21. Fable amendments absorbed (v1.1)
+
+| # | Severity | Amendment | Where landed |
+|---|----------|-----------|--------------|
+| 1 | Blocker | Real WorldClock in S1 (elapsed time, away-time, save, combat policy, upkeep on clock) | §5.3, Phase S1 |
+| 2 | Blocker | Per-station pricing + station economic identity/positions in S2 | §5.3, Phase S2 |
+| 3 | Important | Quantity UI + reason line + news ticker in S2 gate | §5.5, Phase S2 |
+| 4 | Important | Economy kill-shot tests | §5.6 |
+| 5 | Important | Authored ignition climax mission | §8.3, Phase S8 |
+| 6 | Important | CI + test-support harness in S1 | Phase S1 |
+| 7 | Important | WalletService split before S6; incidents vs missions before S3 | S5/S6, S3b, §19 |
+| 8 | Important | Service lifecycle registry in S1 | Phase S1 |
+| 9 | Important | External playtest after S3; screenshot floor S5–S6; onboarding in S7 | S3, S5, S7 |
+| 10 | Polish | Money telemetry in S2; S3 split a/b | Phase S2, S3 |
+| 11 | Polish | Text-encoding fix in S1 | Phase S1 |
+
+**Explicitly not changed (review §9):** phase order; standing law; optional-save + byte-determinism; 10–12 commodity cap; content budgets / loud-failure loading; tech-demo maturity language; 20-ship budget until measured; AGENTS.md discipline.
