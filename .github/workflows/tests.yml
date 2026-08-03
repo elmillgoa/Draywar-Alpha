@@ -1,0 +1,68 @@
+# Draywar CI — headless smoke + GUT on every push / PR.
+#
+# Local equivalent: scripts/run_tests.ps1 (Windows Godot 4.6.1 console binary).
+# CI installs the official Godot 4.6.1 Linux x86_64 build from GitHub releases.
+# Godot 4.x has no separate "headless" Linux package; --headless is enough.
+# Download:
+#   https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_linux.x86_64.zip
+#
+# Bar: suite runs automatically on push. Lint (gdtoolkit) is optional and not required here.
+
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gut:
+    name: Headless smoke + GUT
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Godot 4.6.1
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: .godot-ci
+          key: godot-4.6.1-stable-linux-x86_64
+
+      - name: Download Godot 4.6.1 Linux
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-ci
+          curl -fsSL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/4.6.1-stable/Godot_v4.6.1-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d .godot-ci
+          # Zip contains a single binary named Godot_v4.6.1-stable_linux.x86_64
+          chmod +x .godot-ci/Godot_v4.6.1-stable_linux.x86_64
+          ln -sf Godot_v4.6.1-stable_linux.x86_64 .godot-ci/godot
+          .godot-ci/godot --version
+
+      - name: Ensure godot launcher link
+        run: |
+          set -euo pipefail
+          if [ ! -e .godot-ci/godot ]; then
+            ln -sf Godot_v4.6.1-stable_linux.x86_64 .godot-ci/godot
+          fi
+          chmod +x .godot-ci/Godot_v4.6.1-stable_linux.x86_64
+          .godot-ci/godot --version
+
+      - name: Smoke boot (project opens headless)
+        run: |
+          set -euo pipefail
+          .godot-ci/godot --path "$GITHUB_WORKSPACE" --headless --quit-after 2
+
+      - name: GUT suite
+        run: |
+          set -euo pipefail
+          # Same CLI as scripts/run_tests.ps1: gut_cmdln + tests dir + exit.
+          .godot-ci/godot --path "$GITHUB_WORKSPACE" --headless \
+            -s "res://addons/gut/gut_cmdln.gd" \
+            -gdir=res://tests \
+            -gexit

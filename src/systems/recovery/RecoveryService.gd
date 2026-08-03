@@ -53,6 +53,7 @@ var _completed_steps: Dictionary[StringName, Array] = {}
 
 func _ready() -> void:
 	add_to_group(&"recovery_service")
+	ServiceRegistry.register_resettable(reset)
 	EventBus.on_recovery_accept_requested.connect(_on_accept_requested)
 	EventBus.on_recovery_complete_requested.connect(_on_complete_requested)
 	EventBus.on_recovery_abandon_requested.connect(_on_abandon_requested)
@@ -64,6 +65,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	ServiceRegistry.unregister_resettable(reset)
 	if EventBus.on_recovery_accept_requested.is_connected(_on_accept_requested):
 		EventBus.on_recovery_accept_requested.disconnect(_on_accept_requested)
 	if EventBus.on_recovery_complete_requested.is_connected(_on_complete_requested):

@@ -19,6 +19,9 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	_merge_recovery_progress(tree, standing_section)
 	sections[BalanceStanding.SAVE_SECTION_KEY] = standing_section
 
+	# S1: world clock always written (elapsed seconds; empty sim scaffold later).
+	sections[BalanceWorldClock.SAVE_SECTION_KEY] = WorldClock.to_section()
+
 	var wallet_section: Dictionary = _wallet_section(tree)
 	if not wallet_section.is_empty():
 		sections[BalanceEconomy.SAVE_SECTION_KEY] = wallet_section
@@ -42,9 +45,11 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	return sections
 
 
-## Apply standing (+ recovery), wallet, cargo, ship, mission, career. Not world (Main owns that).
+## Apply standing (+ recovery), world clock, wallet, cargo, ship, mission, career.
+## Not world placement (Main owns that).
 static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_standing_from_sections(tree, sections)
+	_apply_world_clock_from_sections(sections)
 	_apply_wallet_from_sections(tree, sections)
 	# Ship before cargo so capacity path matches restored active hull.
 	_apply_ship_from_sections(tree, sections)
@@ -243,6 +248,14 @@ static func _apply_standing_from_sections(tree: SceneTree, sections: Dictionary)
 	else:
 		StandingService.reset_to_defaults()
 		_reset_recovery_progress(tree)
+
+
+static func _apply_world_clock_from_sections(sections: Dictionary) -> void:
+	if sections.has(BalanceWorldClock.SAVE_SECTION_KEY):
+		WorldClock.apply_section(sections[BalanceWorldClock.SAVE_SECTION_KEY])
+	else:
+		# Old saves / missing section → career clock starts at zero.
+		WorldClock.reset()
 
 
 static func _apply_wallet_from_sections(tree: SceneTree, sections: Dictionary) -> void:

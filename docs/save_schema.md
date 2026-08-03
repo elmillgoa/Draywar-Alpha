@@ -15,14 +15,15 @@ what is inside a section.
 
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
-**`standing`** (A2), **`wallet`** (A5), **`cargo`** (B3), **`ship`** (E2.5),
-**`world`** (B2), **`mission`** (B2), and **`career`** (E4.6) maps. Missing
-`standing` means all-neutral content defaults. Missing `wallet` means starting
-credits/fuel/condition. Missing `cargo` means empty hold. Missing `ship` means
-Hauler only (starter owned, active Hauler). Missing `world` keeps the boot
-system/spawn. Missing `mission` means no active job. Missing `career` means no
-life-path ids on the captain sheet (old saves). Tests may still use a hostile
-probe fixture. New required career fields later bump the version with a
+**`standing`** (A2), **`world_clock`** (S1), **`wallet`** (A5), **`cargo`** (B3),
+**`ship`** (E2.5), **`world`** (B2), **`mission`** (B2), and **`career`** (E4.6)
+maps. Missing `standing` means all-neutral content defaults. Missing
+`world_clock` means elapsed game time starts at zero. Missing `wallet` means
+starting credits/fuel/condition. Missing `cargo` means empty hold. Missing
+`ship` means Hauler only (starter owned, active Hauler). Missing `world` keeps
+the boot system/spawn. Missing `mission` means no active job. Missing `career`
+means no life-path ids on the captain sheet (old saves). Tests may still use a
+hostile probe fixture. New required career fields later bump the version with a
 migration step in `SaveMigrations.gd`.
 
 ### Optional section: `standing` (schema v1)
@@ -41,6 +42,21 @@ Console save also merges recovery chain progress into this section (A4).
 Ids not listed use content `default_player_standing` (else 0).
 Missing A4 maps mean no history, nobody closed, no chain progress.
 No envelope version bump — these keys are optional inside schema v1.
+
+### Optional section: `world_clock` (schema v1)
+
+Written by `WorldClock.to_section()` / applied by `WorldClock.apply_section()`
+via `CareerSave` (S1). Always gathered when saving a career. No envelope
+version bump. Later sim sections (`market`, boards, …) will sit beside this;
+S1 only persists the clock.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `elapsed_seconds` | `float` | Accumulated game seconds since career start / last clock reset. |
+
+Missing section → elapsed resets to 0. Negative / non-finite values → 0.
+Load does **not** emit bulk away-time bus events; TimeScale still resets to 1x
+on `on_save_loaded` independently.
 
 ### Optional section: `wallet` (schema v1)
 

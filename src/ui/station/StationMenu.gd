@@ -1,9 +1,9 @@
 class_name StationMenu
 extends CanvasLayer
 
-## Station menu Ã¢â‚¬â€ Path C B3 sections (jobs, services, trade, contacts).
+## Station menu — Path C B3 sections (jobs, services, trade, contacts).
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A1Ã¢â‚¬â€œA5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B3
 ##
 ## Undock, accept / turn in / abandon jobs, recovery talk / complete /
 ## abandon / favor / betray, refuel and repair, buy/sell commodities.
@@ -23,7 +23,7 @@ var _jobs_box: VBoxContainer = null
 var _turn_in_job_btn: Button = null
 var _abandon_job_btn: Button = null
 var _contacts_header: Label = null
-## Named people for the dock controller (Contacts list Ã¢â‚¬â€ E1.2).
+## Named people for the dock controller (Contacts list — E1.2).
 var _contacts_list: VBoxContainer = null
 var _recovery_hint: Label = null
 var _recovery_btn: Button = null
@@ -277,7 +277,7 @@ func _build_ui() -> void:
 	_betray_btn.pressed.connect(_on_betray_pressed)
 	_betray_btn.visible = false
 
-	# Footer always visible Ã¢â‚¬â€ leave dock without scrolling past trade/contacts.
+	# Footer always visible — leave dock without scrolling past trade/contacts.
 	var undock_spacer: Control = Control.new()
 	undock_spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_UNDOCK_SPACER)
 	undock_spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -747,7 +747,7 @@ func _refresh_recovery_buttons() -> void:
 	_complete_recovery_btn.visible = recovery_busy and visible
 	if _complete_recovery_btn.visible and not String(_active_recovery_person_id).is_empty():
 		_complete_recovery_btn.text = (
-			"%s Ã¢â‚¬â€ %s"
+			BalanceEconomy.STATION_CONTACT_LINE_FORMAT
 			% [
 				BalanceEconomy.STATION_COMPLETE_RECOVERY_LABEL,
 				_content_name(_active_recovery_person_id),
@@ -801,7 +801,7 @@ func _refresh_recovery_drama_header(deep_negative: bool, person_id: StringName) 
 			_recovery_hint.visible = false
 
 
-## Sticky-deep with the dock controller (hostile hole Ã¢â‚¬â€ recovery foothold path).
+## Sticky-deep with the dock controller (hostile hole — recovery foothold path).
 func _is_deep_negative_with_controller() -> bool:
 	var controller: StringName = _dock_controller()
 	if String(controller).is_empty():

@@ -8,6 +8,9 @@ signal on_time_scale_changed(scale: float)
 ## TimeScale: combat lock opened or closed.
 signal on_combat_lock_changed(locked: bool)
 
+## WorldClock: bulk away-time advance finished (not per-frame).
+signal on_world_time_advanced(total_elapsed_seconds: float, delta_seconds: float)
+
 ## SaveService: a career was loaded successfully from this path.
 signal on_save_loaded(path: String)
 

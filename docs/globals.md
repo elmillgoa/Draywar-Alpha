@@ -55,6 +55,18 @@ exists; it holds content references, not career state.
 How fast game time runs. Every clock must ask the same number; two authorities
 would run two games; it holds only the rate and combat lock, not world state.
 
+### `ServiceRegistry` -> `res://src/systems/ServiceRegistry.gd`
+
+Career-reset registration for services that own session state. New services
+self-register a reset callable so Main is not the only place that knows their
+names; two registries would split reset; it holds only callables, not game data.
+
+### `WorldClock` -> `res://src/systems/time/WorldClock.gd`
+
+Accumulated game time and sim tick categories. Every sim system must share one
+elapsed timeline; two clocks would desync markets and upkeep; it holds elapsed
+seconds and category subscribers (not world layout or standing).
+
 ### `StandingService` -> `res://src/systems/standing/StandingService.gd`
 
 Player standing ledger for Entities and People. Everyone that needs standing

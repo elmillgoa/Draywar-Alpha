@@ -388,14 +388,11 @@ func _sections_of(envelope: Dictionary) -> Dictionary:
 
 
 func _reset_career_services() -> void:
-	StandingService.reset_to_defaults()
+	# S1: registered services (WorldClock, StandingService, Mission, Recovery, …).
+	ServiceRegistry.reset_all()
 	CareerStart.reset()
-	var mission: Node = get_node_or_null("MissionService")
-	if mission != null and mission.has_method(&"reset"):
-		mission.call(&"reset")
+	# Recovery progress wipe is more than reset() on some paths — keep explicit.
 	var recovery: Node = get_node_or_null("RecoveryService")
-	if recovery != null and recovery.has_method(&"reset"):
-		recovery.call(&"reset")
 	if recovery != null and recovery.has_method(&"apply_progress_section"):
 		recovery.call(&"apply_progress_section", {})
 
@@ -545,6 +542,9 @@ func _on_jump_requested(destination_system_id: StringName) -> void:
 		return
 	if not _wallet.try_spend_jump_fuel():
 		return
+
+	# S1: compressed transit time on the world clock (same accumulators as live).
+	WorldClock.advance_hours(BalanceWorldClock.JUMP_AWAY_HOURS)
 
 	_jump_busy = true
 	var from_id: StringName = _world.system_id

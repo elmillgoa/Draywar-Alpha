@@ -64,6 +64,20 @@ The combat lock that forces time to 1x opened or closed.
 
 **Emitted by** `src/systems/time/TimeScale.gd`.
 
+### `on_world_time_advanced(total_elapsed_seconds: float, delta_seconds: float)`
+
+Bulk away-time finished on the world clock (jump advance, explicit
+`advance_hours` / `advance_seconds`). Not emitted per frame — live ticks use
+category subscribers only.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `total_elapsed_seconds` | `float` | Elapsed game seconds after this advance. |
+| `delta_seconds` | `float` | Game seconds just applied. |
+
+**Emitted by** `src/systems/time/WorldClock.gd` from public bulk advance only.
+**Listened to by** tests and later sim surfaces (not per-frame consumers).
+
 ## Save
 
 ### `on_save_loaded(path: String)`
@@ -76,7 +90,8 @@ A career was loaded successfully from disk.
 
 **Emitted by** `src/systems/save/SaveService.gd` from `load_from()` only after
 success. Failed / refused loads emit nothing.
-**Listened to by** `TimeScale` (resets to 1x).
+**Listened to by** `TimeScale` (resets rate to 1x). `WorldClock` does **not**
+reset elapsed on load — `CareerSave.apply_meta_sections` restores or zeros it.
 
 ## Debug console
 

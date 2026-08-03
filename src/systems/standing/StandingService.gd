@@ -38,6 +38,7 @@ func _ready() -> void:
 	_console_commands = StandingConsoleCommands.new()
 	EventBus.on_system_entered.connect(_on_system_entered)
 	EventBus.on_docked.connect(_on_docked)
+	ServiceRegistry.register_resettable(reset_to_defaults)
 	reset_to_defaults()
 
 
