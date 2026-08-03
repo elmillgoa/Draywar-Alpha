@@ -112,14 +112,17 @@ func test_dock_fee_row_has_negative_delta() -> void:
 
 func test_refuel_row_has_negative_delta() -> void:
 	var wallet: WalletService = WalletService.new()
+	var fuel: FuelService = FuelService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(fuel)
 	var money_log: MoneyLog = _new_money_log()
 	await get_tree().process_frame
 	wallet.reset()
-	wallet.burn_fuel(FUEL_BURN_SECONDS, 1.0, false)
+	fuel.reset()
+	fuel.burn_fuel(FUEL_BURN_SECONDS, 1.0, false)
 
 	var credits_before: int = wallet.credits()
-	var added: float = wallet.refuel_chunk()
+	var added: float = fuel.refuel_chunk()
 	assert_gt(added, 0.0, "burned fuel must leave room to refuel")
 	var spent: int = credits_before - wallet.credits()
 	assert_gt(spent, 0)
@@ -135,14 +138,17 @@ func test_refuel_row_has_negative_delta() -> void:
 
 func test_repair_row_has_negative_delta() -> void:
 	var wallet: WalletService = WalletService.new()
+	var hull: HullConditionService = HullConditionService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(hull)
 	var money_log: MoneyLog = _new_money_log()
 	await get_tree().process_frame
 	wallet.reset()
-	wallet.apply_damage(DAMAGE_AMOUNT)
+	hull.reset()
+	hull.apply_damage(DAMAGE_AMOUNT)
 
 	var credits_before: int = wallet.credits()
-	assert_true(wallet.repair_full())
+	assert_true(hull.repair_full())
 	var spent: int = credits_before - wallet.credits()
 	assert_gt(spent, 0)
 	_close_money_log(money_log)
@@ -271,15 +277,18 @@ func test_set_enabled_false_stops_new_rows() -> void:
 
 func test_rows_parse_back_in_recorded_order() -> void:
 	var wallet: WalletService = WalletService.new()
+	var fuel: FuelService = FuelService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(fuel)
 	var money_log: MoneyLog = _new_money_log()
 	await get_tree().process_frame
 	wallet.reset()
+	fuel.reset()
 	wallet.set_credits(1000)
 
 	wallet.charge_dock_fee(SYSTEM_ALPHA)
-	wallet.burn_fuel(FUEL_BURN_SECONDS, 1.0, false)
-	wallet.refuel_chunk()
+	fuel.burn_fuel(FUEL_BURN_SECONDS, 1.0, false)
+	fuel.refuel_chunk()
 	wallet.borrow()
 	_close_money_log(money_log)
 

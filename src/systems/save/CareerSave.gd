@@ -133,14 +133,26 @@ static func mission_template_from_sections(sections: Dictionary) -> StringName:
 	return StringName(str(data[BalanceSession.MISSION_KEY_TEMPLATE_ID]))
 
 
+## Merge money + fuel + hull into the single optional `wallet` section key.
+## Old combined saves stay loadable; no envelope version bump (S5 Session B).
 static func _wallet_section(tree: SceneTree) -> Dictionary:
-	var wallet: Node = _node_in_group(tree, &"wallet_service")
-	if wallet == null or not wallet.has_method(&"to_section"):
-		return {}
-	var section: Variant = wallet.call(&"to_section")
-	if typeof(section) != TYPE_DICTIONARY:
-		return {}
+	var section: Dictionary = {}
+	_merge_service_section(tree, &"wallet_service", section)
+	_merge_service_section(tree, &"fuel_service", section)
+	_merge_service_section(tree, &"hull_condition_service", section)
 	return section
+
+
+static func _merge_service_section(tree: SceneTree, group: StringName, section: Dictionary) -> void:
+	var node: Node = _node_in_group(tree, group)
+	if node == null or not node.has_method(&"to_section"):
+		return
+	var part: Variant = node.call(&"to_section")
+	if typeof(part) != TYPE_DICTIONARY:
+		return
+	var data: Dictionary = part
+	for key: Variant in data.keys():
+		section[key] = data[key]
 
 
 static func _merge_cargo_section(tree: SceneTree, sections: Dictionary) -> void:
@@ -311,14 +323,28 @@ static func _apply_enforcement_from_sections(sections: Dictionary) -> void:
 		EnforcementService.reset()
 
 
+## Apply the combined `wallet` section to money, fuel, and hull services.
+## Missing section → each present service resets to boot defaults.
 static func _apply_wallet_from_sections(tree: SceneTree, sections: Dictionary) -> void:
-	var wallet: Node = _node_in_group(tree, &"wallet_service")
-	if wallet == null:
+	var has_section: bool = sections.has(BalanceEconomy.SAVE_SECTION_KEY)
+	var raw: Variant = null
+	if has_section:
+		raw = sections[BalanceEconomy.SAVE_SECTION_KEY]
+	_apply_or_reset_service(tree, &"wallet_service", has_section, raw)
+	_apply_or_reset_service(tree, &"fuel_service", has_section, raw)
+	_apply_or_reset_service(tree, &"hull_condition_service", has_section, raw)
+
+
+static func _apply_or_reset_service(
+	tree: SceneTree, group: StringName, has_section: bool, raw: Variant
+) -> void:
+	var node: Node = _node_in_group(tree, group)
+	if node == null:
 		return
-	if sections.has(BalanceEconomy.SAVE_SECTION_KEY) and wallet.has_method(&"apply_section"):
-		wallet.call(&"apply_section", sections[BalanceEconomy.SAVE_SECTION_KEY])
-	elif wallet.has_method(&"reset"):
-		wallet.call(&"reset")
+	if has_section and node.has_method(&"apply_section"):
+		node.call(&"apply_section", raw)
+	elif node.has_method(&"reset"):
+		node.call(&"reset")
 
 
 static func _apply_mission_from_sections(tree: SceneTree, sections: Dictionary) -> void:

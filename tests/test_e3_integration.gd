@@ -163,8 +163,11 @@ func test_starting_credits_do_not_softlock_before_first_job() -> void:
 
 	assert_eq(wallet.credits(), BalanceEconomy.STARTING_CREDITS)
 	assert_eq(_owed(wallet), 0)
-	assert_true(wallet.has_fuel())
-	assert_true(wallet.can_jump())
+	var fuel: FuelService = FuelService.new()
+	add_child_autofree(fuel)
+	fuel.reset()
+	assert_true(fuel.has_fuel())
+	assert_true(fuel.can_jump())
 
 	# Brief free-fly before first re-dock (life-support only while undocked).
 	var undock_s: float = BalanceEconomy.SCENARIO_FIRST_JOB_UNDOCK_SECONDS

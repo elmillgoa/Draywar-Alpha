@@ -60,16 +60,16 @@ func test_impact_formula_matches_balance_parts() -> void:
 
 
 func test_wallet_apply_via_impact_helper() -> void:
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	add_child_autofree(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var before: float = wallet.condition()
+	hull.reset()
+	var before: float = hull.condition()
 	var dmg: float = BalanceCombat.impact_damage(BalanceCombat.MASS_CLASS_STATION, CLOSING_FAST)
 	assert_gt(dmg, 0.0)
-	wallet.apply_damage(dmg)
-	assert_lt(wallet.condition(), before)
-	assert_almost_eq(wallet.condition(), before - dmg, TOLERANCE)
+	hull.apply_damage(dmg)
+	assert_lt(hull.condition(), before)
+	assert_almost_eq(hull.condition(), before - dmg, TOLERANCE)
 
 
 func test_live_player_impact_damages_hull_via_ship_path() -> void:
@@ -78,11 +78,11 @@ func test_live_player_impact_damages_hull_via_ship_path() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	add_child_autofree(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var before: float = wallet.condition()
+	hull.reset()
+	var before: float = hull.condition()
 
 	var station: StaticBody3D = StaticBody3D.new()
 	station.collision_layer = BalanceFlight.PHYSICS_LAYER_STATICS
@@ -117,11 +117,11 @@ func test_live_player_impact_damages_hull_via_ship_path() -> void:
 
 	assert_true(hit, "expected collision with station wall")
 	assert_lt(
-		wallet.condition(),
+		hull.condition(),
 		before,
 		(
 			"live impact path must apply hull damage (pre-slide closing); condition was %.2f now %.2f"
-			% [before, wallet.condition()]
+			% [before, hull.condition()]
 		)
 	)
 
@@ -130,11 +130,11 @@ func test_live_slow_bump_does_not_damage_hull() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	add_child_autofree(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var before: float = wallet.condition()
+	hull.reset()
+	var before: float = hull.condition()
 
 	var station: StaticBody3D = StaticBody3D.new()
 	station.collision_layer = BalanceFlight.PHYSICS_LAYER_STATICS
@@ -167,7 +167,7 @@ func test_live_slow_bump_does_not_damage_hull() -> void:
 		await get_tree().physics_frame
 		i += 1
 
-	assert_almost_eq(wallet.condition(), before, 0.01, "below threshold = bump only")
+	assert_almost_eq(hull.condition(), before, 0.01, "below threshold = bump only")
 
 
 func test_soft_bump_keeps_lateral_motion() -> void:

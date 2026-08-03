@@ -73,10 +73,10 @@ func _wallet_can_jump() -> bool:
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return false
-	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
-	if wallet == null or not wallet.has_method(&"can_jump"):
+	var fuel: Node = tree.get_first_node_in_group(&"fuel_service")
+	if fuel == null or not fuel.has_method(&"can_jump"):
 		return false
-	return wallet.call(&"can_jump") == true
+	return fuel.call(&"can_jump") == true
 
 
 func _station_blocks_gate() -> bool:

@@ -1,12 +1,15 @@
 class_name WalletService
 extends Node
 
-## Credits, fuel, hull condition, and thin emergency debt — A5 / E3.1 / E3.2.
+## Credits, upkeep, and thin emergency debt — money only (S5 Session B split).
 ##
-## Implements: Alpha/ALPHA_PHASE_PLAN.md A5, docs/BETA_E3_ECONOMY.md E3.1–E3.2
+## Implements: Alpha/ALPHA_PHASE_PLAN.md A5, docs/BETA_E3_ECONOMY.md E3.1–E3.2,
+## docs/STEAM_PHASE_PLAN.md S5 Session B (money half of former god wallet).
 ##
-## Single writer for money/fuel/condition/debt. Child of Main (not an autoload).
-## Optional save section `wallet` (schema v1, no envelope bump).
+## Single writer for credits/debt. Child of Main (not an autoload).
+## Fuel lives on FuelService; hull on HullConditionService.
+## Optional save section `wallet` is gathered by CareerSave from all three
+## (this service writes credits + debt keys only). No envelope version bump.
 ## Console: `credits` / `credits set <n>`.
 ## Undocked life-support upkeep drains credits via tick_upkeep (never negative).
 ## Free Haulers loan: borrow once while clear; job garnish; manual repay; grace
@@ -18,8 +21,6 @@ const CREDITS: StringName = BalanceEconomy.CREDITS_COMMAND
 const ACTION_SET: String = "set"
 
 var _credits: int = BalanceEconomy.STARTING_CREDITS
-var _fuel: float = BalanceEconomy.STARTING_FUEL
-var _condition: float = BalanceEconomy.STARTING_CONDITION
 ## Fractional upkeep remainder until a whole credit is owed (rate can be < 1/s).
 var _upkeep_debt: float = 0.0
 ## E3.2 flat amount still owed on the emergency loan (0 = no debt).
@@ -36,14 +37,10 @@ func _ready() -> void:
 	add_to_group(&"wallet_service")
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
-	EventBus.on_refuel_requested.connect(_on_refuel_requested)
-	EventBus.on_repair_requested.connect(_on_repair_requested)
 	EventBus.on_loan_borrow_requested.connect(_on_loan_borrow_requested)
 	EventBus.on_loan_repay_requested.connect(_on_loan_repay_requested)
 	# Seed HUD listeners.
 	EventBus.on_credits_changed.emit(_credits)
-	EventBus.on_fuel_changed.emit(_fuel, BalanceEconomy.FUEL_MAX)
-	EventBus.on_condition_changed.emit(_condition, BalanceEconomy.CONDITION_MAX)
 	EventBus.on_debt_changed.emit(_debt_owed, _debt_lender_id, _debt_grace_docks_left)
 
 
@@ -52,22 +49,10 @@ func _exit_tree() -> void:
 		EventBus.on_console_commands_requested.disconnect(_on_commands_requested)
 	if EventBus.on_console_command_invoked.is_connected(_on_command_invoked):
 		EventBus.on_console_command_invoked.disconnect(_on_command_invoked)
-	if EventBus.on_refuel_requested.is_connected(_on_refuel_requested):
-		EventBus.on_refuel_requested.disconnect(_on_refuel_requested)
-	if EventBus.on_repair_requested.is_connected(_on_repair_requested):
-		EventBus.on_repair_requested.disconnect(_on_repair_requested)
 	if EventBus.on_loan_borrow_requested.is_connected(_on_loan_borrow_requested):
 		EventBus.on_loan_borrow_requested.disconnect(_on_loan_borrow_requested)
 	if EventBus.on_loan_repay_requested.is_connected(_on_loan_repay_requested):
 		EventBus.on_loan_repay_requested.disconnect(_on_loan_repay_requested)
-
-
-func _on_refuel_requested() -> void:
-	refuel_chunk()
-
-
-func _on_repair_requested() -> void:
-	repair_full()
 
 
 func _on_loan_borrow_requested() -> void:
@@ -82,29 +67,11 @@ func credits() -> int:
 	return _credits
 
 
-func fuel() -> float:
-	return _fuel
-
-
-func fuel_max() -> float:
-	return BalanceEconomy.FUEL_MAX
-
-
-func condition() -> float:
-	return _condition
-
-
-func condition_max() -> float:
-	return BalanceEconomy.CONDITION_MAX
-
-
-## Reset to boot defaults (tests / new session).
+## Reset to boot defaults (tests / new session). Money only.
 func reset() -> void:
 	_upkeep_debt = 0.0
 	_clear_debt_state()
 	_set_credits(BalanceEconomy.STARTING_CREDITS)
-	_set_fuel(BalanceEconomy.STARTING_FUEL)
-	_set_condition(BalanceEconomy.STARTING_CONDITION)
 	_emit_debt_changed()
 
 
@@ -286,74 +253,6 @@ func _emit_debt_changed() -> void:
 	EventBus.on_debt_changed.emit(_debt_owed, _debt_lender_id, _debt_grace_docks_left)
 
 
-## Burn fuel for flight this frame. `throttle` 0..1; afterburn multiplies.
-## S5: multiplies rate by ShipService.fuel_burn_multiplier() when present.
-func burn_fuel(delta_seconds: float, throttle: float, afterburning: bool) -> void:
-	if delta_seconds <= 0.0 or throttle <= 0.0:
-		return
-	if _fuel <= BalanceEconomy.FUEL_EMPTY_EPSILON:
-		_set_fuel(0.0)
-		return
-	var rate: float = BalanceEconomy.FUEL_BURN_PER_SECOND_AT_FULL * throttle
-	if afterburning:
-		rate *= BalanceEconomy.FUEL_AFTERBURNER_MULTIPLIER
-	rate *= _fuel_burn_multiplier()
-	_set_fuel(maxf(0.0, _fuel - rate * delta_seconds))
-
-
-## True when fuel is enough to move (above empty epsilon).
-func has_fuel() -> bool:
-	return _fuel > BalanceEconomy.FUEL_EMPTY_EPSILON
-
-
-## True when fuel can pay a jump.
-func can_jump() -> bool:
-	return _fuel >= BalanceEconomy.JUMP_FUEL_COST
-
-
-## Spend jump fuel. Returns false if not enough.
-func try_spend_jump_fuel() -> bool:
-	if not can_jump():
-		return false
-	_set_fuel(_fuel - BalanceEconomy.JUMP_FUEL_COST)
-	return true
-
-
-## Wear hull while afterburning.
-func wear_condition(delta_seconds: float, afterburning: bool) -> void:
-	if not afterburning or delta_seconds <= 0.0:
-		return
-	var next: float = (
-		_condition - BalanceEconomy.CONDITION_WEAR_PER_SECOND_AFTERBURN * delta_seconds
-	)
-	_set_condition(clampf(next, BalanceEconomy.CONDITION_MIN, BalanceEconomy.CONDITION_MAX))
-
-
-## Combat (or test) hull damage. Returns applied amount. Emits player damage bus.
-## S5: scales by ShipService.damage_taken_multiplier() when a ship service exists.
-func apply_damage(amount: float) -> float:
-	if amount <= 0.0:
-		return 0.0
-	var scaled: float = amount * _damage_taken_multiplier()
-	if scaled <= 0.0:
-		return 0.0
-	var before: float = _condition
-	_set_condition(_condition - scaled)
-	EventBus.on_player_damaged.emit(_condition)
-	return before - _condition
-
-
-## True when the ship can still fly (condition above the cripple floor).
-func can_fly() -> bool:
-	return _condition > BalanceEconomy.CONDITION_MIN
-
-
-## Speed factor from hull condition (1.0 healthy → CONDITION_MIN_SPEED_FACTOR).
-func speed_factor() -> float:
-	var t: float = _condition / BalanceEconomy.CONDITION_MAX
-	return lerpf(BalanceEconomy.CONDITION_MIN_SPEED_FACTOR, 1.0, clampf(t, 0.0, 1.0))
-
-
 ## Docking fee for a system id: policing base × standing mult (E1.5).
 ## Prefer `station_id` so fee uses the station controller when present.
 func dock_fee_for_system(system_id: StringName, station_id: StringName = &"") -> int:
@@ -386,74 +285,6 @@ func charge_dock_fee(system_id: StringName, station_id: StringName = &"") -> int
 			)
 	_note_dock_for_debt_grace()
 	return paid
-
-
-## True when repair is allowed at this station (Hostile/Hated refuse).
-## Empty id uses currently docked station; undocked → allow (tests / non-menu).
-func can_repair_at_station(station_id: StringName = &"") -> bool:
-	var resolved: StringName = station_id
-	if String(resolved).is_empty():
-		resolved = _docked_station_id()
-	if String(resolved).is_empty():
-		return true
-	var system_id: StringName = _system_id_for_station(resolved)
-	var tier: StringName = _standing_tier_for_place(system_id, resolved)
-	return not BalanceEconomy.service_repair_denied_for_tier(tier)
-
-
-## Refuel one chunk (or remaining capacity). Returns fuel added (0 if broke/full).
-## Applies standing service mult when docked at a controlled station (E1.5).
-func refuel_chunk() -> float:
-	var room: float = BalanceEconomy.FUEL_MAX - _fuel
-	if room <= BalanceEconomy.FUEL_EMPTY_EPSILON:
-		return 0.0
-	var mult: float = _service_cost_mult_for_station()
-	var unit_rate: float = BalanceEconomy.REFUEL_CREDITS_PER_UNIT * mult
-	var units: float = minf(BalanceEconomy.REFUEL_CHUNK, room)
-	var cost: int = _ceil_credits(units * unit_rate)
-	if cost > 0 and not try_spend(cost):
-		# Buy as much as credits allow.
-		if _credits <= 0:
-			return 0.0
-		if unit_rate <= 0.0:
-			return 0.0
-		units = float(_credits) / unit_rate
-		units = minf(units, room)
-		if units <= BalanceEconomy.FUEL_EMPTY_EPSILON:
-			return 0.0
-		cost = _ceil_credits(units * unit_rate)
-		if not try_spend(cost):
-			return 0.0
-	if cost > 0:
-		_emit_money(BalanceTelemetry.REASON_REFUEL, -cost)
-	_set_fuel(minf(BalanceEconomy.FUEL_MAX, _fuel + units))
-	return units
-
-
-## Full repair toward CONDITION_MAX. Returns true if any repair applied.
-## Hostile/Hated at docked controller station: refused (E1.5). Cost uses mult.
-func repair_full() -> bool:
-	if _condition >= BalanceEconomy.CONDITION_MAX:
-		return false
-	if not can_repair_at_station():
-		return false
-	var was_crippled: bool = _condition <= BalanceEconomy.CONDITION_MIN
-	var missing: float = BalanceEconomy.CONDITION_MAX - _condition
-	var fraction: float = missing / BalanceEconomy.CONDITION_MAX
-	var mult: float = _service_cost_mult_for_station()
-	var cost: int = _ceil_credits(float(BalanceEconomy.REPAIR_FULL_COST) * fraction * mult)
-	if cost <= 0:
-		_set_condition(BalanceEconomy.CONDITION_MAX)
-		if was_crippled:
-			EventBus.on_player_repaired_from_cripple.emit()
-		return true
-	if not try_spend(cost):
-		return false
-	_emit_money(BalanceTelemetry.REASON_REPAIR, -cost)
-	_set_condition(BalanceEconomy.CONDITION_MAX)
-	if was_crippled:
-		EventBus.on_player_repaired_from_cripple.emit()
-	return true
 
 
 func _base_dock_fee_for_system(system_id: StringName) -> int:
@@ -501,56 +332,18 @@ func _dock_fee_standing_mult(system_id: StringName, station_id: StringName = &""
 	return BalanceEconomy.dock_fee_mult_for_tier(_standing_tier_for_place(system_id, station_id))
 
 
-func _service_cost_mult_for_station(station_id: StringName = &"") -> float:
-	var resolved: StringName = station_id
-	if String(resolved).is_empty():
-		resolved = _docked_station_id()
-	if String(resolved).is_empty():
-		return BalanceEconomy.SERVICE_COST_MULT_DEFAULT
-	var system_id: StringName = _system_id_for_station(resolved)
-	return BalanceEconomy.service_cost_mult_for_tier(_standing_tier_for_place(system_id, resolved))
-
-
-func _docked_station_id() -> StringName:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return &""
-	var dock_node: Node = tree.get_first_node_in_group(&"docking_service")
-	if dock_node == null or not dock_node.has_method(&"docked_station_id"):
-		return &""
-	var raw: Variant = dock_node.call(&"docked_station_id")
-	if typeof(raw) == TYPE_STRING_NAME:
-		var as_name: StringName = raw
-		return as_name
-	if typeof(raw) == TYPE_STRING:
-		var as_text: String = raw
-		return StringName(as_text)
-	return &""
-
-
-func _system_id_for_station(station_id: StringName) -> StringName:
-	if String(station_id).is_empty() or not ContentLibrary.has_item(station_id):
-		return &""
-	var item: ContentItem = ContentLibrary.item(station_id)
-	if item is Station:
-		var station: Station = item as Station
-		return station.system_id
-	return &""
-
-
-## Optional save section dictionary.
+## Optional save section dictionary — credits + debt only (S5 Session B).
 func to_section() -> Dictionary:
 	return {
 		BalanceEconomy.SAVE_KEY_CREDITS: _credits,
-		BalanceEconomy.SAVE_KEY_FUEL: _fuel,
-		BalanceEconomy.SAVE_KEY_CONDITION: _condition,
 		BalanceEconomy.SAVE_KEY_DEBT_OWED: _debt_owed,
 		BalanceEconomy.SAVE_KEY_DEBT_LENDER_ID: String(_debt_lender_id),
 		BalanceEconomy.SAVE_KEY_DEBT_GRACE_DOCKS_LEFT: _debt_grace_docks_left,
 	}
 
 
-## Apply optional wallet section (missing keys keep current / use defaults on reset).
+## Apply optional wallet section keys owned by money (credits + debt).
+## Ignores fuel/condition keys (FuelService / HullConditionService own those).
 ## Missing debt keys → no debt (E3.2 / D5; no envelope version bump).
 func apply_section(raw: Variant) -> void:
 	if typeof(raw) != TYPE_DICTIONARY:
@@ -559,20 +352,6 @@ func apply_section(raw: Variant) -> void:
 	var data: Dictionary = raw
 	if data.has(BalanceEconomy.SAVE_KEY_CREDITS):
 		_set_credits(maxi(0, _variant_to_int(data[BalanceEconomy.SAVE_KEY_CREDITS])))
-	if data.has(BalanceEconomy.SAVE_KEY_FUEL):
-		_set_fuel(
-			clampf(
-				_variant_to_float(data[BalanceEconomy.SAVE_KEY_FUEL]), 0.0, BalanceEconomy.FUEL_MAX
-			)
-		)
-	if data.has(BalanceEconomy.SAVE_KEY_CONDITION):
-		_set_condition(
-			clampf(
-				_variant_to_float(data[BalanceEconomy.SAVE_KEY_CONDITION]),
-				BalanceEconomy.CONDITION_MIN,
-				BalanceEconomy.CONDITION_MAX
-			)
-		)
 	_apply_debt_section(data)
 
 
@@ -639,75 +418,12 @@ func _variant_to_int(value: Variant) -> int:
 	return 0
 
 
-func _variant_to_float(value: Variant) -> float:
-	if typeof(value) == TYPE_FLOAT:
-		var as_float: float = value
-		return as_float
-	if typeof(value) == TYPE_INT:
-		var as_int: int = value
-		return float(as_int)
-	if typeof(value) == TYPE_STRING:
-		var text: String = value
-		if text.is_valid_float():
-			return float(text)
-	return 0.0
-
-
-## S5 outfit armor product (1.0 when no ShipService / no mult modules).
-func _damage_taken_multiplier() -> float:
-	var ships: Node = _ship_service()
-	if ships == null or not ships.has_method(&"damage_taken_multiplier"):
-		return 1.0
-	var mult: float = _variant_to_float(ships.call(&"damage_taken_multiplier"))
-	if mult > 0.0:
-		return mult
-	return 1.0
-
-
-## S5 outfit fuel burn product (1.0 when no ShipService / no mult modules).
-func _fuel_burn_multiplier() -> float:
-	var ships: Node = _ship_service()
-	if ships == null or not ships.has_method(&"fuel_burn_multiplier"):
-		return 1.0
-	var mult: float = _variant_to_float(ships.call(&"fuel_burn_multiplier"))
-	if mult > 0.0:
-		return mult
-	return 1.0
-
-
-func _ship_service() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
-
-
 func _set_credits(value: int) -> void:
 	var next: int = maxi(0, value)
 	if next == _credits:
 		return
 	_credits = next
 	EventBus.on_credits_changed.emit(_credits)
-
-
-func _set_fuel(value: float) -> void:
-	var next: float = clampf(value, 0.0, BalanceEconomy.FUEL_MAX)
-	if is_equal_approx(next, _fuel):
-		return
-	_fuel = next
-	EventBus.on_fuel_changed.emit(_fuel, BalanceEconomy.FUEL_MAX)
-
-
-func _set_condition(value: float) -> void:
-	var previous: float = _condition
-	var next: float = clampf(value, BalanceEconomy.CONDITION_MIN, BalanceEconomy.CONDITION_MAX)
-	if is_equal_approx(next, _condition):
-		return
-	_condition = next
-	EventBus.on_condition_changed.emit(_condition, BalanceEconomy.CONDITION_MAX)
-	# Fail state: first time condition hits the floor, ship is dead in the water.
-	if previous > BalanceEconomy.CONDITION_MIN and next <= BalanceEconomy.CONDITION_MIN:
-		EventBus.on_player_crippled.emit()
 
 
 ## Tags a real credit movement for the S2 telemetry log. Reads `_credits`
@@ -758,18 +474,50 @@ func _on_command_invoked(name_of_command: StringName, args: PackedStringArray) -
 
 
 func _say_status() -> void:
-	var fuel_pct: int = int(
-		roundf((_fuel / BalanceEconomy.FUEL_MAX) * BalanceEconomy.PERCENT_SCALE)
-	)
-	var hull_pct: int = int(
-		roundf((_condition / BalanceEconomy.CONDITION_MAX) * BalanceEconomy.PERCENT_SCALE)
-	)
+	var fuel_units: float = 0.0
+	var fuel_cap: float = BalanceEconomy.FUEL_MAX
+	var condition_units: float = 0.0
+	var condition_cap: float = BalanceEconomy.CONDITION_MAX
+	var tree: SceneTree = get_tree()
+	if tree != null:
+		var fuel_node: Node = tree.get_first_node_in_group(&"fuel_service")
+		if fuel_node != null:
+			if fuel_node.has_method(&"fuel"):
+				fuel_units = _variant_to_float(fuel_node.call(&"fuel"))
+			if fuel_node.has_method(&"fuel_max"):
+				fuel_cap = _variant_to_float(fuel_node.call(&"fuel_max"))
+		var hull_node: Node = tree.get_first_node_in_group(&"hull_condition_service")
+		if hull_node != null:
+			if hull_node.has_method(&"condition"):
+				condition_units = _variant_to_float(hull_node.call(&"condition"))
+			if hull_node.has_method(&"condition_max"):
+				condition_cap = _variant_to_float(hull_node.call(&"condition_max"))
+	var fuel_pct: int = 0
+	if fuel_cap > 0.0:
+		fuel_pct = int(roundf((fuel_units / fuel_cap) * BalanceEconomy.PERCENT_SCALE))
+	var hull_pct: int = 0
+	if condition_cap > 0.0:
+		hull_pct = int(roundf((condition_units / condition_cap) * BalanceEconomy.PERCENT_SCALE))
 	_say(
 		(
 			BalanceEconomy.CONSOLE_CREDITS_SHOW_FORMAT
 			% [_credits, str(fuel_pct) + "%", str(hull_pct) + "%"]
 		)
 	)
+
+
+func _variant_to_float(value: Variant) -> float:
+	if typeof(value) == TYPE_FLOAT:
+		var as_float: float = value
+		return as_float
+	if typeof(value) == TYPE_INT:
+		var as_int: int = value
+		return float(as_int)
+	if typeof(value) == TYPE_STRING:
+		var text: String = value
+		if text.is_valid_float():
+			return float(text)
+	return 0.0
 
 
 static func _say(line: String) -> void:

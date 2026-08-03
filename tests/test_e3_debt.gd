@@ -248,14 +248,20 @@ func test_grace_does_not_burn_when_credits_meet_floor() -> void:
 func test_broke_with_debt_still_can_fly_when_fuel_and_hull_allow() -> void:
 	## Debt ≠ cripple / repossession / undock ban (D2 / D7).
 	var wallet: WalletService = WalletService.new()
+	var fuel: FuelService = FuelService.new()
+	var hull: HullConditionService = HullConditionService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(fuel)
+	add_child_autofree(hull)
 	wallet.reset()
+	fuel.reset()
+	hull.reset()
 	assert_eq(wallet.borrow(), BalanceEconomy.LOAN_PRINCIPAL)
 	wallet.set_credits(0)
 	assert_gt(_owed(wallet), 0)
-	assert_true(wallet.has_fuel())
-	assert_true(wallet.can_fly())
-	assert_true(wallet.can_jump())
+	assert_true(fuel.has_fuel())
+	assert_true(hull.can_fly())
+	assert_true(fuel.can_jump())
 	assert_gte(wallet.credits(), 0)
 
 

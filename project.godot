@@ -28,6 +28,9 @@ MarketService="*res://src/systems/market/MarketService.gd"
 BoardService="*res://src/systems/board/BoardService.gd"
 IncidentService="*res://src/systems/incident/IncidentService.gd"
 EnforcementService="*res://src/systems/enforcement/EnforcementService.gd"
+MCPScreenshot="*res://addons/godot_mcp/mcp_screenshot_service.gd"
+MCPInputService="*res://addons/godot_mcp/mcp_input_service.gd"
+MCPGameInspector="*res://addons/godot_mcp/mcp_game_inspector_service.gd"
 
 [debug]
 

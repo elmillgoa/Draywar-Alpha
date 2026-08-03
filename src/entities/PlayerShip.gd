@@ -699,37 +699,44 @@ func _refresh_input_blocked() -> void:
 	_input_blocked = _console_open or _pause_open
 
 
-func _wallet_node() -> Node:
+func _fuel_service_node() -> Node:
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return null
-	return tree.get_first_node_in_group(&"wallet_service")
+	return tree.get_first_node_in_group(&"fuel_service")
+
+
+func _hull_service_node() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(&"hull_condition_service")
 
 
 func _wallet_has_fuel() -> bool:
-	var wallet: Node = _wallet_node()
-	if wallet == null or not wallet.has_method(&"has_fuel"):
+	var fuel: Node = _fuel_service_node()
+	if fuel == null or not fuel.has_method(&"has_fuel"):
 		return true
-	return wallet.call(&"has_fuel") == true
+	return fuel.call(&"has_fuel") == true
 
 
 func _wallet_burn(dt: float, throttle_value: float, afterburning: bool) -> void:
-	var wallet: Node = _wallet_node()
-	if wallet != null and wallet.has_method(&"burn_fuel"):
-		wallet.call(&"burn_fuel", dt, throttle_value, afterburning)
+	var fuel: Node = _fuel_service_node()
+	if fuel != null and fuel.has_method(&"burn_fuel"):
+		fuel.call(&"burn_fuel", dt, throttle_value, afterburning)
 
 
 func _wallet_wear(dt: float, afterburning: bool) -> void:
-	var wallet: Node = _wallet_node()
-	if wallet != null and wallet.has_method(&"wear_condition"):
-		wallet.call(&"wear_condition", dt, afterburning)
+	var hull: Node = _hull_service_node()
+	if hull != null and hull.has_method(&"wear_condition"):
+		hull.call(&"wear_condition", dt, afterburning)
 
 
 func _wallet_speed_factor() -> float:
-	var wallet: Node = _wallet_node()
-	if wallet == null or not wallet.has_method(&"speed_factor"):
+	var hull: Node = _hull_service_node()
+	if hull == null or not hull.has_method(&"speed_factor"):
 		return 1.0
-	var factor: Variant = wallet.call(&"speed_factor")
+	var factor: Variant = hull.call(&"speed_factor")
 	if typeof(factor) == TYPE_FLOAT:
 		var as_float: float = factor
 		return as_float
@@ -857,9 +864,9 @@ func _try_impact_damage(mass_class: StringName, closing_speed: float, collider: 
 	if _impact_cooldown.has(pair_id):
 		return
 	_impact_cooldown[pair_id] = BalanceCombat.IMPACT_COOLDOWN_SECONDS
-	var wallet: Node = _wallet_node()
-	if wallet != null and wallet.has_method(&"apply_damage"):
-		wallet.call(&"apply_damage", damage)
+	var hull: Node = _hull_service_node()
+	if hull != null and hull.has_method(&"apply_damage"):
+		hull.call(&"apply_damage", damage)
 	# Mutual: lockable ships (hostiles + traffic) take impact (D3 / E6.3).
 	if collider is Node:
 		var target: Node = _lockable_from_collider(collider as Node)

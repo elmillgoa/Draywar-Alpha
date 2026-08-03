@@ -31,7 +31,9 @@ same-station money pump (§11), so there is now precisely one.
 | Thing | Owner |
 |---|---|
 | Stocks, prices, shocks | `MarketService` (single writer) |
-| Money | `WalletService` |
+| Money / debt | `WalletService` |
+| Ship fuel | `FuelService` |
+| Hull condition | `HullConditionService` |
 | Hold contents | `CargoService` |
 | Elapsed time / tick pulses | `WorldClock` |
 

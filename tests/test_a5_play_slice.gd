@@ -85,16 +85,16 @@ func test_wallet_mission_pay_and_dock_fee() -> void:
 
 
 func test_wallet_fuel_burn_and_jump_cost() -> void:
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
-	wallet.reset()
-	var before: float = wallet.fuel()
-	wallet.burn_fuel(1.0, 1.0, false)
-	assert_lt(wallet.fuel(), before)
-	assert_true(wallet.can_jump())
-	assert_true(wallet.try_spend_jump_fuel())
+	var fuel: FuelService = FuelService.new()
+	add_child_autofree(fuel)
+	fuel.reset()
+	var before: float = fuel.fuel()
+	fuel.burn_fuel(1.0, 1.0, false)
+	assert_lt(fuel.fuel(), before)
+	assert_true(fuel.can_jump())
+	assert_true(fuel.try_spend_jump_fuel())
 	assert_almost_eq(
-		wallet.fuel(),
+		fuel.fuel(),
 		before - BalanceEconomy.FUEL_BURN_PER_SECOND_AT_FULL - BalanceEconomy.JUMP_FUEL_COST,
 		TOLERANCE
 	)
@@ -112,23 +112,29 @@ func test_mission_destination_gate_for_turn_in() -> void:
 
 func test_refuel_and_repair_cost_credits() -> void:
 	var wallet: WalletService = WalletService.new()
+	var fuel: FuelService = FuelService.new()
+	var hull: HullConditionService = HullConditionService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(fuel)
+	add_child_autofree(hull)
 	wallet.reset()
+	fuel.reset()
+	hull.reset()
 	wallet.set_credits(1000)
 	# Drain fuel and hull.
-	while wallet.fuel() > 1.0:
-		wallet.burn_fuel(1.0, 1.0, true)
-	wallet.wear_condition(50.0, true)
-	assert_lt(wallet.fuel(), BalanceEconomy.FUEL_MAX)
-	assert_lt(wallet.condition(), BalanceEconomy.CONDITION_MAX)
+	while fuel.fuel() > 1.0:
+		fuel.burn_fuel(1.0, 1.0, true)
+	hull.wear_condition(50.0, true)
+	assert_lt(fuel.fuel(), BalanceEconomy.FUEL_MAX)
+	assert_lt(hull.condition(), BalanceEconomy.CONDITION_MAX)
 	var credits_before: int = wallet.credits()
-	var added: float = wallet.refuel_chunk()
+	var added: float = fuel.refuel_chunk()
 	assert_gt(added, 0.0)
 	assert_lt(wallet.credits(), credits_before)
 	credits_before = wallet.credits()
-	assert_true(wallet.repair_full())
+	assert_true(hull.repair_full())
 	assert_lt(wallet.credits(), credits_before)
-	assert_almost_eq(wallet.condition(), BalanceEconomy.CONDITION_MAX, TOLERANCE)
+	assert_almost_eq(hull.condition(), BalanceEconomy.CONDITION_MAX, TOLERANCE)
 
 
 func test_recovery_favor_and_complete_via_event_bus() -> void:
@@ -156,18 +162,33 @@ func test_recovery_favor_and_complete_via_event_bus() -> void:
 
 func test_wallet_save_section_round_trip() -> void:
 	var wallet: WalletService = WalletService.new()
+	var fuel: FuelService = FuelService.new()
+	var hull: HullConditionService = HullConditionService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(fuel)
+	add_child_autofree(hull)
 	wallet.reset()
+	fuel.reset()
+	hull.reset()
 	wallet.set_credits(321)
-	wallet.burn_fuel(2.0, 1.0, false)
-	wallet.wear_condition(5.0, true)
-	var section: Dictionary = wallet.to_section()
-	var other: WalletService = WalletService.new()
-	add_child_autofree(other)
-	other.apply_section(section)
-	assert_eq(other.credits(), 321)
-	assert_almost_eq(other.fuel(), wallet.fuel(), TOLERANCE)
-	assert_almost_eq(other.condition(), wallet.condition(), TOLERANCE)
+	fuel.burn_fuel(2.0, 1.0, false)
+	hull.wear_condition(5.0, true)
+	var section: Dictionary = {}
+	section.merge(wallet.to_section())
+	section.merge(fuel.to_section())
+	section.merge(hull.to_section())
+	var other_wallet: WalletService = WalletService.new()
+	var other_fuel: FuelService = FuelService.new()
+	var other_hull: HullConditionService = HullConditionService.new()
+	add_child_autofree(other_wallet)
+	add_child_autofree(other_fuel)
+	add_child_autofree(other_hull)
+	other_wallet.apply_section(section)
+	other_fuel.apply_section(section)
+	other_hull.apply_section(section)
+	assert_eq(other_wallet.credits(), 321)
+	assert_almost_eq(other_fuel.fuel(), fuel.fuel(), TOLERANCE)
+	assert_almost_eq(other_hull.condition(), hull.condition(), TOLERANCE)
 
 
 func test_contract_templates_have_pay_and_destinations() -> void:

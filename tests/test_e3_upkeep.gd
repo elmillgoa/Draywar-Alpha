@@ -80,25 +80,25 @@ func test_upkeep_zero_delta_and_zero_rate_safe() -> void:
 
 
 func test_fuel_still_gates_thrust_and_jumps() -> void:
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
-	wallet.reset()
-	assert_true(wallet.has_fuel())
-	assert_true(wallet.can_jump())
+	var fuel: FuelService = FuelService.new()
+	add_child_autofree(fuel)
+	fuel.reset()
+	assert_true(fuel.has_fuel())
+	assert_true(fuel.can_jump())
 
 	# Drain tank via burn + jumps until empty of jump fuel.
-	while wallet.can_jump():
-		assert_true(wallet.try_spend_jump_fuel())
-	assert_false(wallet.can_jump())
+	while fuel.can_jump():
+		assert_true(fuel.try_spend_jump_fuel())
+	assert_false(fuel.can_jump())
 
 	# Burn remaining fuel with full throttle.
 	var guard: int = 0
-	while wallet.has_fuel() and guard < 10000:
-		wallet.burn_fuel(1.0, 1.0, true)
+	while fuel.has_fuel() and guard < 10000:
+		fuel.burn_fuel(1.0, 1.0, true)
 		guard += 1
-	assert_false(wallet.has_fuel())
-	assert_false(wallet.can_jump())
-	assert_false(wallet.try_spend_jump_fuel())
+	assert_false(fuel.has_fuel())
+	assert_false(fuel.can_jump())
+	assert_false(fuel.try_spend_jump_fuel())
 
 
 func test_upkeep_rate_is_noticeable_vs_start() -> void:

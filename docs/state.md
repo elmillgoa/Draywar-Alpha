@@ -2,9 +2,8 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S5 Session A code complete 2026-08-03** — ship layer
-(weapons/equipment outfitting, sinks, perf probe, screenshot notes). Lint +
-tests green after S5. Feel gate **open, not signed**. Maturity = **tech demo**.
+**Current position:** **S5 complete 2026-08-03** — ship layer (Session A) +
+WalletService split (Session B). Feel gate **signed**. Maturity = **tech demo**.
 Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
@@ -13,7 +12,7 @@ Elliot = playtest + ideas only; LLMs program everything.
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2–S4 signed; **S5 feel gate open** |
+| `docs/gates.md` | E6.6 signed; S2–S5 signed |
 | `docs/S5_SCREENSHOT_FLOOR.md` | Honest gray-box presentation inventory |
 
 ## Phase progress
@@ -29,8 +28,8 @@ Elliot = playtest + ideas only; LLMs program everything.
 | **S3a** Radiant work surface | **done** 2026-08-03 |
 | **S3b** Space life + news | **done** 2026-08-03 — gate signed |
 | **S4** Enforcement & standing surface | **done** 2026-08-03 — gate signed |
-| **S5** Ship layer | **Session A code done** 2026-08-03 — feel gate open; **Wallet split Session B still required before S6** |
-| S6–S10 | queued (blocked on S5 gate + wallet split) |
+| **S5** Ship layer | **done** 2026-08-03 — Sessions A+B + feel gate signed |
+| S6–S10 | queued (S6 next) |
 
 ## What the game can do now
 
@@ -43,20 +42,17 @@ Elliot = playtest + ideas only; LLMs program everything.
 - **Money sinks** — outfit buy/sell tagged `outfit_buy` / `outfit_sell` on the
   money log. Fighter purchase + endgame guns are multi-start-wallet spends.
 - **PerfProbe** — densest-scene FPS instrument (budget still 20 ships).
+- **Split wallet** — credits/debt on `WalletService`; tank on `FuelService`;
+  hull condition / cripple on `HullConditionService`. One save section still.
 
-- **Not yet:** Ops, Holding, campaign spine, **WalletService split** (Session B),
-  S5 feel gate signed, Steam-page art floor.
+- **Not yet:** Ops, Holding, campaign spine, Steam-page art floor.
 
 ## Next session starts here
 
-1. **Blocked on Elliot:** S5 feel gate — playtest brief in `docs/gates.md` (S5
-   section). New Game; Outfitting; hauler racks vs fighter guns; save/load gear.
-2. **Before S6:** **WalletService split** (Session B — money/debt vs fuel vs
-   hull-condition). Do not start Ops on the god-wallet.
-3. If **S5 pass**: mark gate, then Session B wallet split, then S6 per §22.
-4. If **fail**: fix only what he named; re-run lint + tests; hand gate back.
-5. Out of scope until authorized: Ops, campaign, standing law invention, raising
-   the 20-ship budget.
+1. **S6** Ops layer — follow `docs/STEAM_PHASE_PLAN.md` §22 model routing
+   (wallet split prerequisite is met).
+2. Out of scope until authorized: campaign, standing law invention, raising the
+   20-ship budget.
 
 ### Locked decisions
 
@@ -76,13 +72,16 @@ Elliot = playtest + ideas only; LLMs program everything.
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2–S4 signed; S5 gate open.
+- E6.6 signed; S2–S5 signed.
 
 ## Session history
 
+- **2026-08-03 (S5B)** — WalletService split: WalletService (credits/debt),
+  FuelService, HullConditionService. Single save key `wallet` via CareerSave
+  merge. Callers + tests updated. Lint/tests green. S5 feel gate still open.
 - **2026-08-03 (S5A)** — Weapon/Equipment shapes; 12+10 content; ShipService
   loadouts + ShipOutfit; station Outfitting UI; damage/fuel mult wire; PerfProbe;
-  screenshot floor doc; S5 feel gate open. Wallet split still required before S6.
+  screenshot floor doc; S5 feel gate open.
 - **2026-08-03 (S4)** — EnforcementService + heat / pressure / recovery lift.
   Feel gate signed same day.
 - **2026-08-03 (wrap)** — S2 signed + full S3 code (a+b) pushed; S3 feel gate

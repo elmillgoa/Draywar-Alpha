@@ -558,7 +558,7 @@ Player fuel changed.
 | `fuel` | `float` | Current fuel units. |
 | `fuel_max` | `float` | Tank capacity. |
 
-**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Emitted by** `src/systems/wallet/FuelService.gd`.
 **Listened to by** `FlightHUD`, `StationMenu`.
 
 ### `on_condition_changed(condition: float, condition_max: float)`
@@ -570,7 +570,7 @@ Ship hull condition changed.
 | `condition` | `float` | Current condition. |
 | `condition_max` | `float` | Max condition. |
 
-**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Emitted by** `src/systems/wallet/HullConditionService.gd`.
 **Listened to by** `FlightHUD`, `StationMenu`.
 
 ## Thin combat (B4)
@@ -628,7 +628,7 @@ Player hull took combat damage (condition after the hit).
 |---|---|---|
 | `condition` | `float` | Hull condition after damage. |
 
-**Emitted by** `src/systems/wallet/WalletService.gd` (`apply_damage`).
+**Emitted by** `src/systems/wallet/HullConditionService.gd` (`apply_damage`).
 **Listened to by** `FlightHUD` (brief condition line flash).
 
 ### `on_player_crippled()`
@@ -637,7 +637,7 @@ Hull condition reached zero — ship dead in the water until dock + repair.
 
 No parameters.
 
-**Emitted by** `src/systems/wallet/WalletService.gd`.
+**Emitted by** `src/systems/wallet/HullConditionService.gd`.
 **Listened to by** `PlayerShip` (disables flight), `FlightHUD`.
 
 ### `on_player_repaired_from_cripple()`
@@ -646,7 +646,7 @@ Full repair restored condition after a cripple fail state.
 
 No parameters.
 
-**Emitted by** `src/systems/wallet/WalletService.gd` (`repair_full`).
+**Emitted by** `src/systems/wallet/HullConditionService.gd` (`repair_full`).
 **Listened to by** `PlayerShip` (may re-enable flight if undocked), `FlightHUD`.
 
 ### `on_mission_complete_requested()`
@@ -714,7 +714,7 @@ UI asked to buy a fuel chunk at the docked station.
 No parameters.
 
 **Emitted by** `StationMenu`.
-**Listened to by** `WalletService`.
+**Listened to by** `FuelService`.
 
 ### `on_repair_requested()`
 
@@ -723,7 +723,7 @@ UI asked to fully repair the ship at the docked station.
 No parameters.
 
 **Emitted by** `StationMenu`.
-**Listened to by** `WalletService`.
+**Listened to by** `HullConditionService`.
 
 ### `on_loan_borrow_requested()`
 
@@ -1039,7 +1039,8 @@ Any money path: credits moved, tagged by activity for the telemetry log.
 | `credits_after` | `int` | Credit balance after the change. |
 | `detail` | `Dictionary` | Optional context (commodity id, units, unit price, station id, system id); may be empty. |
 
-**Emitted by** `WalletService` and `CargoService` on every credit movement.
+**Emitted by** `WalletService` (money paths), `FuelService` / `HullConditionService`
+(refuel/repair spend after wallet `try_spend`), and `CargoService` on credit movements.
 **Listened to by** the money telemetry log.
 
 ### `on_contraband_seized(station_id: StringName, entity_id: StringName, commodity_ids: PackedStringArray, fine_paid: int, standing_delta: float)`

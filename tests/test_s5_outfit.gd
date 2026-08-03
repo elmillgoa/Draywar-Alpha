@@ -121,19 +121,22 @@ func test_armor_mult_reduces_apply_damage() -> void:
 	host.add_child(FakeDocking.new())
 	var wallet: WalletService = WalletService.new()
 	host.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	host.add_child(hull)
 	var ships: ShipService = ShipService.new()
 	host.add_child(ships)
 	await get_tree().process_frame
 
 	ships.reset()
 	wallet.reset()
+	hull.reset()
 	wallet.set_credits(10000)
 	assert_true(ships.install_equipment(EQUIP_ARMOR_PLATE))
 	var mult: float = ships.damage_taken_multiplier()
 	var armor: Equipment = ContentLibrary.item(EQUIP_ARMOR_PLATE) as Equipment
 	assert_almost_eq(mult, armor.effect_value, TOLERANCE)
 	var hit: float = 40.0
-	var applied: float = wallet.apply_damage(hit)
+	var applied: float = hull.apply_damage(hit)
 	assert_almost_eq(applied, hit * mult, TOLERANCE)
 
 

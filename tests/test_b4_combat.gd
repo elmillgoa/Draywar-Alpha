@@ -172,54 +172,57 @@ func test_kill_in_patrolled_alpha_drops_reach_standing() -> void:
 
 
 func test_player_condition_drops_on_apply_damage() -> void:
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	add_child_autofree(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
-	var applied: float = wallet.apply_damage(BalanceCombat.HOSTILE_DAMAGE)
+	hull.reset()
+	var start: float = hull.condition()
+	var applied: float = hull.apply_damage(BalanceCombat.HOSTILE_DAMAGE)
 	assert_almost_eq(applied, BalanceCombat.HOSTILE_DAMAGE, TOLERANCE)
-	assert_almost_eq(wallet.condition(), start - BalanceCombat.HOSTILE_DAMAGE, TOLERANCE)
+	assert_almost_eq(hull.condition(), start - BalanceCombat.HOSTILE_DAMAGE, TOLERANCE)
 	assert_eq(_player_damaged.size(), 1)
-	assert_almost_eq(_player_damaged[0], wallet.condition(), TOLERANCE)
+	assert_almost_eq(_player_damaged[0], hull.condition(), TOLERANCE)
 
 
 func test_crippled_at_zero_disables_flight() -> void:
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	add_child_autofree(hull)
 	var ship: PlayerShip = PlayerShip.new()
 	add_child_autofree(ship)
 	await get_tree().process_frame
-	wallet.reset()
+	hull.reset()
 	assert_true(ship.is_flight_enabled())
 
-	wallet.apply_damage(BalanceEconomy.CONDITION_MAX)
-	assert_almost_eq(wallet.condition(), BalanceEconomy.CONDITION_MIN, TOLERANCE)
+	hull.apply_damage(BalanceEconomy.CONDITION_MAX)
+	assert_almost_eq(hull.condition(), BalanceEconomy.CONDITION_MIN, TOLERANCE)
 	assert_eq(_crippled_count, 1)
 	assert_true(ship.is_crippled())
 	assert_false(ship.is_flight_enabled())
-	assert_false(wallet.can_fly())
+	assert_false(hull.can_fly())
 
 
 func test_repair_restores_condition_and_can_reenable_flight() -> void:
 	var wallet: WalletService = WalletService.new()
+	var hull: HullConditionService = HullConditionService.new()
 	add_child_autofree(wallet)
+	add_child_autofree(hull)
 	var ship: PlayerShip = PlayerShip.new()
 	add_child_autofree(ship)
 	await get_tree().process_frame
 	wallet.reset()
+	hull.reset()
 
-	wallet.apply_damage(BalanceEconomy.CONDITION_MAX)
+	hull.apply_damage(BalanceEconomy.CONDITION_MAX)
 	assert_true(ship.is_crippled())
 	assert_false(ship.is_flight_enabled())
 
 	wallet.set_credits(BalanceEconomy.STARTING_CREDITS + BalanceEconomy.REPAIR_FULL_COST)
-	assert_true(wallet.repair_full())
-	assert_almost_eq(wallet.condition(), BalanceEconomy.CONDITION_MAX, TOLERANCE)
+	assert_true(hull.repair_full())
+	assert_almost_eq(hull.condition(), BalanceEconomy.CONDITION_MAX, TOLERANCE)
 	assert_eq(_repaired_count, 1)
 	assert_false(ship.is_crippled())
 	assert_true(ship.is_flight_enabled())
-	assert_true(wallet.can_fly())
+	assert_true(hull.can_fly())
 
 
 func test_bolt_fire_spawns_projectile_along_aim() -> void:
@@ -286,11 +289,11 @@ func test_hostile_does_not_fire_while_player_docked() -> void:
 	var fake_dock: FakeDockedService = FakeDockedService.new()
 	space.add_child(fake_dock)
 
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
+	hull.reset()
+	var start: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -306,18 +309,18 @@ func test_hostile_does_not_fire_while_player_docked() -> void:
 	var bolts_before: int = _count_hostile_bolts(space)
 	for _i: int in 5:
 		hostile._physics_process(0.5)
-	assert_eq(wallet.condition(), start, "docked player must not take combat fire")
+	assert_eq(hull.condition(), start, "docked player must not take combat fire")
 	assert_eq(_count_hostile_bolts(space), bolts_before, "docked: hostile must not spawn bolts")
 
 
 func test_station_safe_zone_blocks_fire_when_undocked_near_station() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
+	hull.reset()
+	var start: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -334,7 +337,7 @@ func test_station_safe_zone_blocks_fire_when_undocked_near_station() -> void:
 	var bolts_before: int = _count_hostile_bolts(space)
 	for _i: int in 5:
 		hostile._physics_process(0.5)
-	assert_eq(wallet.condition(), start, "station airspace must stay peaceful on undock")
+	assert_eq(hull.condition(), start, "station airspace must stay peaceful on undock")
 	assert_eq(_count_hostile_bolts(space), bolts_before, "safe zone: hostile must not spawn bolts")
 
 

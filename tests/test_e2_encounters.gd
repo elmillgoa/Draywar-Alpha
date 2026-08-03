@@ -54,11 +54,11 @@ func test_undock_grace_blocks_hostile_fire() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start_condition: float = wallet.condition()
+	hull.reset()
+	var start_condition: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -89,7 +89,7 @@ func test_undock_grace_blocks_hostile_fire() -> void:
 		bolts_before,
 		"hostiles must not spawn bolts during undock grace"
 	)
-	assert_almost_eq(wallet.condition(), start_condition, TOLERANCE, "no damage during grace")
+	assert_almost_eq(hull.condition(), start_condition, TOLERANCE, "no damage during grace")
 
 	# After grace expires, a facing hostile may fire.
 	hostile._undock_grace = 0.0

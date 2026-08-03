@@ -22,11 +22,11 @@ func test_hostile_projectile_damages_player_once_on_contact() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
+	hull.reset()
+	var start: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -39,21 +39,21 @@ func test_hostile_projectile_damages_player_once_on_contact() -> void:
 	await get_tree().process_frame
 	assert_true(bolt.has_method(&"try_hit"))
 	bolt.call(&"try_hit", ship)
-	assert_almost_eq(wallet.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)
+	assert_almost_eq(hull.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)
 	# Second call after spent must not stack.
 	bolt.call(&"try_hit", ship)
-	assert_almost_eq(wallet.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)
+	assert_almost_eq(hull.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)
 
 
 func test_hostile_projectile_miss_does_not_damage() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
+	hull.reset()
+	var start: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -75,18 +75,18 @@ func test_hostile_projectile_miss_does_not_damage() -> void:
 			break
 		if bolt.has_method(&"_physics_process"):
 			bolt.call(&"_physics_process", 0.05)
-	assert_almost_eq(wallet.condition(), start, 0.001, "far miss must not damage")
+	assert_almost_eq(hull.condition(), start, 0.001, "far miss must not damage")
 
 
 func test_hostile_fire_spawns_projectile_without_instant_damage() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
+	hull.reset()
+	var start: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -105,7 +105,7 @@ func test_hostile_fire_spawns_projectile_without_instant_damage() -> void:
 
 	var before_children: int = space.get_child_count()
 	hostile._fire_at_player(ship)
-	assert_almost_eq(wallet.condition(), start, 0.001, "fire must not instantly reduce condition")
+	assert_almost_eq(hull.condition(), start, 0.001, "fire must not instantly reduce condition")
 	assert_gt(space.get_child_count(), before_children, "hostile bolt should spawn")
 
 	var found_bolt: bool = false
@@ -120,7 +120,7 @@ func test_hostile_fire_spawns_projectile_without_instant_damage() -> void:
 	space.add_child(hit_bolt)
 	await get_tree().process_frame
 	hit_bolt.call(&"try_hit", ship)
-	assert_almost_eq(wallet.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)
+	assert_almost_eq(hull.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)
 
 
 func test_hostile_lead_point_matches_stationary_target() -> void:
@@ -137,11 +137,11 @@ func test_hostile_bolt_physics_overlap_damages_player() -> void:
 	var space: Node3D = Node3D.new()
 	add_child_autofree(space)
 
-	var wallet: WalletService = WalletService.new()
-	space.add_child(wallet)
+	var hull: HullConditionService = HullConditionService.new()
+	space.add_child(hull)
 	await get_tree().process_frame
-	wallet.reset()
-	var start: float = wallet.condition()
+	hull.reset()
+	var start: float = hull.condition()
 
 	var ship: PlayerShip = PlayerShip.new()
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -171,13 +171,13 @@ func test_hostile_bolt_physics_overlap_damages_player() -> void:
 	for _i: int in 120:
 		if not is_instance_valid(bolt):
 			break
-		if wallet.condition() < start - 0.001:
+		if hull.condition() < start - 0.001:
 			break
 		bolt._physics_process(step_dt)
 		await get_tree().physics_frame
 
 	assert_almost_eq(
-		wallet.condition(),
+		hull.condition(),
 		start - BalanceCombat.HOSTILE_DAMAGE,
 		0.001,
 		"physics overlap damages by HOSTILE_DAMAGE without test try_hit"
@@ -206,11 +206,11 @@ func test_strafe_avoids_bolt_aimed_at_still_position() -> void:
 	# --- Case still ---
 	var space_a: Node3D = Node3D.new()
 	add_child_autofree(space_a)
-	var wallet_a: WalletService = WalletService.new()
-	space_a.add_child(wallet_a)
+	var hull_a: HullConditionService = HullConditionService.new()
+	space_a.add_child(hull_a)
 	await get_tree().process_frame
-	wallet_a.reset()
-	var start_still: float = wallet_a.condition()
+	hull_a.reset()
+	var start_still: float = hull_a.condition()
 
 	var ship_a: PlayerShip = PlayerShip.new()
 	ship_a.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -229,13 +229,13 @@ func test_strafe_avoids_bolt_aimed_at_still_position() -> void:
 	for _i: int in 120:
 		if not is_instance_valid(bolt_a):
 			break
-		if wallet_a.condition() < start_still - 0.001:
+		if hull_a.condition() < start_still - 0.001:
 			break
 		bolt_a._physics_process(0.01)
 		await get_tree().physics_frame
 
 	assert_almost_eq(
-		wallet_a.condition(),
+		hull_a.condition(),
 		start_still - BalanceCombat.HOSTILE_DAMAGE,
 		0.001,
 		"still ship should take bolt damage"
@@ -246,7 +246,7 @@ func test_strafe_avoids_bolt_aimed_at_still_position() -> void:
 	if is_instance_valid(bolt_a):
 		bolt_a.queue_free()
 	ship_a.queue_free()
-	wallet_a.queue_free()
+	hull_a.queue_free()
 	space_a.queue_free()
 	await get_tree().process_frame
 	await get_tree().physics_frame
@@ -254,11 +254,11 @@ func test_strafe_avoids_bolt_aimed_at_still_position() -> void:
 	# --- Case strafe: ship never sits on the aim line ---
 	var space_b: Node3D = Node3D.new()
 	add_child_autofree(space_b)
-	var wallet_b: WalletService = WalletService.new()
-	space_b.add_child(wallet_b)
+	var hull_b: HullConditionService = HullConditionService.new()
+	space_b.add_child(hull_b)
 	await get_tree().process_frame
-	wallet_b.reset()
-	var start_strafe: float = wallet_b.condition()
+	hull_b.reset()
+	var start_strafe: float = hull_b.condition()
 
 	var ship_b: PlayerShip = PlayerShip.new()
 	# Position before enter tree so the physics body is born off the aim line.
@@ -287,7 +287,7 @@ func test_strafe_avoids_bolt_aimed_at_still_position() -> void:
 
 	assert_gt(closest, contact_radius + 1.0, "bolt path stays outside strafed hurtbox")
 	assert_almost_eq(
-		wallet_b.condition(),
+		hull_b.condition(),
 		start_strafe,
 		0.001,
 		"strafed ship far from aim line must not take damage"

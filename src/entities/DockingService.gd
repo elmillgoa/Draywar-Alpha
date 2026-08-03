@@ -248,7 +248,7 @@ func _wallet_can_fly() -> bool:
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return true
-	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
-	if wallet == null or not wallet.has_method(&"can_fly"):
+	var hull: Node = tree.get_first_node_in_group(&"hull_condition_service")
+	if hull == null or not hull.has_method(&"can_fly"):
 		return true
-	return wallet.call(&"can_fly") == true
+	return hull.call(&"can_fly") == true

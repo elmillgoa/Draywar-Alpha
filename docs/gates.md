@@ -648,7 +648,7 @@ not “same starter forever.”
 
 **Build:** S5 Session A code complete (weapons/equipment, station Outfitting,
 loadout save). Start a **New Game**. Do **not** sign from headless green alone —
-this is a feel gate. **Open, not signed.**
+this is a feel gate. **Signed 2026-08-03** (Elliot: “I'm good. Continue”).
 
 ### Playtest brief
 
@@ -690,9 +690,22 @@ play; spending on the ship feels like progress.
 - **2026-08-03** — S5 Session A code complete (12 weapons, 10 equipment, install
   / remove, loadout save, PerfProbe, screenshot floor notes). **Gate open, not
   signed.**
-  WalletService split (Session B) still required before S6 — not part of this
+  WalletService split (Session B) was required before S6 — not part of this
   feel gate.
 - **2026-08-03** — Adversary fix: `apply_section` always emits `on_loadout_changed`
   so save/load re-arms flight stats when the active hull id is unchanged;
   StationMenu listens; cargo-rack uninstall refuses overweight hold.
+- **2026-08-03** — **Signed pass** (Elliot: “I'm good. Continue”). Ship fantasy
+  accepted; WalletService split (Session B) authorized before S6.
+- **2026-08-03** — Session B landed: WalletService / FuelService /
+  HullConditionService; single save key `wallet` via CareerSave merge.
+
+**Verdict: signed — S5 ship fantasy passes.**
+
+**Signed by:** Elliot  
+**Date:** 2026-08-03  
+**Verbatim:**
+> I'm good. Continue
+
+**Notes:** Feel gate closed. Session B (wallet split) **done** 2026-08-03 — S6 unblocked on wallet.
 

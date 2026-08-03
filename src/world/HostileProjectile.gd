@@ -94,9 +94,9 @@ func _apply_player_damage(amount: float) -> void:
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return
-	var wallet: Node = tree.get_first_node_in_group(&"wallet_service")
-	if wallet != null and wallet.has_method(&"apply_damage"):
-		wallet.call(&"apply_damage", amount)
+	var hull: Node = tree.get_first_node_in_group(&"hull_condition_service")
+	if hull != null and hull.has_method(&"apply_damage"):
+		hull.call(&"apply_damage", amount)
 
 
 ## Lead intercept so a bolt at `shot_speed` meets a moving target.

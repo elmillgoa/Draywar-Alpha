@@ -148,10 +148,10 @@ signal on_system_exited(system_id: StringName)
 ## WalletService: credits changed.
 signal on_credits_changed(credits: int)
 
-## WalletService: fuel changed (current and max).
+## FuelService: fuel changed (current and max).
 signal on_fuel_changed(fuel: float, fuel_max: float)
 
-## WalletService: hull condition changed (current and max).
+## HullConditionService: hull condition changed (current and max).
 signal on_condition_changed(condition: float, condition_max: float)
 
 ## UI: request to complete the active mission.
@@ -301,13 +301,13 @@ signal on_hostile_damaged(remaining_hp: float)
 ## HostileNpc: died (before / with attribution report).
 signal on_hostile_killed(system_id: StringName, victim_entity_id: StringName)
 
-## WalletService: player hull took combat damage (condition after hit).
+## HullConditionService: player hull took combat damage (condition after hit).
 signal on_player_damaged(condition: float)
 
-## WalletService: condition reached zero — fail state until dock + repair.
+## HullConditionService: condition reached zero — fail state until dock + repair.
 signal on_player_crippled
 
-## WalletService: repair restored condition after a cripple.
+## HullConditionService: repair restored condition after a cripple.
 signal on_player_repaired_from_cripple
 
 ## UI: request one-time Fighter purchase at the docked station (E2.5).

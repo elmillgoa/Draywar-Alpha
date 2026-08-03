@@ -92,8 +92,19 @@ path that produces them is deterministic (no RNG anywhere in the market sim).
 
 ### Optional section: `wallet` (schema v1)
 
-Written by `WalletService.to_section()` / applied by `apply_section()`.
-Console save merges this section when a wallet service is present (A5).
+**Single section key** for money + fuel + hull (S5 Session B split). `CareerSave`
+**gathers** by merging `to_section()` from three services:
+
+| Service | Group | Keys written |
+|---|---|---|
+| `WalletService` | `wallet_service` | `credits`, `debt_*` |
+| `FuelService` | `fuel_service` | `fuel` |
+| `HullConditionService` | `hull_condition_service` | `condition` |
+
+**Apply:** the same dictionary is passed to all three; each applies only its
+keys. Missing section → each present service `reset()` to boot defaults.
+Old saves written by the pre-split god `WalletService` (all keys in one
+`to_section`) still load correctly. No envelope version bump.
 
 | Key | Type | Meaning |
 |---|---|---|
@@ -104,7 +115,7 @@ Console save merges this section when a wallet service is present (A5).
 | `debt_lender_id` | `String` | Optional (E3.2). Lender Entity id while debt is open (default Free Haulers when owed > 0 and key empty). |
 | `debt_grace_docks_left` | `int` | Optional (E3.2). Fee-charging docks left before Free Haulers standing hit while broke with debt. Missing with other debt keys → 0. |
 
-Missing section → boot defaults from `BalanceEconomy`.
+Missing section → boot defaults from `BalanceEconomy` (each service resets).
 Missing debt keys (old saves) → no debt.
 No envelope version bump — optional inside schema v1.
 

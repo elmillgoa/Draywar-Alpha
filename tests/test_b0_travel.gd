@@ -123,14 +123,14 @@ func test_flight_hud_nav_lists_gates_for_current_system() -> void:
 
 
 func test_wallet_fuel_blocks_jump_when_empty() -> void:
-	var wallet: WalletService = WalletService.new()
-	add_child_autofree(wallet)
-	wallet.reset()
+	var fuel: FuelService = FuelService.new()
+	add_child_autofree(fuel)
+	fuel.reset()
 	# Drain fuel below jump cost.
-	while wallet.can_jump():
-		assert_true(wallet.try_spend_jump_fuel())
-	assert_false(wallet.can_jump())
-	assert_false(wallet.try_spend_jump_fuel())
+	while fuel.can_jump():
+		assert_true(fuel.try_spend_jump_fuel())
+	assert_false(fuel.can_jump())
+	assert_false(fuel.try_spend_jump_fuel())
 
 
 func test_jump_arrival_places_ship_near_return_gate() -> void:

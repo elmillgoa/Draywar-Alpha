@@ -5,8 +5,8 @@ extends Node
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B2–B3
 ##
 ## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission /
-## Recovery / Wallet / Cargo / Ship / MoneyLog services, boots play from the
-## main menu, and rebuilds the world on gate jumps.
+## Recovery / Wallet / Fuel / Hull / Cargo / Ship / MoneyLog services, boots play
+## from the main menu, and rebuilds the world on gate jumps.
 
 const BOOT_BANNER: String = "Draywar Alpha — boot OK"
 
@@ -19,6 +19,8 @@ var _camera: ChaseCamera = null
 var _docking: DockingService = null
 var _gate_travel: GateTravelService = null
 var _wallet: WalletService = null
+var _fuel: FuelService = null
+var _hull: HullConditionService = null
 var _cargo: CargoService = null
 var _money_log: MoneyLog = null
 var _ship_service: ShipService = null
@@ -400,7 +402,7 @@ func _reset_career_services() -> void:
 
 func _boot_play_session() -> void:
 	# UI must exist before SystemWorld.build() emits on_system_entered.
-	# Wallet after HUD so seed emissions for credits/fuel/condition hit the HUD.
+	# Wallet/fuel/hull after HUD so seed emissions for credits/fuel/condition hit the HUD.
 	_hud = FlightHUD.new()
 	_hud.name = "FlightHUD"
 	add_child(_hud)
@@ -408,6 +410,14 @@ func _boot_play_session() -> void:
 	_wallet = WalletService.new()
 	_wallet.name = "WalletService"
 	add_child(_wallet)
+
+	_fuel = FuelService.new()
+	_fuel.name = "FuelService"
+	add_child(_fuel)
+
+	_hull = HullConditionService.new()
+	_hull.name = "HullConditionService"
+	add_child(_hull)
 
 	_money_log = MoneyLog.new()
 	_money_log.name = "MoneyLog"
@@ -487,6 +497,12 @@ func _tear_down_play_session() -> void:
 	if _wallet != null:
 		_wallet.queue_free()
 		_wallet = null
+	if _fuel != null:
+		_fuel.queue_free()
+		_fuel = null
+	if _hull != null:
+		_hull.queue_free()
+		_hull = null
 	if _money_log != null:
 		_money_log.queue_free()
 		_money_log = null
@@ -548,7 +564,7 @@ func _on_jump_requested(destination_system_id: StringName) -> void:
 		return
 	if not _jump_allowed(destination_system_id):
 		return
-	if not _wallet.try_spend_jump_fuel():
+	if _fuel == null or not _fuel.try_spend_jump_fuel():
 		return
 
 	# S1: compressed transit time on the world clock (same accumulators as live).
@@ -579,7 +595,7 @@ func _on_jump_requested(destination_system_id: StringName) -> void:
 
 
 func _jump_allowed(destination_system_id: StringName) -> bool:
-	if _wallet == null or _world == null or _ship == null:
+	if _fuel == null or _world == null or _ship == null:
 		return false
 	if _docking != null and _docking.controller().is_docked():
 		return false
@@ -589,7 +605,7 @@ func _jump_allowed(destination_system_id: StringName) -> bool:
 		return false
 	if not ContentLibrary.has_item(destination_system_id):
 		return false
-	return _wallet.can_jump()
+	return _fuel.can_jump()
 
 
 func _raise_debug_console() -> void:

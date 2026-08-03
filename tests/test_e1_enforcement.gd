@@ -91,11 +91,17 @@ func test_hostile_denies_repair_and_trade_marks_up_refuel() -> void:
 
 	var wallet: WalletService = WalletService.new()
 	host.add_child(wallet)
+	var fuel: FuelService = FuelService.new()
+	host.add_child(fuel)
+	var hull: HullConditionService = HullConditionService.new()
+	host.add_child(hull)
 	var cargo: CargoService = CargoService.new()
 	host.add_child(cargo)
 	await get_tree().process_frame
 
 	wallet.reset()
+	fuel.reset()
+	hull.reset()
 	cargo.reset()
 	wallet.set_credits(5000)
 
@@ -107,13 +113,13 @@ func test_hostile_denies_repair_and_trade_marks_up_refuel() -> void:
 	)
 
 	assert_false(
-		wallet.can_repair_at_station(STATION_ALPHA),
+		hull.can_repair_at_station(STATION_ALPHA),
 		"Hostile must refuse repair at controller station"
 	)
 	# Drain hull so repair would otherwise apply.
-	wallet.wear_condition(40.0, true)
-	assert_lt(wallet.condition(), BalanceEconomy.CONDITION_MAX)
-	assert_false(wallet.repair_full(), "repair_full must refuse when Hostile at dock")
+	hull.wear_condition(40.0, true)
+	assert_lt(hull.condition(), BalanceEconomy.CONDITION_MAX)
+	assert_false(hull.repair_full(), "repair_full must refuse when Hostile at dock")
 
 	assert_false(cargo.trade_allowed_at_dock(), "Hostile must close trade")
 	assert_false(cargo.try_buy(GRAIN, 1), "buy refused at Hostile")
@@ -121,9 +127,9 @@ func test_hostile_denies_repair_and_trade_marks_up_refuel() -> void:
 	assert_false(cargo.try_sell(GRAIN, 1), "sell refused at Hostile")
 
 	# Refuel still allowed, but standing markup raises cost vs neutral base.
-	while wallet.fuel() > 1.0:
-		wallet.burn_fuel(1.0, 1.0, true)
-	var room: float = BalanceEconomy.FUEL_MAX - wallet.fuel()
+	while fuel.fuel() > 1.0:
+		fuel.burn_fuel(1.0, 1.0, true)
+	var room: float = BalanceEconomy.FUEL_MAX - fuel.fuel()
 	var units: float = minf(BalanceEconomy.REFUEL_CHUNK, room)
 	var expected_cost: int = int(
 		ceilf(
@@ -135,7 +141,7 @@ func test_hostile_denies_repair_and_trade_marks_up_refuel() -> void:
 		)
 	)
 	var credits_before: int = wallet.credits()
-	var added: float = wallet.refuel_chunk()
+	var added: float = fuel.refuel_chunk()
 	assert_gt(added, 0.0, "Hostile still allows refuel so player can leave")
 	assert_eq(wallet.credits(), credits_before - expected_cost)
 
@@ -146,7 +152,7 @@ func test_hostile_denies_repair_and_trade_marks_up_refuel() -> void:
 	var hated_fee: int = wallet.dock_fee_for_system(SYSTEM_ALPHA, STATION_ALPHA)
 	assert_gt(hostile_fee, base_fee)
 	assert_gt(hated_fee, hostile_fee)
-	assert_false(wallet.can_repair_at_station(STATION_ALPHA))
+	assert_false(hull.can_repair_at_station(STATION_ALPHA))
 	assert_false(cargo.trade_allowed_at_dock())
 
 
@@ -196,16 +202,22 @@ func test_unfriendly_service_markup_without_denial() -> void:
 	host.add_child(dock)
 	var wallet: WalletService = WalletService.new()
 	host.add_child(wallet)
+	var fuel: FuelService = FuelService.new()
+	host.add_child(fuel)
+	var hull: HullConditionService = HullConditionService.new()
+	host.add_child(hull)
 	var cargo: CargoService = CargoService.new()
 	host.add_child(cargo)
 	await get_tree().process_frame
 
 	wallet.reset()
+	fuel.reset()
+	hull.reset()
 	cargo.reset()
 	wallet.set_credits(5000)
 	StandingService.set_entity_standing(ENTITY_REACH, BalanceStanding.TIER_UNFRIENDLY_MIN)
 
-	assert_true(wallet.can_repair_at_station(STATION_ALPHA), "Unfriendly may still repair")
+	assert_true(hull.can_repair_at_station(STATION_ALPHA), "Unfriendly may still repair")
 	assert_true(cargo.trade_allowed_at_dock(), "Unfriendly may still trade")
 	assert_almost_eq(
 		BalanceEconomy.service_cost_mult_for_tier(BalanceStanding.TIER_UNFRIENDLY),
@@ -213,9 +225,9 @@ func test_unfriendly_service_markup_without_denial() -> void:
 		TOLERANCE
 	)
 
-	while wallet.fuel() > 1.0:
-		wallet.burn_fuel(1.0, 1.0, true)
-	var room: float = BalanceEconomy.FUEL_MAX - wallet.fuel()
+	while fuel.fuel() > 1.0:
+		fuel.burn_fuel(1.0, 1.0, true)
+	var room: float = BalanceEconomy.FUEL_MAX - fuel.fuel()
 	var units: float = minf(BalanceEconomy.REFUEL_CHUNK, room)
 	var expected: int = int(
 		ceilf(
@@ -227,7 +239,7 @@ func test_unfriendly_service_markup_without_denial() -> void:
 		)
 	)
 	var before: int = wallet.credits()
-	assert_gt(wallet.refuel_chunk(), 0.0)
+	assert_gt(fuel.refuel_chunk(), 0.0)
 	assert_eq(wallet.credits(), before - expected)
 
 

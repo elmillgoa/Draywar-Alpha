@@ -241,9 +241,13 @@ func _refresh_wallet() -> void:
 	var hull_pct: int = int(BalanceEconomy.PERCENT_SCALE)
 	var tree: SceneTree = get_tree()
 	var wallet: Node = null
+	var fuel_svc: Node = null
+	var hull_svc: Node = null
 	var cargo: Node = null
 	if tree != null:
 		wallet = tree.get_first_node_in_group(&"wallet_service")
+		fuel_svc = tree.get_first_node_in_group(&"fuel_service")
+		hull_svc = tree.get_first_node_in_group(&"hull_condition_service")
 		cargo = tree.get_first_node_in_group(&"cargo_service")
 	if wallet != null:
 		if wallet.has_method(&"credits"):
@@ -256,16 +260,20 @@ func _refresh_wallet() -> void:
 					debt_owed = _variant_to_int(debt[&"owed"])
 				if debt.has(&"lender_id"):
 					debt_lender = _variant_to_name(debt[&"lender_id"])
-		if wallet.has_method(&"fuel") and wallet.has_method(&"fuel_max"):
-			var fuel: float = _variant_to_float(wallet.call(&"fuel"))
-			var fuel_max: float = _variant_to_float(wallet.call(&"fuel_max"))
-			if fuel_max > 0.0:
-				fuel_pct = int(roundf((fuel / fuel_max) * BalanceEconomy.PERCENT_SCALE))
-		if wallet.has_method(&"condition") and wallet.has_method(&"condition_max"):
-			var condition: float = _variant_to_float(wallet.call(&"condition"))
-			var condition_max: float = _variant_to_float(wallet.call(&"condition_max"))
-			if condition_max > 0.0:
-				hull_pct = int(roundf((condition / condition_max) * BalanceEconomy.PERCENT_SCALE))
+	if fuel_svc != null and fuel_svc.has_method(&"fuel") and fuel_svc.has_method(&"fuel_max"):
+		var fuel: float = _variant_to_float(fuel_svc.call(&"fuel"))
+		var fuel_max: float = _variant_to_float(fuel_svc.call(&"fuel_max"))
+		if fuel_max > 0.0:
+			fuel_pct = int(roundf((fuel / fuel_max) * BalanceEconomy.PERCENT_SCALE))
+	if (
+		hull_svc != null
+		and hull_svc.has_method(&"condition")
+		and hull_svc.has_method(&"condition_max")
+	):
+		var condition: float = _variant_to_float(hull_svc.call(&"condition"))
+		var condition_max: float = _variant_to_float(hull_svc.call(&"condition_max"))
+		if condition_max > 0.0:
+			hull_pct = int(roundf((condition / condition_max) * BalanceEconomy.PERCENT_SCALE))
 	if cargo != null:
 		if cargo.has_method(&"used_volume"):
 			cargo_used = _variant_to_int(cargo.call(&"used_volume"))
