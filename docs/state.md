@@ -49,9 +49,11 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 
 ## Next session starts here
 
-1. **Elliot S3 feel gate** — playtest brief in `docs/gates.md` (S3 section).
-2. After gate: plan **external strangers** touch before trusting 30h claims.
-3. Then S4 (enforcement & standing career surface) per plan — Hard tier.
+1. **Blocked on Elliot:** S3 feel gate — playtest brief in `docs/gates.md` (S3 section).
+   New Game; ~60–90 min. Do **not** start S4 until pass/fail is recorded.
+2. If **pass**: mark gate in `docs/gates.md`, set S3 done, plan external strangers,
+   then open **Hard-tier** chat for S4 (`docs/STEAM_PHASE_PLAN.md` §22.6 S4).
+3. If **fail**: fix only what he named; re-run lint + tests; hand gate back.
 4. Out of scope until authorized: Ops, campaign, standing law invention.
 
 ### Locked decisions
@@ -72,6 +74,8 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 
 ## Session history
 
+- **2026-08-03 (wrap)** — S2 signed + full S3 code (a+b) pushed; S3 feel gate open.
+  Lint green, 717 tests, `main` @ `95f5249`. Next: Elliot S3 playtest.
 - **2026-08-03 (S3b)** — Space life + news. IncidentService autoload, distress/
   intercept/customs, promote-to-mission path, MarketNews thickened, traffic
   purpose lite, FlightHUD news/incident toast, save steps-only expire-on-load.
