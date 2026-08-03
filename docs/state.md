@@ -50,6 +50,7 @@
 
 ## Session history
 
+- **2026-08-02 (wrap)** — Planning session closed. Plan v1.2 on origin/main. No S1 code. Lint green. Unrelated dirty files left uncommitted (project.godot, node_3d.tscn, assorted .uid).
 - **2026-08-02 (v1.2)** — Model routing + paste-ready phase prompts (§22); Elliot = playtest/ideas only.
 - **2026-08-02 (plan absorb)** — Fable review → plan v1.1; all 11 amendments + combat/incident locks; S1 ready on go.
 - **2026-08-02 (start)** — Fable review on disk; S1 blocked pending absorb.
