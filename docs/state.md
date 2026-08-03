@@ -25,7 +25,7 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 | **S1** World clock & sim foundation | **done** 2026-08-03 |
 | **S2** Economy simulator | **done** 2026-08-03 — headless + feel gate signed |
 | **S3a** Radiant work surface | **done** 2026-08-03 |
-| **S3b** Space life + news | **done** 2026-08-03 — gate open, not signed |
+| **S3b** Space life + news | **done** 2026-08-03 — lint + 717 tests; gate open, not signed |
 | S4–S10 | queued |
 
 ## What the game can do now

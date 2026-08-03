@@ -526,22 +526,22 @@ Not a re-open of E1–E5. Refuse → iterate E6.1–E6.5 only. Sign → E6 close
 
 ---
 
-## S3 � Living activity density: not a thin menu loop
+## S3 — Living activity density: not a thin menu loop
 
-**Criteria (plan):** in a 60�90 min free session, the player finds varied work
+**Criteria (plan):** in a 60–90 min free session, the player finds varied work
 without exhausting only a fixed board. Gate after **S3b** (S3a alone is not enough).
 
-**Build:** S3b complete on this branch/session. Start a **New Game**. Do not sign
-from headless green alone � this is a feel gate.
+**Build:** S3b complete (`8d5c331` and later). Start a **New Game**. Do not sign
+from headless green alone — this is a feel gate.
 
 ### How to find radiant vs incidents
 
 | Activity | Where | What you do |
 |----------|--------|-------------|
-| **Hand / radiant board jobs** | Dock ? station **Jobs** board | Accept a haul, bounty, escort, or smuggle row. Boards restock on the world clock (jump away and come back; the list changes). |
-| **Distress** | Free flight in a system | A toast/prompt: freighter in trouble. **Help** or **Ignore**. Help with no active job ? short rescue haul mission. Help while already on a job ? small credit reward; your mission stays. |
+| **Hand / radiant board jobs** | Dock → station **Jobs** board | Accept a haul, bounty, escort, or smuggle row. Boards restock on the world clock (jump away and come back; the list changes). |
+| **Distress** | Free flight in a system | A toast/prompt: freighter in trouble. **Help** or **Ignore**. Help with no active job → short rescue haul mission. Help while already on a job → small credit reward; your mission stays. |
 | **Intercept** | Free flight | Hostile pressure prompt. Submit (pay a cut) or resist (small payoff). Does **not** need the mission slot. |
-| **Customs light** | Patrolled space (e.g. Alpha) with **restricted cargo** in hold (e.g. munitions under Reach) | Scan prompt. Cooperate ? fine/seize using existing contraband law; flee ? walk away. If you cooperated, the **same undocked trip** will not fine you again at the next dock for that load. |
+| **Customs light** | Patrolled space (e.g. Alpha) with **restricted cargo** in hold (e.g. munitions under Reach) | Scan prompt. Cooperate → fine/seize using existing contraband law; flee → walk away. If you cooperated, the **same undocked trip** will not fine you again at the next dock for that load. |
 | **News** | Station ticker **and** flight toast while undocked | Shortage/glut, patrol chatter, and echoes of real incidents. |
 | **Traffic purpose** | Look at freighters in space | Some approach pads and leave (dock cycle). When a dock is short, a freighter may push toward that station. |
 
@@ -551,13 +551,13 @@ Console / debug (if needed for the brief, not required for pass): incident respo
 
 Fail the gate if any of these are true for you after ~an hour:
 
-1. **Only the board** � you never get work or pressure that is not a dock menu row (no space events, no reason to undock except travel to turn in).
-2. **Board goes dead** � after a few accepts the list feels empty forever and restock is invisible.
-3. **Incidents feel like the mission slot** � helping a distress always blocks or steals your current job, or you cannot help while employed.
-4. **Space is wallpaper** � freighters never look like they are going somewhere; news never names a real shortage or incident you just saw.
-5. **Double-punish customs** � you cooperate with a scan in space, then the same load is seized again the moment you dock with no undock in between.
+1. **Only the board** — you never get work or pressure that is not a dock menu row (no space events, no reason to undock except travel to turn in).
+2. **Board goes dead** — after a few accepts the list feels empty forever and restock is invisible.
+3. **Incidents feel like the mission slot** — helping a distress always blocks or steals your current job, or you cannot help while employed.
+4. **Space is wallpaper** — freighters never look like they are going somewhere; news never names a real shortage or incident you just saw.
+5. **Double-punish customs** — you cooperate with a scan in space, then the same load is seized again the moment you dock with no undock in between.
 
-Pass when: you can chain board work **and** space incidents **and** see the sector talk (news/traffic) without the session collapsing into "dock ? click job ? undock ? dock".
+Pass when: you can chain board work **and** space incidents **and** see the sector talk (news/traffic) without the session collapsing into "dock → click job → undock → dock".
 
 ### What to report back
 
@@ -572,10 +572,10 @@ Pass when: you can chain board work **and** space incidents **and** see the sect
 Do **not** call the 30h career claim honest until strangers touch the build.
 Plan who, how many, and what is measured (time-to-first-fun, did they undock for
 non-board reasons, did they quit at the menu loop). Agents do not run that plan
-for you � schedule it after you sign S3.
+for you — schedule it after you sign S3.
 
 ### Attempt log
 
-- **2026-08-03** � S3b code complete. Headless proxies for varied activity classes
-  green. **Gate open, not signed.**
+- **2026-08-03** — S3b code complete. Headless proxies for varied activity classes
+  green (717 tests). **Gate open, not signed.**
 
