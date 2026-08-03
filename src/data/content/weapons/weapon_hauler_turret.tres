@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Weapon" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Weapon.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon_hauler_turret"
+display_name = "Hauler Turret"
+damage = 45
+cooldown = 0.4
+projectile_speed = 220
+buy_price = 350
+hauler_ok = true
+fighter_ok = false

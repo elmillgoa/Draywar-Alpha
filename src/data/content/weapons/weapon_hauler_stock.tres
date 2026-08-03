@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Weapon" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Weapon.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon_hauler_stock"
+display_name = "Hauler Stock Gun"
+damage = 30
+cooldown = 0.35
+projectile_speed = 250
+buy_price = 40
+hauler_ok = true
+fighter_ok = false

@@ -10,6 +10,7 @@ extends CanvasLayer
 ## All actions go through EventBus.
 
 const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
+const StationOutfitUiScript = preload("res://src/ui/station/StationOutfitUi.gd")
 const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
 const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
 const StationLoanUiScript = preload("res://src/ui/station/StationLoanUi.gd")
@@ -40,6 +41,7 @@ var _borrow_btn: Button = null
 var _repay_btn: Button = null
 var _buy_fighter_btn: Button = null
 var _switch_hull_btn: Button = null
+var _outfit_box: VBoxContainer = null
 var _dock_fee_label: Label = null
 var _undock_btn: Button = null
 var _status_label: Label = null
@@ -241,6 +243,8 @@ func _build_ui() -> void:
 	_switch_hull_btn = _make_button(layout, button_size, "Switch hull")
 	_switch_hull_btn.pressed.connect(_on_switch_hull_pressed)
 	_switch_hull_btn.visible = false
+
+	_outfit_box = StationOutfitUiScript.make_box(layout)
 
 	# --- Trade ---
 	_add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
@@ -867,6 +871,7 @@ func _refresh_hull_buttons() -> void:
 	StationHullUiScript.refresh_buttons(
 		_buy_fighter_btn, _switch_hull_btn, _ship_service(), visible
 	)
+	StationOutfitUiScript.refresh_box(_outfit_box, _ship_service(), _wallet_service(), visible)
 
 
 func _clear_trade_rows() -> void:

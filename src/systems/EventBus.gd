@@ -321,3 +321,12 @@ signal on_hull_purchased(hull_id: StringName)
 
 ## ShipService: active flyable hull changed (switch, load, or set).
 signal on_hull_changed(old_hull_id: StringName, new_hull_id: StringName)
+
+## UI: request install of a weapon or equipment item while docked (S5).
+signal on_outfit_install_requested(item_id: StringName)
+
+## UI: request uninstall of an installed item at a slot index (S5).
+signal on_outfit_uninstall_requested(item_id: StringName, slot_index: int)
+
+## ShipService: weapons/equipment on a hull changed (install, remove, load).
+signal on_loadout_changed(hull_id: StringName)

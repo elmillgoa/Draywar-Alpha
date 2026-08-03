@@ -287,6 +287,7 @@ func _emit_debt_changed() -> void:
 
 
 ## Burn fuel for flight this frame. `throttle` 0..1; afterburn multiplies.
+## S5: multiplies rate by ShipService.fuel_burn_multiplier() when present.
 func burn_fuel(delta_seconds: float, throttle: float, afterburning: bool) -> void:
 	if delta_seconds <= 0.0 or throttle <= 0.0:
 		return
@@ -296,6 +297,7 @@ func burn_fuel(delta_seconds: float, throttle: float, afterburning: bool) -> voi
 	var rate: float = BalanceEconomy.FUEL_BURN_PER_SECOND_AT_FULL * throttle
 	if afterburning:
 		rate *= BalanceEconomy.FUEL_AFTERBURNER_MULTIPLIER
+	rate *= _fuel_burn_multiplier()
 	_set_fuel(maxf(0.0, _fuel - rate * delta_seconds))
 
 
@@ -328,11 +330,15 @@ func wear_condition(delta_seconds: float, afterburning: bool) -> void:
 
 
 ## Combat (or test) hull damage. Returns applied amount. Emits player damage bus.
+## S5: scales by ShipService.damage_taken_multiplier() when a ship service exists.
 func apply_damage(amount: float) -> float:
 	if amount <= 0.0:
 		return 0.0
+	var scaled: float = amount * _damage_taken_multiplier()
+	if scaled <= 0.0:
+		return 0.0
 	var before: float = _condition
-	_set_condition(_condition - amount)
+	_set_condition(_condition - scaled)
 	EventBus.on_player_damaged.emit(_condition)
 	return before - _condition
 
@@ -645,6 +651,35 @@ func _variant_to_float(value: Variant) -> float:
 		if text.is_valid_float():
 			return float(text)
 	return 0.0
+
+
+## S5 outfit armor product (1.0 when no ShipService / no mult modules).
+func _damage_taken_multiplier() -> float:
+	var ships: Node = _ship_service()
+	if ships == null or not ships.has_method(&"damage_taken_multiplier"):
+		return 1.0
+	var mult: float = _variant_to_float(ships.call(&"damage_taken_multiplier"))
+	if mult > 0.0:
+		return mult
+	return 1.0
+
+
+## S5 outfit fuel burn product (1.0 when no ShipService / no mult modules).
+func _fuel_burn_multiplier() -> float:
+	var ships: Node = _ship_service()
+	if ships == null or not ships.has_method(&"fuel_burn_multiplier"):
+		return 1.0
+	var mult: float = _variant_to_float(ships.call(&"fuel_burn_multiplier"))
+	if mult > 0.0:
+		return mult
+	return 1.0
+
+
+func _ship_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
 
 
 func _set_credits(value: int) -> void:

@@ -1117,3 +1117,40 @@ Active flyable hull changed (station switch, load, or direct set).
 
 **Emitted by** `ShipService`.
 **Listened to by** `PlayerShip` (flight/weapon/silhouette), `StationMenu`, `CaptainSheet`.
+
+## Outfitting / loadout (S5)
+
+### `on_outfit_install_requested(item_id: StringName)`
+
+UI asked to buy and install a weapon or equipment item on the active hull while
+docked.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item_id` | `StringName` | Weapon or equipment content id. |
+
+**Emitted by** `StationOutfitUi` (via station menu buttons).
+**Listened to by** `ShipService`.
+
+### `on_outfit_uninstall_requested(item_id: StringName, slot_index: int)`
+
+UI asked to remove an installed weapon or equipment module and refund sell-back.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `item_id` | `StringName` | Content id in that slot (used to pick weapon vs equipment path). |
+| `slot_index` | `int` | Slot index within weapons or equipment array. |
+
+**Emitted by** `StationOutfitUi`.
+**Listened to by** `ShipService`.
+
+### `on_loadout_changed(hull_id: StringName)`
+
+Weapons or equipment on a hull changed (install, remove, or load apply).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `hull_id` | `StringName` | Hull content id whose loadout changed. |
+
+**Emitted by** `ShipService`.
+**Listened to by** `PlayerShip` (reapply weapon/turn/afterburner), `StationMenu`.

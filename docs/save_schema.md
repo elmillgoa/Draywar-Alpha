@@ -131,10 +131,11 @@ sections. No envelope version bump.
 |---|---|---|
 | `active_hull_id` | `String` | Content id of the hull currently flown. |
 | `owned_hull_ids` | `Array` of `String` | Hull content ids the career owns. Always includes starter `hull_courier`. |
+| `loadouts` | `Dictionary` (optional) | Per-hull outfitting (S5). Keys are hull content id strings. Each value is `{ "weapons": [id or ""], "equipment": [id or ""] }` sized to that hull's role slots. Empty string = empty slot. Unknown / invalid item ids are dropped on load. |
 
 Missing section → Hauler only (owned `hull_courier`, active Hauler).
 Unknown / unowned active id falls back to Hauler. Starter ownership is always
-restored if omitted from the array.
+restored if omitted from the array. Missing `loadouts` → empty slots for owned hulls.
 
 ### Optional section: `world` (schema v1)
 

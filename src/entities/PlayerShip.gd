@@ -51,6 +51,7 @@ func _ready() -> void:
 	EventBus.on_player_repaired_from_cripple.connect(_on_player_repaired_from_cripple)
 	EventBus.on_hostile_killed.connect(_on_hostile_killed_clear_lock)
 	EventBus.on_hull_changed.connect(_on_hull_changed)
+	EventBus.on_loadout_changed.connect(_on_loadout_changed)
 	# Seed HUD listeners that connect before the first physics tick.
 	EventBus.on_player_throttle_changed.emit(_throttle)
 	EventBus.on_player_speed_changed.emit(0.0)
@@ -71,6 +72,8 @@ func _exit_tree() -> void:
 		EventBus.on_hostile_killed.disconnect(_on_hostile_killed_clear_lock)
 	if EventBus.on_hull_changed.is_connected(_on_hull_changed):
 		EventBus.on_hull_changed.disconnect(_on_hull_changed)
+	if EventBus.on_loadout_changed.is_connected(_on_loadout_changed):
+		EventBus.on_loadout_changed.disconnect(_on_loadout_changed)
 
 
 ## Wire the chase camera used for mouse-aim raycasts.
@@ -112,6 +115,7 @@ func set_throttle(value: float) -> void:
 
 
 ## Load profile numbers from a Hull content id (falls back to Balance* defaults).
+## Weapon stats + turn/afterburner bonuses come from ShipService loadout when present.
 func _apply_hull_from_library(id: StringName) -> void:
 	if not ContentLibrary.has_item(id):
 		return
@@ -131,6 +135,7 @@ func _apply_hull_from_library(id: StringName) -> void:
 		_weapon_cooldown = hull.weapon_cooldown
 	if hull.projectile_speed > 0.0:
 		_projectile_speed = hull.projectile_speed
+	_apply_loadout_overrides()
 
 
 ## Active bolt travel speed (lead pip / aim plane). Exposed for CombatReticle.
@@ -167,6 +172,54 @@ func _on_hull_changed(_old_hull_id: StringName, new_hull_id: StringName) -> void
 		return
 	hull_id = new_hull_id
 	reapply_active_hull()
+
+
+func _on_loadout_changed(changed_hull_id: StringName) -> void:
+	if changed_hull_id != hull_id and not String(changed_hull_id).is_empty():
+		return
+	_apply_loadout_overrides()
+
+
+## Pull effective weapons + equipment bonuses from ShipService (S5).
+func _apply_loadout_overrides() -> void:
+	var ships: Node = _ship_service_node()
+	if ships == null:
+		return
+	if ships.has_method(&"effective_weapon_damage"):
+		_weapon_damage = _as_float(ships.call(&"effective_weapon_damage"), _weapon_damage)
+	if ships.has_method(&"effective_weapon_cooldown"):
+		_weapon_cooldown = _as_float(ships.call(&"effective_weapon_cooldown"), _weapon_cooldown)
+	if ships.has_method(&"effective_weapon_projectile_speed"):
+		_projectile_speed = _as_float(
+			ships.call(&"effective_weapon_projectile_speed"), _projectile_speed
+		)
+	if ships.has_method(&"turn_rate_bonus") and ContentLibrary.has_item(hull_id):
+		var hull_item: ContentItem = ContentLibrary.item(hull_id)
+		if hull_item is Hull:
+			var base_turn: float = (hull_item as Hull).turn_rate
+			_turn_rate = base_turn + _as_float(ships.call(&"turn_rate_bonus"), 0.0)
+	if ships.has_method(&"afterburner_bonus") and ContentLibrary.has_item(hull_id):
+		var hull_ab: ContentItem = ContentLibrary.item(hull_id)
+		if hull_ab is Hull:
+			var base_ab: float = (hull_ab as Hull).afterburner_multiplier
+			_afterburner_multiplier = base_ab + _as_float(ships.call(&"afterburner_bonus"), 0.0)
+
+
+func _as_float(value: Variant, fallback: float) -> float:
+	if typeof(value) == TYPE_FLOAT:
+		var as_f: float = value
+		return as_f
+	if typeof(value) == TYPE_INT:
+		var as_i: int = value
+		return float(as_i)
+	return fallback
+
+
+func _ship_service_node() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	return tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
 
 
 func _sync_hull_id_from_service() -> void:

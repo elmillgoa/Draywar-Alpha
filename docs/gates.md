@@ -598,7 +598,7 @@ lawless space; heat/pressure stays per-Entity (no global wanted bar); status
 moment still shows local controller standing; personal recovery still works.
 
 **Build:** S4 code complete. Start a **New Game**. Do **not** sign from headless
-green alone — this is a feel gate. **Not signed.**
+green alone — this is a feel gate. **Signed 2026-08-03** (Elliot: approved).
 
 ### How to raise heat / feel the difference
 
@@ -635,4 +635,61 @@ Pass when: Alpha crime makes Reach care and press you there; Gamma stays soft; s
 - **2026-08-03** — S4 code complete (EnforcementService heat, customs loop keys,
   recovery budget 4, network betrayal lite). Headless tests added. **Gate open,
   not signed.**
+- **2026-08-03** — **Signed pass** (Elliot: “S4 approved”). Jurisdictional identity
+  accepted; S5 authorized.
+
+---
+
+## S5 — Ship fantasy: outfitting and long careers, not bored
+
+**Criteria (plan):** both careers (hauler-first, fighter-first) feel viable into
+mid-game; outfitting is a real money sink and identity choice; ship fantasy is
+not “same starter forever.”
+
+**Build:** S5 Session A code complete (weapons/equipment, station Outfitting,
+loadout save). Start a **New Game**. Do **not** sign from headless green alone —
+this is a feel gate. **Open, not signed.**
+
+### Playtest brief
+
+1. **New Game → dock at Alpha Port.** Open station. Find **Outfitting** under
+   Services (after Buy Fighter / Switch hull).
+2. **Hauler path:** install a **cargo rack** (or straps). Confirm hold feels
+   bigger when trading. Optionally put on light armor. Fly a short trade or job.
+3. **Earn and buy Fighter** (Services). Switch hulls. Note: Fighter hold is tiny;
+   cargo racks that are hauler-only should not fit the fighter fantasy.
+4. **Fighter path:** install a mid/high weapon (Pulse → Interceptor when you can
+   afford it). Dogfight a skirmisher in contested/lawless. Stock hauler guns
+   should feel weaker than a geared fighter.
+5. **Money sink:** top weapons + fighter purchase should clear several jobs’
+   worth of credits — progression spends, not infinite wallet.
+6. **Save/load** once with a loadout; gear should still be there.
+7. **Screenshot honesty:** ships are still code-mesh gray-box
+   (`docs/S5_SCREENSHOT_FLOOR.md`). Gate is about *fantasy of upgrade*, not art.
+
+### What failure looks like
+
+1. Outfitting missing, broken, or only on one hull with no reason.
+2. No meaningful difference between stock and upgraded weapons.
+3. Hauler and fighter feel the same job (no cargo vs guns trade).
+4. Gear disappears on load, or installs free / without dock.
+5. You are bored within an hour because there is nothing to spend on for the ship.
+
+Pass when: you want the next gun or rack; hauler and fighter pull different
+play; spending on the ship feels like progress.
+
+### What to report back
+
+- **Pass or fail**, in your own words.
+- Did Outfitting read in the station menu?
+- Hauler cargo vs fighter guns — did both careers feel real?
+- Any broke / stuck / “why can’t I install” moments?
+
+### Attempt log
+
+- **2026-08-03** — S5 Session A code complete (12 weapons, 10 equipment, install
+  / remove, loadout save, PerfProbe, screenshot floor notes). **Gate open, not
+  signed.**
+  WalletService split (Session B) still required before S6 — not part of this
+  feel gate.
 

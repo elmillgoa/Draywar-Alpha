@@ -62,6 +62,10 @@ const REASON_JOB_PAY: StringName = &"job_pay"
 const REASON_TRADE_BUY: StringName = &"trade_buy"
 const REASON_TRADE_SELL: StringName = &"trade_sell"
 const REASON_DEBUG_CREDITS_SET: StringName = &"debug_credits_set"
+## Station outfitting install (S5).
+const REASON_OUTFIT_BUY: StringName = &"outfit_buy"
+## Station outfitting uninstall refund (S5).
+const REASON_OUTFIT_SELL: StringName = &"outfit_sell"
 
 # --- Detail dictionary keys (StringName) --------------------------------------
 
@@ -70,3 +74,5 @@ const DETAIL_KEY_UNITS: StringName = &"units"
 const DETAIL_KEY_UNIT_PRICE: StringName = &"unit_price"
 const DETAIL_KEY_STATION_ID: StringName = &"station_id"
 const DETAIL_KEY_SYSTEM_ID: StringName = &"system_id"
+## Outfit install/remove item content id (S5).
+const DETAIL_KEY_ITEM_ID: StringName = &"item_id"

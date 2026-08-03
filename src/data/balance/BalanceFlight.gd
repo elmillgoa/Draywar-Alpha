@@ -27,6 +27,8 @@ const GROUP_SHIP_SERVICE: StringName = &"ship_service"
 const SAVE_SECTION_SHIP: StringName = &"ship"
 const SAVE_KEY_ACTIVE_HULL_ID: StringName = &"active_hull_id"
 const SAVE_KEY_OWNED_HULL_IDS: StringName = &"owned_hull_ids"
+## Per-hull weapons/equipment loadouts (S5). Nested dict; optional.
+const SAVE_KEY_LOADOUTS: StringName = &"loadouts"
 
 # --- Ship motion (courier defaults; Hull.tres may override) ----------------
 

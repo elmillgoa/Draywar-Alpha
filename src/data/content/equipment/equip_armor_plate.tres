@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Equipment" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Equipment.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"equip_armor_plate"
+display_name = "Armor Plate"
+effect_kind = &"damage_taken_mult"
+effect_value = 0.75
+buy_price = 800
+hauler_ok = true
+fighter_ok = true

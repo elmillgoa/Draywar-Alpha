@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Weapon" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/data/shapes/Weapon.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon_fighter_stock"
+display_name = "Fighter Stock Gun"
+damage = 50
+cooldown = 0.22
+projectile_speed = 320
+buy_price = 100
+hauler_ok = false
+fighter_ok = true

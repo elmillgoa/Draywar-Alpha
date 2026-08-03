@@ -2,9 +2,10 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S4 code complete 2026-08-03** — Enforcement & standing
-career surface. Lint green, **726 tests**. Feel gate **open, not signed**.
-Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everything.
+**Current position:** **S5 Session A code complete 2026-08-03** — ship layer
+(weapons/equipment outfitting, sinks, perf probe, screenshot notes). Lint +
+tests green after S5. Feel gate **open, not signed**. Maturity = **tech demo**.
+Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
 |-----|------|
@@ -12,7 +13,8 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2–S3 signed; **S4 feel gate open** |
+| `docs/gates.md` | E6.6 signed; S2–S4 signed; **S5 feel gate open** |
+| `docs/S5_SCREENSHOT_FLOOR.md` | Honest gray-box presentation inventory |
 
 ## Phase progress
 
@@ -26,34 +28,35 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
 | **S2** Economy simulator | **done** 2026-08-03 — headless + feel gate signed |
 | **S3a** Radiant work surface | **done** 2026-08-03 |
 | **S3b** Space life + news | **done** 2026-08-03 — gate signed |
-| **S4** Enforcement & standing surface | **code done** 2026-08-03 — feel gate open |
-| S5–S10 | queued |
+| **S4** Enforcement & standing surface | **done** 2026-08-03 — gate signed |
+| **S5** Ship layer | **Session A code done** 2026-08-03 — feel gate open; **Wallet split Session B still required before S6** |
+| S6–S10 | queued (blocked on S5 gate + wallet split) |
 
 ## What the game can do now
 
-- Everything from S3 (living boards, radiant jobs, escort, incidents, news,
-  traffic purpose), **plus:**
-- **Per-Entity heat** (not global wanted). Crime in patrolled space raises heat
-  on the enforcer (e.g. Reach in Alpha). Lawless (Gamma) adds **no** heat.
-- **Customs flee** raises heat; **[1]/[2]** answer free-flight incident prompts.
-- **Pressure / hunt** in patrolled systems only — more intercepts; high heat can
-  force a patrol-response intercept ("you are wanted here").
-- **Four recovery chains** — Mendi/Reach, Jax/Drift, Wren/Haulers, Kade/Fringe.
-- **Network betrayal lite** — betraying a contact nicks their network personally
-  (small hit; does not close them).
-- Standing still only via StandingService. Status moment unchanged.
+- Everything from S4 (heat, customs, recovery, living boards, economy), **plus:**
+- **Outfitting at stations** — 12 weapons, 10 equipment modules. Install/remove
+  while docked; role gates (hauler vs fighter); sell-back at 50%.
+- **Per-hull loadouts** saved under `ship.loadouts`. Empty hardpoint = hull
+  baseline guns. Cargo racks raise hold; armor cuts incoming damage; fuel /
+  thruster / afterburner modules stack as designed.
+- **Money sinks** — outfit buy/sell tagged `outfit_buy` / `outfit_sell` on the
+  money log. Fighter purchase + endgame guns are multi-start-wallet spends.
+- **PerfProbe** — densest-scene FPS instrument (budget still 20 ships).
 
-- **Not yet:** Ops, Holding, campaign spine, economy redesign, inventing standing
-  law, S4 feel gate signed.
+- **Not yet:** Ops, Holding, campaign spine, **WalletService split** (Session B),
+  S5 feel gate signed, Steam-page art floor.
 
 ## Next session starts here
 
-1. **Blocked on Elliot:** S4 feel gate — playtest brief in `docs/gates.md` (S4
-   section). New Game; try crime in Alpha vs Gamma; customs [1]/[2]; recovery.
-2. If **pass**: mark gate in `docs/gates.md`, set S4 done, then open next phase
-   per `docs/STEAM_PHASE_PLAN.md` §22.
-3. If **fail**: fix only what he named; re-run lint + tests; hand gate back.
-4. Out of scope until authorized: Ops, campaign, standing law invention.
+1. **Blocked on Elliot:** S5 feel gate — playtest brief in `docs/gates.md` (S5
+   section). New Game; Outfitting; hauler racks vs fighter guns; save/load gear.
+2. **Before S6:** **WalletService split** (Session B — money/debt vs fuel vs
+   hull-condition). Do not start Ops on the god-wallet.
+3. If **S5 pass**: mark gate, then Session B wallet split, then S6 per §22.
+4. If **fail**: fix only what he named; re-run lint + tests; hand gate back.
+5. Out of scope until authorized: Ops, campaign, standing law invention, raising
+   the 20-ship budget.
 
 ### Locked decisions
 
@@ -66,19 +69,22 @@ Maturity = **tech demo**. Elliot = playtest + ideas only; LLMs program everythin
   offered incidents expire on load; customs same-trip skip after cooperate.
 - S4: heat per-Entity; pressure/hunt only in patrolled; no standing writes from
   EnforcementService; recovery budget 4.
+- S5: slots by role (BalanceOutfit), not hull fields; hull weapon fields = baseline
+  when no weapon installed; 20-ship budget unchanged without evidence.
 
 ## Standing decisions
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2–S3 signed; S4 gate open.
+- E6.6 signed; S2–S4 signed; S5 gate open.
 
 ## Session history
 
-- **2026-08-03 (S4)** — EnforcementService + BalanceEnforcement; heat from kill /
-  customs flee / contraband; pressure/hunt in IncidentService; customs [1]/[2]
-  on FlightHUD; Wren + Kade recovery chains; network betrayal lite; save section
-  `enforcement`. S4 feel gate open, not signed.
+- **2026-08-03 (S5A)** — Weapon/Equipment shapes; 12+10 content; ShipService
+  loadouts + ShipOutfit; station Outfitting UI; damage/fuel mult wire; PerfProbe;
+  screenshot floor doc; S5 feel gate open. Wallet split still required before S6.
+- **2026-08-03 (S4)** — EnforcementService + heat / pressure / recovery lift.
+  Feel gate signed same day.
 - **2026-08-03 (wrap)** — S2 signed + full S3 code (a+b) pushed; S3 feel gate
   later signed same day.
 - **2026-08-03 (S3b)** — Space life + news. IncidentService, MarketNews, traffic.
