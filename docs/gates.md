@@ -4,6 +4,65 @@ Elliot’s words only. Agents never sign these.
 
 ---
 
+## S2 — Economy: can I plan a trade route, and does the market fight back?
+
+**Criteria (plan §5.6):** "I can plan a trade route and feel the market fight back."
+Judged with the quantity control and a visible reason on screen — **not** one-unit-per-click theatre.
+
+**Build:** commit `3963d84` on `main` (docs follow-up `30f49d9`). Start a **New Game** —
+the market only makes sense from a fresh career, and an old save has no market section.
+
+### The route (one gate out, one gate back)
+
+Every number below is what a fresh career should show before anything ticks.
+You start docked at **Alpha Port** with 500 credits and a 20-crate hold.
+
+1. **Alpha Port — buy Medical.** It costs **42**. The dock makes medical: 200 on the
+   shelf against the 100 it wants, and the row says so. Credits are the limit here,
+   not the hold — **Max buy** should offer about 11.
+2. **Undock, fly to the gate, jump to Beta Drift.** Eight hours of game time pass
+   while you travel.
+3. **Beta Hub — sell the Medical.** It pays **59**. That is **+17 a crate**, roughly
+   190 credits on the run.
+4. **Same dock, buy Fuel Cells at 17.** Beta Hub makes them.
+5. **Jump back to Alpha, but dock at Alpha Yard this time** — the *other* dock in the
+   system. Fuel Cells sell at **25** there. **+8 a crate.**
+6. **While at Alpha Yard, look at Alloy: it buys at 28.** At Alpha Port, one short
+   flight away in the same system, Alloy buys at **56**. Same good, same system,
+   double the price — because one dock makes it and the other needs it.
+
+### What "the market fights back" should feel like
+
+- **The price moves while you trade.** Drag the quantity up and the total on the
+  button climbs *faster* than the unit price times the amount. Twenty crates cost
+  more than twenty times the first crate, because you are eating through the shelf.
+- **You cannot clear a dock out.** Push the amount past what is sensible and the row
+  tells you which wall you hit — the shelf, your hold, or your wallet.
+- **Flipping in place always loses.** Buy and immediately sell back at the same dock,
+  in either order, and you are down. There is no free money anywhere.
+- **Leaving and coming back matters.** Strip a shelf, jump away, come back: it has
+  partly refilled — but slowly, and never all the way. The far, thin docks stay
+  short, which is why they pay best.
+- **The ticker moves.** One line at the top of the station screen naming what the
+  sector is short of.
+
+### What to report back
+
+- **Pass or fail**, in your own words.
+- Did you ever have to guess *why* a price was what it was, or did the row tell you?
+- Was the quantity control comfortable, or fiddly?
+- Did anything feel like a cheat, a dead end, or a number that made no sense?
+- Ideas are welcome and go on the pile — they do not block the gate.
+
+### Attempt log
+
+- **2026-08-03** — S2 code complete. Lint green, 72 scripts / 677 tests green. Every
+  headless criterion in §5.6 passes, including the 10,000-tick stability run, away-time
+  equivalence, byte-deterministic market save, both money-pump directions, no dead
+  commodities, and the tick budget (0.44 ms against 2.0 ms). **Gate open, not signed.**
+
+---
+
 ## A1 — Flight feel
 
 **Criteria:** basic flight is not nauseating and is controllable.
