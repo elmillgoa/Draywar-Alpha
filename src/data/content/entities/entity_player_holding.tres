@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Entity" load_steps=3 format=3]
+
+; Player Holding — S8. Reach empty; station control is a StandingService override.
+[ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"entity_player_holding"
+display_name = "Captain's Holding"
+relationship_links = Array[ExtResource("2")]([])
+reach_system_ids = Array[StringName]([])
+reach_station_ids = Array[StringName]([])
+default_player_standing = 40.0
+dock_refusal_threshold = -100.0

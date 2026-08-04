@@ -387,3 +387,12 @@ signal on_campaign_journal_open_requested
 
 ## UI: close campaign journal panel.
 signal on_campaign_journal_close_requested
+
+## UI: request Holding purchase at this candidate station (S8).
+signal on_holding_purchase_requested(station_id: StringName)
+
+## CampaignService: player purchased a Holding (debt clear + milestones + pay).
+signal on_holding_claimed(station_id: StringName, price_paid: int)
+
+## CampaignService: ignition crisis complete; campaign complete / sandbox open.
+signal on_holding_ignited(station_id: StringName)

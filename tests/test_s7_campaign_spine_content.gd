@@ -34,7 +34,7 @@ func test_spine_count_and_budget() -> void:
 			if ct.is_spine:
 				spine_count += 1
 	assert_gte(spine_count, 8, "S7 ships at least 8 spine beats")
-	assert_eq(Balance.CONTENT_BUDGET[&"contract_types"], 24)
+	assert_eq(Balance.CONTENT_BUDGET[&"contract_types"], 32)
 
 
 func test_all_spine_rows_valid_and_present() -> void:
@@ -49,7 +49,9 @@ func test_all_spine_rows_valid_and_present() -> void:
 		assert_eq(ct.validation_errors().size(), 0, "spine %s invalid" % String(id))
 		assert_false(ct.journal_blurb.strip_edges().is_empty())
 		assert_false(String(ct.offer_station_id).is_empty())
-		assert_true(ct.spine_act == 1 or ct.spine_act == 2)
+		assert_true(
+			ct.spine_act >= BalanceCampaign.ACT_I and ct.spine_act <= BalanceCampaign.ACT_MAX
+		)
 
 
 func test_requires_chain_completable_in_order() -> void:

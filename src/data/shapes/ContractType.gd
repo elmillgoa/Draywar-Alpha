@@ -56,6 +56,9 @@ extends ContentItem
 ## When true, only available while WalletService debt owed > 0.
 @export var requires_debt: bool = false
 
+## When true, only available while WalletService debt owed == 0 (S8 ignition).
+@export var requires_debt_clear: bool = false
+
 ## Station where the Story offer appears. Required when is_spine.
 @export var offer_station_id: StringName = &""
 
@@ -143,11 +146,11 @@ func validation_errors() -> PackedStringArray:
 
 func _spine_validation_errors() -> PackedStringArray:
 	var problems: PackedStringArray = []
-	if spine_act < BalanceCampaign.ACT_MIN or spine_act > BalanceCampaign.ACT_MAX_S7:
+	if spine_act < BalanceCampaign.ACT_MIN or spine_act > BalanceCampaign.ACT_MAX:
 		problems.append(
 			(
-				"`spine_act` is %s; S7 spine beats use act %s or %s."
-				% [spine_act, BalanceCampaign.ACT_I, BalanceCampaign.ACT_II]
+				"`spine_act` is %s; spine beats use acts %s–%s."
+				% [spine_act, BalanceCampaign.ACT_MIN, BalanceCampaign.ACT_MAX]
 			)
 		)
 	if String(offer_station_id).strip_edges().is_empty():
@@ -159,6 +162,13 @@ func _spine_validation_errors() -> PackedStringArray:
 		)
 	if journal_blurb.strip_edges().is_empty():
 		problems.append("`journal_blurb` is empty. Spine contracts need a short journal line.")
+	if requires_debt and requires_debt_clear:
+		problems.append(
+			(
+				"`requires_debt` and `requires_debt_clear` cannot both be true. "
+				+ "A beat cannot require open debt and cleared debt at once."
+			)
+		)
 	return problems
 
 

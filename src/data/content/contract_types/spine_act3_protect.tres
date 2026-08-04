@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act III — Protect: clear hostiles in Epsilon approaches.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act3_protect"
+display_name = "Protect the approaches — Epsilon bounty"
+offering_entity_id = &"entity_beta_syndicate"
+kind = &"bounty"
+standing_complete = 10.0
+standing_fail = -4.0
+standing_abandon = -10.0
+pay_credits = 240
+destination_station_id = &"station_beta_spit"
+target_system_id = &"system_epsilon"
+is_spine = true
+spine_act = 3
+requires_flags = PackedStringArray("flag_holding_supply")
+sets_flags = PackedStringArray("flag_holding_protect")
+min_entity_standing = -100.0
+requires_debt = false
+requires_debt_clear = false
+offer_station_id = &"station_beta_spit"
+journal_blurb = "Syndicate wants hostiles off the Epsilon approaches before anyone papers a private dock. Kill confirmed in-system, turn in at Spit. Guns, heat, and a cleaner lane for claim filings. You are not a navy — you are a captain who can finish a contract. Milestone four."
+sort_index = 40

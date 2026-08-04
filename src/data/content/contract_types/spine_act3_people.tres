@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act III — People: personal work that makes a Holding livable.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act3_people"
+display_name = "People — sealed kit to Gamma"
+offering_entity_id = &"entity_gamma_collective"
+kind = &"delivery"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 200
+destination_station_id = &"station_zeta_spur"
+is_spine = true
+spine_act = 3
+requires_flags = PackedStringArray("flag_holding_protect")
+sets_flags = PackedStringArray("flag_holding_people")
+min_entity_standing = -100.0
+requires_debt = false
+requires_debt_clear = false
+offer_station_id = &"station_gamma_outpost"
+journal_blurb = "A Holding is people who will dock with you, not just a title. Fringe Collective needs a sealed kit run from Gamma Outpost to Zeta Spur — medical and tools, quiet paperwork. Last milestone. When it lands, the purchase price at the candidate docks finally bottoms out. Then debt, then claim, then the fight that makes it real."
+sort_index = 50

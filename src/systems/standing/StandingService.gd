@@ -31,6 +31,8 @@ var _person_standing: Dictionary[StringName, float] = {}
 var _person_success_count: Dictionary[StringName, int] = {}
 ## Person id → close reason (non-empty means recovery route closed).
 var _person_closed: Dictionary[StringName, StringName] = {}
+## Station id string → controlling Entity id override (S8 Holding claim).
+var _station_controller_overrides: Dictionary = {}
 var _console_commands: RefCounted = null
 
 
@@ -48,6 +50,41 @@ func reset_to_defaults() -> void:
 	_person_standing.clear()
 	_person_success_count.clear()
 	_person_closed.clear()
+	clear_all_station_controller_overrides()
+
+
+## S8: runtime controller for a station after Holding purchase (or clear).
+func set_station_controller_override(station_id: StringName, entity_id: StringName) -> void:
+	var key: String = String(station_id)
+	if key.is_empty():
+		return
+	_station_controller_overrides[key] = entity_id
+
+
+## Remove one station controller override (content controller resumes).
+func clear_station_controller_override(station_id: StringName) -> void:
+	var key: String = String(station_id)
+	if key.is_empty():
+		return
+	_station_controller_overrides.erase(key)
+
+
+## Remove every station controller override.
+func clear_all_station_controller_overrides() -> void:
+	_station_controller_overrides.clear()
+
+
+## Controller Entity for status/dock: override if set, else content.
+func station_controller_id(station_id: StringName) -> StringName:
+	var key: String = String(station_id)
+	if not key.is_empty() and _station_controller_overrides.has(key):
+		return _as_name(_station_controller_overrides[key])
+	if ContentLibrary.has_item(station_id):
+		var item: ContentItem = ContentLibrary.item(station_id)
+		if item is Station:
+			var station: Station = item as Station
+			return station.controller_entity_id
+	return Station.CONTROLLER_NOBODY
 
 
 ## Player standing with this Entity (content default if unset).
@@ -267,12 +304,7 @@ func status_for_system(system_id: StringName) -> Dictionary:
 
 ## Status moment payload for the Entity that controls this station.
 func status_for_station(station_id: StringName) -> Dictionary:
-	var controller: StringName = Station.CONTROLLER_NOBODY
-	if ContentLibrary.has_item(station_id):
-		var item: ContentItem = ContentLibrary.item(station_id)
-		if item is Station:
-			var station: Station = item as Station
-			controller = station.controller_entity_id
+	var controller: StringName = station_controller_id(station_id)
 	return _status_for_controller(controller)
 
 
@@ -289,8 +321,7 @@ func can_dock_at_station(station_id: StringName) -> bool:
 	var item: ContentItem = ContentLibrary.item(station_id)
 	if not (item is Station):
 		return true
-	var station: Station = item as Station
-	var controller_id: StringName = station.controller_entity_id
+	var controller_id: StringName = station_controller_id(station_id)
 	if controller_id == Station.CONTROLLER_NOBODY or String(controller_id).is_empty():
 		return true
 	var threshold: float = BalanceStanding.DEFAULT_DOCK_REFUSAL_THRESHOLD
@@ -578,3 +609,13 @@ func _ripple_fraction_for(relation_type: StringName) -> float:
 	if relation_type == EntityLink.RELATION_RIVAL or relation_type == EntityLink.RELATION_ENEMY:
 		return -BalanceStanding.RIPPLE_RIVAL_FRACTION
 	return 0.0
+
+
+func _as_name(value: Variant) -> StringName:
+	if typeof(value) == TYPE_STRING_NAME:
+		var as_name: StringName = value
+		return as_name
+	if typeof(value) == TYPE_STRING:
+		var as_text: String = value
+		return StringName(as_text)
+	return StringName(str(value))

@@ -2,8 +2,8 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S7 done 2026-08-04** — Campaign framework + Acts I–II
-(code + feel gate signed). Maturity = **tech demo**.
+**Current position:** **S8 code complete 2026-08-04** — Holding path + Act III
+spines + ignition (feel gate open). Maturity = **tech demo**.
 Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
@@ -13,6 +13,7 @@ Elliot = playtest + ideas only; LLMs program everything.
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
 | `docs/gates.md` | E6.6 signed; S2–**S7** signed |
+| `docs/S8_ENDGAME_PLAYTEST.md` | Holding / climax / sandbox brief (**gate open**) |
 | `docs/S7_COLD_START_PLAYTEST.md` | Story / freeroam + cold-start brief (gate closed) |
 | `docs/S6_OPS_PLAYTEST.md` | Ops feel playtest brief (gate closed) |
 | `docs/S5_SCREENSHOT_FLOOR.md` | Honest gray-box presentation inventory |
@@ -33,29 +34,26 @@ Elliot = playtest + ideas only; LLMs program everything.
 | **S5** Ship layer | **done** 2026-08-03 — Sessions A+B + feel gate signed |
 | **S6** Operations | **done** 2026-08-04 — code + Ops feel signed |
 | **S7** Campaign I–II | **done** 2026-08-04 — code + feel gate signed |
-| S8–S10 | queued |
+| **S8** Holding + Act III | **code complete** 2026-08-04 — **feel gate open** |
+| S9–S10 | queued |
 
 ## What the game can do now
 
-- Everything from S6 (ops fleet, warehouse, economy, boards, enforcement, outfit),
-  **plus:**
-- **Campaign spine** — 9 Story beats (Act I onboarding + Act II lane + ops intro)
-  as `ContractType` with spine flags; excluded from radiant board hand.
-- **CampaignService** — acts, flags, standing/debt/lane gates, accept → MissionService
-  (one mission slot), complete → flags + act advance.
-- **Journal** — pause menu; open / done / locked blurbs.
-- **Station Story section** — accept spine at offer station without console.
-- **Save** — optional `campaign` section (act, flags, completed_spine, holding stub).
-- **New-game tip** mentions Story + Journal.
+- Everything from S7 (campaign I–II, journal, Story UI, ops, economy…), **plus:**
+- **Act III spine** — 5 Holding milestones + 2 ignition crises (Epsilon / Zeta).
+- **Holding purchase** — candidates Epsilon Belt / Zeta Spur; debt clear; milestones
+  cut price; station **Holding** UI; player Holding entity + status moment override.
+- **Ignition** — authored contest mission after claim (not buy-as-ending); epitaph.
+- **Sandbox continue** — boards/markets/Ops still live after `flag_campaign_complete`.
+- **Save** — `campaign.holding` keys + controller override reapplied on load.
 
-- **Not yet:** Act III / Holding purchase (S8); Steam-page art floor; content fill (S9).
+- **Not yet:** S8 feel gate; Steam-page art floor; content fill (S9).
 
 ## Next session starts here
 
-1. **S8** Holding + Act III + climax + sandbox continue — only when Elliot says go.
-   Follow `docs/STEAM_PHASE_PLAN.md` Phase S8 + §22 (Session A systems / Session B
-   ignition prose).
-2. Out of scope until authorized: standing law invention, empire sim, ship budget raise.
+1. **S8 feel gate** — Elliot playtests `docs/S8_ENDGAME_PLAYTEST.md` (endgame + rhyme).
+2. After gate: S9 content complete when authorized.
+3. Out of scope: standing law invention, empire sim, ship budget raise.
 
 ### Locked decisions
 
@@ -74,16 +72,24 @@ Elliot = playtest + ideas only; LLMs program everything.
   (`TIER_FRIENDLY_MIN`); haul is market buy/sell legs not MissionService.
 - S7: spine = ContractType flags (not second mission slot); debt beat does **not**
   hard-require open loan (clean life path); lane exclusivity; ops intro needs any
-  lane + Friendly Reach; Act III reserved for S8.
+  lane + Friendly Reach.
+- S8: Holding candidates Epsilon/Zeta; milestones pay via price cut; debt clear for
+  purchase + ignition; purchase requires docked at candidate; ignition is dual-path
+  crisis (papers if prior Neutral+, force bounty if contested + Friendly Haulers/Reach
+  backing) not buy button; controller override via StandingService only; owner
+  dock_refusal -100.
 
 ## Standing decisions
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2–**S7** signed. Next gate after S8 code: endgame feel.
+- E6.6 signed; S2–**S7** signed. **S8 feel gate open** (endgame + structural rhyme).
 
 ## Session history
 
+- **2026-08-04 (S8 code)** — BalanceHolding, CampaignService purchase/ignition,
+  station controller overrides, Act III spines + player Holding entity, Station
+  Holding UI, tests, S8_ENDGAME_PLAYTEST. **S8 feel gate open.**
 - **2026-08-04 (S7 gate)** — Elliot signed S7 cold start / story-freeroam (“Pass”).
   S7 phase closed. S8 queued until authorized.
 - **2026-08-04 (S7 code)** — CampaignService + spine ContractType fields; 9 Act

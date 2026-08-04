@@ -131,3 +131,14 @@ static func offered_recovery_person(station_id: StringName, service: Node) -> St
 			found = person_id
 			break
 	return found
+
+
+## Person on the active recovery chain (empty when none).
+static func active_recovery_person(service: Node) -> StringName:
+	if service == null or not service.has_method(&"active_chain_id"):
+		return &""
+	var chain_id: StringName = as_name(service.call(&"active_chain_id"))
+	if String(chain_id).is_empty() or not ContentLibrary.has_item(chain_id):
+		return &""
+	var item: ContentItem = ContentLibrary.item(chain_id)
+	return as_name(item.get("person_id"))

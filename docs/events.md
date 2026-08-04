@@ -1350,3 +1350,37 @@ No parameters.
 
 **Emitted by** `CampaignJournal` close button / Esc path via Main.
 **Listened to by** `CampaignJournal`.
+
+### `on_holding_purchase_requested(station_id: StringName)`
+
+UI asked to purchase a Holding at this candidate station (S8).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Candidate station to claim. |
+
+**Emitted by** `StationHoldingUi` (Purchase button).
+**Listened to by** `CampaignService` → `try_purchase_holding`.
+
+### `on_holding_claimed(station_id: StringName, price_paid: int)`
+
+Player purchased a Holding (debt clear, milestones, credits spent).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Station claimed as Holding. |
+| `price_paid` | `int` | Credits spent (effective price after milestones). |
+
+**Emitted by** `CampaignService`.
+**Listened to by** `StationHoldingUi` (via StationMenu refresh).
+
+### `on_holding_ignited(station_id: StringName)`
+
+Ignition crisis spine complete; campaign complete; sandbox continues.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `station_id` | `StringName` | Claimed Holding station. |
+
+**Emitted by** `CampaignService` after `flag_campaign_complete`.
+**Listened to by** `StationHoldingUi` (via StationMenu refresh).

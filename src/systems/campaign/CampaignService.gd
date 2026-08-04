@@ -1,19 +1,20 @@
 class_name CampaignService
 extends Node
 
-## Campaign acts, flags, and spine offers — Steam S7.
+## Campaign acts, flags, spine offers, and Holding path — Steam S7–S8.
 ##
-## Implements: docs/STEAM_PHASE_PLAN.md Phase S7
+## Implements: docs/STEAM_PHASE_PLAN.md Phase S7–S8
 ##
 ## Child of Main (not an autoload). Spine beats are ContractType rows with
-## is_spine; they use MissionService (one active mission). Never writes standing.
+## is_spine; they use MissionService (one active mission). Standing writes only
+## via StandingService (Holding claim override + owner standing).
 
 var _act: int = BalanceCampaign.ACT_I
 ## flag name string → true
 var _flags: Dictionary = {}
 ## completed spine template id string → true
 var _completed: Dictionary = {}
-## Holding stub for S8 (opaque dict).
+## Holding progress (S8): station_id, claimed, ignited, price_paid, prior_controller.
 var _holding: Dictionary = {}
 
 
@@ -22,12 +23,14 @@ func _ready() -> void:
 	ServiceRegistry.register_resettable(reset)
 	EventBus.on_mission_completed.connect(_on_mission_completed)
 	EventBus.on_spine_accept_requested.connect(_on_spine_accept_requested)
+	EventBus.on_holding_purchase_requested.connect(_on_holding_purchase_requested)
 
 
 func _exit_tree() -> void:
 	ServiceRegistry.unregister_resettable(reset)
 	_disconnect(EventBus.on_mission_completed, _on_mission_completed)
 	_disconnect(EventBus.on_spine_accept_requested, _on_spine_accept_requested)
+	_disconnect(EventBus.on_holding_purchase_requested, _on_holding_purchase_requested)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -39,6 +42,10 @@ func _on_spine_accept_requested(template_id: StringName) -> void:
 	try_accept_spine(template_id)
 
 
+func _on_holding_purchase_requested(station_id: StringName) -> void:
+	try_purchase_holding(station_id)
+
+
 func _on_mission_completed(template_id: StringName, _entity_id: StringName, _delta: float) -> void:
 	_handle_spine_complete(template_id)
 
@@ -48,6 +55,7 @@ func _on_mission_completed(template_id: StringName, _entity_id: StringName, _del
 
 ## New career / missing save: Act I, clear flags/completed, empty holding.
 func reset() -> void:
+	_clear_holding_controller_override()
 	_act = BalanceCampaign.ACT_I
 	_flags.clear()
 	_completed.clear()
@@ -96,6 +104,13 @@ func apply_section(raw: Variant) -> void:
 	# Guarantee Act I started flag when act is at least I.
 	if _act >= BalanceCampaign.ACT_I and not has_flag(BalanceCampaign.FLAG_ACT1_STARTED):
 		_flags[String(BalanceCampaign.FLAG_ACT1_STARTED)] = true
+	# Re-apply Holding controller override after load.
+	if is_holding_claimed():
+		var station_id: StringName = claimed_station_id()
+		if not String(station_id).is_empty():
+			StandingService.set_station_controller_override(
+				station_id, BalanceHolding.ENTITY_PLAYER_HOLDING
+			)
 
 
 func current_act() -> int:
@@ -124,6 +139,126 @@ func is_spine_completed(template_id: StringName) -> bool:
 
 func get_flag_map() -> Dictionary:
 	return _flags.duplicate(true)
+
+
+# --- Holding (S8) -----------------------------------------------------------
+
+
+## Copy of Holding progress dict (may be empty).
+func holding_state() -> Dictionary:
+	return _holding.duplicate(true)
+
+
+func is_candidate_station(station_id: StringName) -> bool:
+	return BalanceHolding.is_candidate_station(station_id)
+
+
+## How many Holding milestone flags are set (0–5).
+func milestone_count() -> int:
+	var count: int = 0
+	for flag: StringName in BalanceHolding.MILESTONE_FLAGS:
+		if has_flag(flag):
+			count += 1
+	return count
+
+
+func effective_holding_price() -> int:
+	return BalanceHolding.price_for_milestone_count(milestone_count())
+
+
+## Debt clear + all milestones + candidate + not claimed + can afford + docked there.
+func can_purchase_holding(station_id: StringName) -> bool:
+	var gates_ok: bool = (
+		is_candidate_station(station_id)
+		and not is_holding_claimed()
+		and _debt_is_clear()
+		and milestone_count() >= BalanceHolding.MILESTONE_COUNT
+		and _docked_station_id() == station_id
+	)
+	if not gates_ok:
+		return false
+	var wallet: Node = _wallet_service()
+	if wallet == null or not wallet.has_method(&"can_afford"):
+		return false
+	return wallet.call(&"can_afford", effective_holding_price()) == true
+
+
+## Spend, claim Holding, set flag, controller override, owner standing, bus.
+func try_purchase_holding(station_id: StringName) -> bool:
+	if not can_purchase_holding(station_id):
+		return false
+	var price: int = effective_holding_price()
+	var wallet: Node = _wallet_service()
+	if wallet == null or not wallet.has_method(&"try_spend"):
+		return false
+	if wallet.call(&"try_spend", price) != true:
+		return false
+	_emit_money(BalanceHolding.REASON_HOLDING_PURCHASE, -price, station_id)
+	var prior: StringName = prior_controller_for(station_id)
+	_holding = {
+		BalanceHolding.KEY_STATION_ID: station_id,
+		BalanceHolding.KEY_CLAIMED: true,
+		BalanceHolding.KEY_IGNITED: false,
+		BalanceHolding.KEY_PRICE_PAID: price,
+		BalanceHolding.KEY_PRIOR_CONTROLLER: prior,
+	}
+	_set_flag_internal(BalanceCampaign.FLAG_HOLDING_CLAIMED, true)
+	StandingService.set_station_controller_override(
+		station_id, BalanceHolding.ENTITY_PLAYER_HOLDING
+	)
+	StandingService.set_entity_standing(
+		BalanceHolding.ENTITY_PLAYER_HOLDING, BalanceHolding.OWNER_STANDING
+	)
+	EventBus.on_holding_claimed.emit(station_id, price)
+	return true
+
+
+func is_holding_claimed() -> bool:
+	if _holding.get(BalanceHolding.KEY_CLAIMED, false) == true:
+		return true
+	return has_flag(BalanceCampaign.FLAG_HOLDING_CLAIMED)
+
+
+func is_holding_ignited() -> bool:
+	return _holding.get(BalanceHolding.KEY_IGNITED, false) == true
+
+
+func is_campaign_complete() -> bool:
+	return has_flag(BalanceCampaign.FLAG_CAMPAIGN_COMPLETE) or is_holding_ignited()
+
+
+func claimed_station_id() -> StringName:
+	return _as_name(_holding.get(BalanceHolding.KEY_STATION_ID, &""))
+
+
+## Empty until ignited; then peaceful/contested epitaph from standing vs prior.
+func celebration_line() -> String:
+	if not is_holding_ignited():
+		return ""
+	var station_id: StringName = claimed_station_id()
+	var station_name: String = _content_display_name(station_id)
+	var prior_id: StringName = _as_name(_holding.get(BalanceHolding.KEY_PRIOR_CONTROLLER, &""))
+	var prior_name: String = _content_display_name(prior_id)
+	if prior_name.is_empty():
+		prior_name = "The prior holder"
+	var prior_standing: float = StandingService.get_entity_standing(prior_id)
+	if prior_standing >= BalanceHolding.EPITAPH_PEACEFUL_STANDING_MIN:
+		return BalanceHolding.EPITAPH_PEACEFUL_FORMAT % [station_name, prior_name]
+	return BalanceHolding.EPITAPH_CONTESTED_FORMAT % [station_name, prior_name]
+
+
+## Content controller at claim time (Station.controller_entity_id).
+func prior_controller_for(station_id: StringName) -> StringName:
+	if not ContentLibrary.has_item(station_id):
+		return Station.CONTROLLER_NOBODY
+	var item: ContentItem = ContentLibrary.item(station_id)
+	if item is Station:
+		var station: Station = item as Station
+		return station.controller_entity_id
+	return Station.CONTROLLER_NOBODY
+
+
+# --- Spine offers -----------------------------------------------------------
 
 
 ## Spine template ids offered at this station that pass all gates.
@@ -228,6 +363,19 @@ func _handle_spine_complete(template_id: StringName) -> void:
 		_set_flag_internal(flag_name, true)
 	EventBus.on_spine_completed.emit(template_id)
 	_maybe_advance_act()
+	_maybe_ignite_holding()
+
+
+func _maybe_ignite_holding() -> void:
+	if not has_flag(BalanceCampaign.FLAG_CAMPAIGN_COMPLETE):
+		return
+	if is_holding_ignited():
+		return
+	if not is_holding_claimed():
+		return
+	_holding[BalanceHolding.KEY_IGNITED] = true
+	var station_id: StringName = claimed_station_id()
+	EventBus.on_holding_ignited.emit(station_id)
 
 
 func _maybe_advance_act() -> void:
@@ -271,6 +419,8 @@ func _gates_pass(template: ContractType) -> bool:
 		and _lane_prerequisite_ok(template)
 		and _standing_ok(template)
 		and _debt_ok(template)
+		and _holding_station_ok(template)
+		and _ignition_standoff_ok(template)
 		and not _lane_blocked(template)
 	)
 
@@ -298,17 +448,25 @@ func _first_locked_candidate(station_id: StringName) -> ContractType:
 
 
 func _locked_reason_for(best: ContractType) -> String:
+	var reason: String = BalanceCampaign.STATION_STORY_LOCKED_FORMAT % best.display_name
 	if not _flags_ok(best):
-		return BalanceCampaign.STATION_STORY_NEED_FLAGS
-	if not _lane_prerequisite_ok(best):
-		return BalanceCampaign.STATION_STORY_NEED_LANE
-	if not _standing_ok(best):
-		return BalanceCampaign.STATION_STORY_NEED_STANDING
-	if not _debt_ok(best):
-		return BalanceCampaign.STATION_STORY_NEED_DEBT
-	if _mission_busy():
-		return BalanceCampaign.STATION_STORY_BUSY
-	return BalanceCampaign.STATION_STORY_LOCKED_FORMAT % best.display_name
+		reason = BalanceCampaign.STATION_STORY_NEED_FLAGS
+	elif not _lane_prerequisite_ok(best):
+		reason = BalanceCampaign.STATION_STORY_NEED_LANE
+	elif not _standing_ok(best):
+		reason = BalanceCampaign.STATION_STORY_NEED_STANDING
+	elif not _debt_ok(best):
+		if best.requires_debt_clear:
+			reason = BalanceCampaign.STATION_STORY_NEED_DEBT_CLEAR
+		else:
+			reason = BalanceCampaign.STATION_STORY_NEED_DEBT
+	elif not _holding_station_ok(best):
+		reason = BalanceCampaign.STATION_STORY_NEED_HOLDING_MATCH
+	elif not _ignition_standoff_ok(best):
+		reason = BalanceCampaign.STATION_STORY_NEED_STANDOFF
+	elif _mission_busy():
+		reason = BalanceCampaign.STATION_STORY_BUSY
+	return reason
 
 
 func _is_available_anywhere(template_id: StringName) -> bool:
@@ -359,18 +517,75 @@ func _standing_ok(template: ContractType) -> bool:
 	return standing >= template.min_entity_standing
 
 
+## requires_debt: need owed > 0. requires_debt_clear: need owed == 0.
 func _debt_ok(template: ContractType) -> bool:
+	if template.requires_debt_clear:
+		return _debt_is_clear()
 	if not template.requires_debt:
 		return true
+	var owed: int = _debt_owed()
+	return owed > 0
+
+
+## Ignition (and any debt-clear beat at a candidate): claimed station must match offer.
+func _holding_station_ok(template: ContractType) -> bool:
+	if not template.requires_debt_clear:
+		return true
+	if not is_holding_claimed():
+		return false
+	return claimed_station_id() == template.offer_station_id
+
+
+## Standings resolve the standoff: papers if prior Neutral+, force if contested + backing.
+func _ignition_standoff_ok(template: ContractType) -> bool:
+	var template_id: StringName = template.id
+	if not BalanceHolding.is_ignition_spine(template_id):
+		return true
+	if not is_holding_claimed():
+		return false
+	var prior_id: StringName = _as_name(_holding.get(BalanceHolding.KEY_PRIOR_CONTROLLER, &""))
+	var prior_standing: float = StandingService.get_entity_standing(prior_id)
+	var papers_ok: bool = prior_standing >= BalanceHolding.STANDOFF_PAPERS_STANDING_MIN
+	if BalanceHolding.is_papers_ignition(template_id):
+		return papers_ok
+	if BalanceHolding.is_force_ignition(template_id):
+		if papers_ok:
+			return false
+		return _has_standoff_backing()
+	return true
+
+
+func _has_standoff_backing() -> bool:
+	for entity_id: StringName in BalanceHolding.STANDOFF_BACKING_ENTITY_IDS:
+		var standing: float = StandingService.get_entity_standing(entity_id)
+		if standing >= BalanceHolding.STANDOFF_BACKING_STANDING_MIN:
+			return true
+	return false
+
+
+func _debt_is_clear() -> bool:
+	return _debt_owed() == 0
+
+
+func _debt_owed() -> int:
 	var wallet: Node = _wallet_service()
 	if wallet == null or not wallet.has_method(&"debt_state"):
-		return false
+		return 0
 	var state_raw: Variant = wallet.call(&"debt_state")
 	if typeof(state_raw) != TYPE_DICTIONARY:
-		return false
+		return 0
 	var state: Dictionary = state_raw
-	var owed: int = _as_int(state.get(&"owed", 0))
-	return owed > 0
+	return _as_int(state.get(&"owed", 0))
+
+
+func _docked_station_id() -> StringName:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return &""
+	var docking: Node = tree.get_first_node_in_group(&"docking_service")
+	if docking == null or not docking.has_method(&"docked_station_id"):
+		return &""
+	return _as_name(docking.call(&"docked_station_id"))
 
 
 func _lane_blocked(template: ContractType) -> bool:
@@ -458,6 +673,39 @@ func _apply_completed(raw: Variant) -> void:
 		var id_text: String = str(entry).strip_edges()
 		if not id_text.is_empty():
 			_completed[id_text] = true
+
+
+func _clear_holding_controller_override() -> void:
+	if is_holding_claimed():
+		var station_id: StringName = claimed_station_id()
+		if not String(station_id).is_empty():
+			StandingService.clear_station_controller_override(station_id)
+	else:
+		# Defensive: clear all Holding-related overrides if state is messy.
+		StandingService.clear_all_station_controller_overrides()
+
+
+func _emit_money(reason: StringName, delta: int, station_id: StringName) -> void:
+	if delta == 0:
+		return
+	var credits_after: int = 0
+	var wallet: Node = _wallet_service()
+	if wallet != null and wallet.has_method(&"credits"):
+		credits_after = _as_int(wallet.call(&"credits"))
+	var detail: Dictionary = {
+		BalanceTelemetry.DETAIL_KEY_STATION_ID: station_id,
+	}
+	EventBus.on_money_event.emit(reason, delta, credits_after, detail)
+
+
+func _content_display_name(id: StringName) -> String:
+	if String(id).is_empty():
+		return ""
+	if ContentLibrary.has_item(id):
+		var item: ContentItem = ContentLibrary.item(id)
+		if item != null and not item.display_name.is_empty():
+			return item.display_name
+	return String(id)
 
 
 func _mission_service() -> Node:

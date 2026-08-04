@@ -22,7 +22,9 @@ const ACT_II: int = 2
 const ACT_III: int = 3
 
 const ACT_MIN: int = ACT_I
+## S7 ceiling kept as alias; live validation uses ACT_MAX (includes Act III / S8).
 const ACT_MAX_S7: int = ACT_II
+const ACT_MAX: int = ACT_III
 
 # --- Standing gate ----------------------------------------------------------
 
@@ -63,6 +65,17 @@ const FLAG_LANE_GUN: StringName = &"flag_lane_gun"
 const FLAG_LANE_SHADOW: StringName = &"flag_lane_shadow"
 const FLAG_OPS_INTRO: StringName = &"flag_ops_intro"
 const FLAG_ACT2_DONE: StringName = &"flag_act2_done"
+
+## Act III Holding milestones (S8) — names only; money/UI in BalanceHolding.
+const FLAG_HOLDING_CLAIM: StringName = &"flag_holding_claim"
+const FLAG_HOLDING_POWER: StringName = &"flag_holding_power"
+const FLAG_HOLDING_SUPPLY: StringName = &"flag_holding_supply"
+const FLAG_HOLDING_PROTECT: StringName = &"flag_holding_protect"
+const FLAG_HOLDING_PEOPLE: StringName = &"flag_holding_people"
+## Set on Holding purchase (not on milestone work).
+const FLAG_HOLDING_CLAIMED: StringName = &"flag_holding_claimed"
+## Set when ignition spine completes (campaign complete).
+const FLAG_CAMPAIGN_COMPLETE: StringName = &"flag_campaign_complete"
 
 ## Lane-choice flags: once any is set, other lane spines hide.
 const LANE_FLAGS: Array[StringName] = [
@@ -108,8 +121,13 @@ const STATION_STORY_ACCEPT_FORMAT: String = "Accept: %s"
 const STATION_STORY_LOCKED_FORMAT: String = "Next locked: %s"
 const STATION_STORY_NEED_STANDING: String = "Need better standing with the offerer"
 const STATION_STORY_NEED_DEBT: String = "Need an open Free Haulers loan (Services)"
+const STATION_STORY_NEED_DEBT_CLEAR: String = "Clear all debt before this story work"
 const STATION_STORY_NEED_FLAGS: String = "Complete earlier story work first"
 const STATION_STORY_NEED_LANE: String = "Pick a lane first (trade, gun, or shadow)"
+const STATION_STORY_NEED_HOLDING_MATCH: String = "Ignition only at your claimed Holding dock"
+const STATION_STORY_NEED_STANDOFF: String = (
+	"Standoff unresolved: Neutral+ with prior, " + "or Friendly Free Haulers/Reach"
+)
 const STATION_STORY_BUSY: String = "Finish or abandon the active job first"
 const STATION_STORY_NONE: String = "No story work at this dock"
 

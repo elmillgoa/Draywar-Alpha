@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act III — Claim: survey papers for a belt rock. Port → Epsilon Belt.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act3_claim"
+display_name = "Claim survey — rock papers to Epsilon"
+offering_entity_id = &"entity_free_haulers"
+kind = &"delivery"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 180
+destination_station_id = &"station_epsilon_belt"
+is_spine = true
+spine_act = 3
+requires_flags = PackedStringArray("flag_act2_done")
+sets_flags = PackedStringArray("flag_holding_claim")
+min_entity_standing = -100.0
+requires_debt = false
+requires_debt_clear = false
+offer_station_id = &"station_alpha_port"
+journal_blurb = "Free Haulers have claim survey papers for a belt dock that nobody wants on the books. Run them from Alpha Port to Epsilon Belt. You are not buying the rock yet — you are putting your name on the survey so later filings have a trail. Jurisdictional paper, not destiny. The Holding ladder starts here."
+sort_index = 10

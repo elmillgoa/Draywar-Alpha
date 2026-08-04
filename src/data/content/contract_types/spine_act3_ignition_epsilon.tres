@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act III climax — peaceful papers path when prior controller is Neutral+.
+; Must leave the pad: file claim papers at Alpha Port (jurisdictional witness).
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act3_ignition_epsilon"
+display_name = "Ignition — papers for the Belt"
+offering_entity_id = &"entity_free_haulers"
+kind = &"delivery"
+standing_complete = 12.0
+standing_fail = -5.0
+standing_abandon = -12.0
+pay_credits = 280
+destination_station_id = &"station_alpha_port"
+is_spine = true
+spine_act = 3
+requires_flags = PackedStringArray("flag_holding_claimed")
+sets_flags = PackedStringArray("flag_campaign_complete")
+min_entity_standing = -19.0
+requires_debt = false
+requires_debt_clear = true
+offer_station_id = &"station_epsilon_belt"
+journal_blurb = "You bought the dock. Drift still owns the memory of this pad, but your standing with them is good enough that the standoff can end in paper, not fire. Free Haulers will seal a run: leave your bay, file the claim at Alpha Port where Reach can witness the title, and bring the receipt home by finishing the job. Debt must be clear. If the prior power is Hostile, this papers path stays locked — you need Friendly Free Haulers or Reach for a contested fight instead. Complete this and the campaign ends. The sector does not."
+sort_index = 60

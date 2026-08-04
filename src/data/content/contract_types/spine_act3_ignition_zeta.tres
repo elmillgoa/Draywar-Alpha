@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act III climax — peaceful papers path for Zeta when prior is Neutral+.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act3_ignition_zeta"
+display_name = "Ignition — papers for the Spur"
+offering_entity_id = &"entity_free_haulers"
+kind = &"delivery"
+standing_complete = 12.0
+standing_fail = -5.0
+standing_abandon = -12.0
+pay_credits = 280
+destination_station_id = &"station_alpha_port"
+is_spine = true
+spine_act = 3
+requires_flags = PackedStringArray("flag_holding_claimed")
+sets_flags = PackedStringArray("flag_campaign_complete")
+min_entity_standing = -19.0
+requires_debt = false
+requires_debt_clear = true
+offer_station_id = &"station_zeta_spur"
+journal_blurb = "You bought the Spur. Fringe still remembers the chart line, but if they sit Neutral or better with you the standoff can close on paper. Free Haulers seal a run off your pad to Alpha Port — Reach witnesses the title. Debt zero. Hostile prior blocks this path; then you need Friendly Free Haulers or Reach for the force beat instead. Finish it: campaign complete, sandbox continues."
+sort_index = 61

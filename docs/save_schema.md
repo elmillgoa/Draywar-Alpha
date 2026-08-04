@@ -169,16 +169,30 @@ Missing section → empty fleet and empty warehouses.
 ### Optional section: `campaign` (schema v1)
 
 Written by `CampaignService.to_section()` / applied by `apply_section()` when a
-campaign service is present (S7). Always gathered when the service exists
+campaign service is present (S7–S8). Always gathered when the service exists
 (Act I with no progress is valid). Applied **after `operation`** and **before
-`mission`**. No envelope version bump. Holding is a stub dict reserved for S8.
+`mission`**. No envelope version bump.
 
 | Key | Type | Meaning |
 |---|---|---|
-| `act` | `int` | Current campaign act (`1` Act I, `2` Act II, `3` reserved Act III). |
-| `flags` | `Dictionary` | flag name string → `true` for set campaign flags. |
+| `act` | `int` | Current campaign act (`1` Act I, `2` Act II, `3` Act III). |
+| `flags` | `Dictionary` | flag name string → `true` for set campaign flags (includes Holding milestones, `flag_holding_claimed`, `flag_campaign_complete`). |
 | `completed_spine` | `Array` of `String` | Spine contract template ids completed. |
-| `holding` | `Dictionary` | Holding stub for S8 (empty in S7). |
+| `holding` | `Dictionary` | Holding progress (S8). Empty when unclaimed. Keys below. |
+
+#### `campaign.holding` keys (S8)
+
+| Key | Type | Meaning |
+|---|---|---|
+| `station_id` | `String` / `StringName` | Claimed candidate station id. |
+| `claimed` | `bool` | True after purchase. |
+| `ignited` | `bool` | True after ignition spine sets `flag_campaign_complete`. |
+| `price_paid` | `int` | Credits spent at purchase (effective milestone price). |
+| `prior_controller` | `String` / `StringName` | Content `Station.controller_entity_id` at claim time (epitaph). |
+
+On load, if `claimed` is true, `CampaignService` re-applies
+`StandingService.set_station_controller_override(station_id, entity_player_holding)`
+so status moment and dock use the player Holding entity.
 
 Missing section → Act I, `flag_act1_started` only, no completed spines, empty holding.
 

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act III — Power: sealed brief through Hub politics.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act3_power"
+display_name = "Power brief — Hub to Spit"
+offering_entity_id = &"entity_reach_authority"
+kind = &"delivery"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 200
+destination_station_id = &"station_beta_spit"
+is_spine = true
+spine_act = 3
+requires_flags = PackedStringArray("flag_holding_claim")
+sets_flags = PackedStringArray("flag_holding_power")
+min_entity_standing = -100.0
+requires_debt = false
+requires_debt_clear = false
+offer_station_id = &"station_beta_hub"
+journal_blurb = "Reach wants a sealed power brief walked through Beta Hub to Spit — who may sign dock titles when the empire is gone. You are courier, not counsel. Deliver it. The politics stay in the envelope; your job is the bay clock and a clean turn-in. Milestone two of five toward a Holding price cut."
+sort_index = 20

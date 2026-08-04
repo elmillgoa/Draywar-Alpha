@@ -1,12 +1,13 @@
 class_name StationMenu
 extends CanvasLayer
 
-## Station menu — jobs, services, outfitting, ops, trade, contacts (EventBus only).
+## Station menu â€” jobs, services, outfitting, ops, trade, contacts (EventBus only).
 
 const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
 const StationOutfitUiScript = preload("res://src/ui/station/StationOutfitUi.gd")
 const StationOpsUiScript = preload("res://src/ui/station/StationOpsUi.gd")
 const StationCampaignUiScript = preload("res://src/ui/station/StationCampaignUi.gd")
+const StationHoldingUiScript = preload("res://src/ui/station/StationHoldingUi.gd")
 const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
 const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
 const StationLoanUiScript = preload("res://src/ui/station/StationLoanUi.gd")
@@ -24,7 +25,7 @@ var _jobs_box: VBoxContainer = null
 var _turn_in_job_btn: Button = null
 var _abandon_job_btn: Button = null
 var _contacts_header: Label = null
-## Named people for the dock controller (Contacts list — E1.2).
+## Named people for the dock controller (Contacts list â€” E1.2).
 var _contacts_list: VBoxContainer = null
 var _recovery_hint: Label = null
 var _recovery_btn: Button = null
@@ -41,6 +42,7 @@ var _switch_hull_btn: Button = null
 var _outfit_box: VBoxContainer = null
 var _ops_box: VBoxContainer = null
 var _story_box: VBoxContainer = null
+var _holding_box: VBoxContainer = null
 var _dock_fee_label: Label = null
 var _undock_btn: Button = null
 var _status_label: Label = null
@@ -83,6 +85,7 @@ func _ready() -> void:
 	EventBus.on_market_changed.connect(_on_market_changed)
 	StationOpsUiScript.connect_refresh(_request_ops_refresh)
 	StationCampaignUiScript.connect_refresh(_request_story_refresh)
+	StationHoldingUiScript.connect_refresh(_request_holding_refresh)
 
 
 func _exit_tree() -> void:
@@ -113,6 +116,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_market_changed, _on_market_changed)
 	StationOpsUiScript.disconnect_refresh(_request_ops_refresh)
 	StationCampaignUiScript.disconnect_refresh(_request_story_refresh)
+	StationHoldingUiScript.disconnect_refresh(_request_holding_refresh)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -251,6 +255,8 @@ func _build_ui() -> void:
 	_outfit_box = StationOutfitUiScript.make_box(layout)
 
 	_ops_box = StationOpsUiScript.make_box(layout)
+
+	_holding_box = StationHoldingUiScript.make_box(layout)
 
 	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
 	_trade_denied_label = Label.new()
@@ -698,6 +704,7 @@ func _refresh_all() -> void:
 	_refresh_recovery_buttons()
 	_refresh_services()
 	_refresh_ops()
+	_refresh_holding()
 	_refresh_news()
 	_refresh_trade()
 
@@ -868,6 +875,18 @@ func _request_story_refresh() -> void:
 		call_deferred(&"_refresh_story")
 
 
+func _refresh_holding() -> void:
+	if _holding_box != null:
+		StationHoldingUiScript.refresh_for_tree(
+			_holding_box, get_tree(), _docked_station_id, visible
+		)
+
+
+func _request_holding_refresh() -> void:
+	if visible:
+		call_deferred(&"_refresh_holding")
+
+
 func _clear_trade_rows() -> void:
 	StationTradeUiScript.clear_rows(_trade_box)
 
@@ -894,24 +913,15 @@ func _on_trade_sell_pressed(commodity_id: StringName, units: int) -> void:
 
 
 func _cargo_service() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(&"cargo_service")
+	return _node_in_group(&"cargo_service")
 
 
 func _wallet_service() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(&"wallet_service")
+	return _node_in_group(&"wallet_service")
 
 
 func _ship_service() -> Node:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return null
-	return tree.get_first_node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
+	return _node_in_group(BalanceFlight.GROUP_SHIP_SERVICE)
 
 
 func _mission_is_active() -> bool:
@@ -919,14 +929,10 @@ func _mission_is_active() -> bool:
 
 
 func _mission_can_complete_here() -> bool:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return false
-	var service: Node = tree.get_first_node_in_group(&"mission_service")
+	var service: Node = _node_in_group(&"mission_service")
 	if service == null or not service.has_method(&"can_complete_at_station"):
 		return false
-	var ok: Variant = service.call(&"can_complete_at_station", _docked_station_id)
-	return ok == true
+	return service.call(&"can_complete_at_station", _docked_station_id) == true
 
 
 func _recovery_is_active() -> bool:
@@ -934,30 +940,21 @@ func _recovery_is_active() -> bool:
 
 
 func _active_recovery_person() -> StringName:
-	var found: StringName = &""
-	var tree: SceneTree = get_tree()
-	var service: Node = null
-	if tree != null:
-		service = tree.get_first_node_in_group(&"recovery_service")
-	if service != null and service.has_method(&"active_chain_id"):
-		var chain_id: StringName = StationDockQueries.as_name(service.call(&"active_chain_id"))
-		if not String(chain_id).is_empty() and ContentLibrary.has_item(chain_id):
-			var item: ContentItem = ContentLibrary.item(chain_id)
-			found = StationDockQueries.as_name(item.get("person_id"))
-	return found
+	return StationDockQueries.active_recovery_person(_node_in_group(&"recovery_service"))
 
 
 func _group_bool(group: StringName, method: StringName) -> bool:
+	var service: Node = _node_in_group(group)
+	if service == null or not service.has_method(method):
+		return false
+	return service.call(method) == true
+
+
+func _node_in_group(group: StringName) -> Node:
 	var tree: SceneTree = get_tree()
 	if tree == null:
-		return false
-	var service: Node = tree.get_first_node_in_group(group)
-	if service == null:
-		return false
-	if not service.has_method(method):
-		return false
-	var active: Variant = service.call(method)
-	return active == true
+		return null
+	return tree.get_first_node_in_group(group)
 
 
 ## First offered template for this dock (legacy single-pick callers / tests).
@@ -973,11 +970,9 @@ func _offered_templates_for_dock() -> Array[StringName]:
 
 
 func _offered_recovery_person_for_dock() -> StringName:
-	var tree: SceneTree = get_tree()
-	if tree == null:
-		return &""
-	var service: Node = tree.get_first_node_in_group(&"recovery_service")
-	return StationDockQueries.offered_recovery_person(_docked_station_id, service)
+	return StationDockQueries.offered_recovery_person(
+		_docked_station_id, _node_in_group(&"recovery_service")
+	)
 
 
 func _favor_person_for_dock() -> StringName:
