@@ -800,3 +800,35 @@ Journal (pause), `campaign` save section. Boards exclude spine. Commit `4ca17dc`
 **Notes:** Feel gate closed. S7 phase done. Next phase S8 (Holding + Act III)
 when authorized — do not start until he says so.
 
+---
+
+## S8 — Endgame feel + structural rhyme
+
+**Criteria (plan):** debt clear + Holding ignition (crisis resolved) ends campaign;
+continue play free. Endgame feel + structural rhyme (“powers respond on ground
+you own”). Purchase alone is not the ending.
+
+**Build:** BalanceHolding, CampaignService purchase/ignition, station controller
+overrides, Act III milestones + dual-path ignition (papers/force by standing),
+player Holding entity, station Holding UI, save `campaign.holding`. Commit
+`9ab4930`.
+
+**Playtest brief:** **`docs/S8_ENDGAME_PLAYTEST.md`**
+
+### Attempt log
+
+- **2026-08-04** — S8 code complete. Lint green; full suite green (792 tests).
+  **Gate open, not signed.**
+- **2026-08-04** — **Signed pass** (Elliot: “Signed”). Endgame + rhyme accepted;
+  S9 queued until authorized.
+
+**Verdict: signed — S8 endgame feel + structural rhyme passes.**
+
+**Signed by:** Elliot  
+**Date:** 2026-08-04  
+**Verbatim:**
+> Signed
+
+**Notes:** Feel gate closed. S8 phase done. Plan marks real Alpha at S8 accept.
+Next phase S9 (content complete) when authorized — do not start until he says so.
+

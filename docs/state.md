@@ -2,9 +2,9 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S8 code complete 2026-08-04** — Holding path + Act III
-spines + ignition (feel gate open). Maturity = **tech demo**.
-Elliot = playtest + ideas only; LLMs program everything.
+**Current position:** **S8 done 2026-08-04** — Holding + Act III + ignition
+(code + feel gate signed). Maturity = **tech demo** (plan marks **real Alpha at
+S8 accept**). Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
 |-----|------|
@@ -12,8 +12,8 @@ Elliot = playtest + ideas only; LLMs program everything.
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2–**S7** signed |
-| `docs/S8_ENDGAME_PLAYTEST.md` | Holding / climax / sandbox brief (**gate open**) |
+| `docs/gates.md` | E6.6 signed; S2–**S8** signed |
+| `docs/S8_ENDGAME_PLAYTEST.md` | Holding / climax / sandbox brief (gate closed) |
 | `docs/S7_COLD_START_PLAYTEST.md` | Story / freeroam + cold-start brief (gate closed) |
 | `docs/S6_OPS_PLAYTEST.md` | Ops feel playtest brief (gate closed) |
 | `docs/S5_SCREENSHOT_FLOOR.md` | Honest gray-box presentation inventory |
@@ -34,26 +34,26 @@ Elliot = playtest + ideas only; LLMs program everything.
 | **S5** Ship layer | **done** 2026-08-03 — Sessions A+B + feel gate signed |
 | **S6** Operations | **done** 2026-08-04 — code + Ops feel signed |
 | **S7** Campaign I–II | **done** 2026-08-04 — code + feel gate signed |
-| **S8** Holding + Act III | **code complete** 2026-08-04 — **feel gate open** |
+| **S8** Holding + Act III | **done** 2026-08-04 — code + feel gate signed |
 | S9–S10 | queued |
 
 ## What the game can do now
 
 - Everything from S7 (campaign I–II, journal, Story UI, ops, economy…), **plus:**
-- **Act III spine** — 5 Holding milestones + 2 ignition crises (Epsilon / Zeta).
+- **Act III spine** — 5 Holding milestones + dual-path ignition (papers / force).
 - **Holding purchase** — candidates Epsilon Belt / Zeta Spur; debt clear; milestones
-  cut price; station **Holding** UI; player Holding entity + status moment override.
-- **Ignition** — authored contest mission after claim (not buy-as-ending); epitaph.
+  cut price; dock-gated purchase; player Holding entity + status moment override.
+- **Ignition** — standing-resolved crisis after claim (not buy-as-ending); epitaph.
 - **Sandbox continue** — boards/markets/Ops still live after `flag_campaign_complete`.
 - **Save** — `campaign.holding` keys + controller override reapplied on load.
 
-- **Not yet:** S8 feel gate; Steam-page art floor; content fill (S9).
+- **Not yet:** Steam-page art floor; content fill toward 30h/80h (**S9**); polish (**S10**).
 
 ## Next session starts here
 
-1. **S8 feel gate** — Elliot playtests `docs/S8_ENDGAME_PLAYTEST.md` (endgame + rhyme).
-2. After gate: S9 content complete when authorized.
-3. Out of scope: standing law invention, empire sim, ship budget raise.
+1. **S9** Content complete (real Beta) — only when Elliot says go.
+   Follow `docs/STEAM_PHASE_PLAN.md` Phase S9 + §22 (Content primary).
+2. Out of scope until authorized: standing law invention, empire sim, ship budget raise.
 
 ### Locked decisions
 
@@ -83,10 +83,12 @@ Elliot = playtest + ideas only; LLMs program everything.
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2–**S7** signed. **S8 feel gate open** (endgame + structural rhyme).
+- E6.6 signed; S2–**S8** signed. Plan: real Alpha at S8 accept. Next: S9 when authorized.
 
 ## Session history
 
+- **2026-08-04 (S8 gate)** — Elliot signed S8 endgame feel (“Signed”). S8 phase
+  closed. S9 queued until authorized.
 - **2026-08-04 (S8 code)** — BalanceHolding, CampaignService purchase/ignition,
   station controller overrides, Act III spines + player Holding entity, Station
   Holding UI, tests, S8_ENDGAME_PLAYTEST. **S8 feel gate open.**
