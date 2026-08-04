@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_gamma_cache"
+display_name = "Gamma Cache"
+system_id = &"system_gamma"
+controller_entity_id = &"entity_gamma_collective"
+position_offset = Vector3(600, 0, -650)
+flavor_line = "Hidden freeport cache — ice crates and quiet scrap deals."
+economy_role = &"frontier"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_grain": 200.0,
+&"commodity_rations": 150.0,
+&"commodity_scrap": 220.0,
+&"commodity_ice": 200.0,
+&"commodity_medical": 45.0,
+&"commodity_components": 40.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_scrap": 4.209,
+&"commodity_ice": 3.23
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_grain": 0.9,
+&"commodity_components": 1.8,
+&"commodity_medical": 1.0
+})
+market_scale = 0.75

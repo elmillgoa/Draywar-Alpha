@@ -176,6 +176,11 @@ const COLOR_SPACE_EPSILON: Color = Color(0.12, 0.06, 0.02)
 const COLOR_AMBIENT_EPSILON: Color = Color(0.48, 0.30, 0.12)
 const COLOR_SPACE_ZETA: Color = Color(0.04, 0.04, 0.05)
 const COLOR_AMBIENT_ZETA: Color = Color(0.22, 0.24, 0.28)
+## S9 outer arm — rust-ore Eta / cold-steel Theta.
+const COLOR_SPACE_ETA: Color = Color(0.10, 0.05, 0.02)
+const COLOR_AMBIENT_ETA: Color = Color(0.42, 0.28, 0.14)
+const COLOR_SPACE_THETA: Color = Color(0.02, 0.06, 0.10)
+const COLOR_AMBIENT_THETA: Color = Color(0.20, 0.36, 0.48)
 
 ## Ambient fill energy (Environment.ambient_light_energy) per system.
 const AMBIENT_ENERGY_DEFAULT: float = 0.85
@@ -185,6 +190,8 @@ const AMBIENT_ENERGY_GAMMA: float = 0.95
 const AMBIENT_ENERGY_DELTA: float = 1.0
 const AMBIENT_ENERGY_EPSILON: float = 1.1
 const AMBIENT_ENERGY_ZETA: float = 0.8
+const AMBIENT_ENERGY_ETA: float = 1.05
+const AMBIENT_ENERGY_THETA: float = 1.0
 
 ## Station silhouette colour per system (still readable as a station).
 const COLOR_STATION_ALPHA: Color = Color(0.48, 0.58, 0.82)
@@ -193,6 +200,8 @@ const COLOR_STATION_GAMMA: Color = Color(0.32, 0.70, 0.52)
 const COLOR_STATION_DELTA: Color = Color(0.58, 0.42, 0.88)
 const COLOR_STATION_EPSILON: Color = Color(0.88, 0.55, 0.22)
 const COLOR_STATION_ZETA: Color = Color(0.55, 0.58, 0.62)
+const COLOR_STATION_ETA: Color = Color(0.78, 0.48, 0.28)
+const COLOR_STATION_THETA: Color = Color(0.40, 0.62, 0.78)
 
 ## Starfield (procedural points — not pure black void).
 const STARFIELD_COUNT: int = 220
@@ -202,6 +211,8 @@ const STARFIELD_COUNT_GAMMA: int = 230
 const STARFIELD_COUNT_DELTA: int = 240
 const STARFIELD_COUNT_EPSILON: int = 190
 const STARFIELD_COUNT_ZETA: int = 200
+const STARFIELD_COUNT_ETA: int = 210
+const STARFIELD_COUNT_THETA: int = 250
 const STARFIELD_RADIUS_MIN: float = 380.0
 const STARFIELD_RADIUS_MAX: float = 720.0
 const STARFIELD_STAR_SIZE: float = 1.6
@@ -220,6 +231,10 @@ const COLOR_STAR_EPSILON: Color = Color(1.0, 0.78, 0.45)
 const COLOR_STAR_WARM_EPSILON: Color = Color(1.0, 0.55, 0.25)
 const COLOR_STAR_ZETA: Color = Color(0.8, 0.82, 0.88)
 const COLOR_STAR_WARM_ZETA: Color = Color(0.9, 0.88, 0.8)
+const COLOR_STAR_ETA: Color = Color(1.0, 0.8, 0.5)
+const COLOR_STAR_WARM_ETA: Color = Color(1.0, 0.6, 0.3)
+const COLOR_STAR_THETA: Color = Color(0.7, 0.88, 1.0)
+const COLOR_STAR_WARM_THETA: Color = Color(0.85, 0.92, 1.0)
 
 ## Gate world label (Label3D) — discoverable without HUD.
 const GATE_LABEL_HEIGHT: float = 22.0
@@ -509,6 +524,10 @@ static func space_color_for(system_id: StringName) -> Color:
 			return COLOR_SPACE_EPSILON
 		&"system_zeta":
 			return COLOR_SPACE_ZETA
+		&"system_eta":
+			return COLOR_SPACE_ETA
+		&"system_theta":
+			return COLOR_SPACE_THETA
 		_:
 			return COLOR_SPACE
 
@@ -528,6 +547,10 @@ static func ambient_color_for(system_id: StringName) -> Color:
 			return COLOR_AMBIENT_EPSILON
 		&"system_zeta":
 			return COLOR_AMBIENT_ZETA
+		&"system_eta":
+			return COLOR_AMBIENT_ETA
+		&"system_theta":
+			return COLOR_AMBIENT_THETA
 		_:
 			return COLOR_AMBIENT
 
@@ -547,6 +570,10 @@ static func ambient_energy_for(system_id: StringName) -> float:
 			return AMBIENT_ENERGY_EPSILON
 		&"system_zeta":
 			return AMBIENT_ENERGY_ZETA
+		&"system_eta":
+			return AMBIENT_ENERGY_ETA
+		&"system_theta":
+			return AMBIENT_ENERGY_THETA
 		_:
 			return AMBIENT_ENERGY_DEFAULT
 
@@ -566,6 +593,10 @@ static func station_color_for(system_id: StringName) -> Color:
 			return COLOR_STATION_EPSILON
 		&"system_zeta":
 			return COLOR_STATION_ZETA
+		&"system_eta":
+			return COLOR_STATION_ETA
+		&"system_theta":
+			return COLOR_STATION_THETA
 		_:
 			return COLOR_STATION
 
@@ -585,6 +616,10 @@ static func starfield_count_for(system_id: StringName) -> int:
 			return STARFIELD_COUNT_EPSILON
 		&"system_zeta":
 			return STARFIELD_COUNT_ZETA
+		&"system_eta":
+			return STARFIELD_COUNT_ETA
+		&"system_theta":
+			return STARFIELD_COUNT_THETA
 		_:
 			return STARFIELD_COUNT
 
@@ -604,6 +639,10 @@ static func star_color_cool_for(system_id: StringName) -> Color:
 			return COLOR_STAR_EPSILON
 		&"system_zeta":
 			return COLOR_STAR_ZETA
+		&"system_eta":
+			return COLOR_STAR_ETA
+		&"system_theta":
+			return COLOR_STAR_THETA
 		_:
 			return COLOR_STAR
 
@@ -623,6 +662,10 @@ static func star_color_warm_for(system_id: StringName) -> Color:
 			return COLOR_STAR_WARM_EPSILON
 		&"system_zeta":
 			return COLOR_STAR_WARM_ZETA
+		&"system_eta":
+			return COLOR_STAR_WARM_ETA
+		&"system_theta":
+			return COLOR_STAR_WARM_THETA
 		_:
 			return COLOR_STAR_WARM
 
@@ -638,6 +681,10 @@ static func sun_pitch_for(system_id: StringName) -> float:
 			return SUN_PITCH_BETA_DEGREES
 		&"system_zeta":
 			return SUN_PITCH_GAMMA_DEGREES
+		&"system_eta":
+			return SUN_PITCH_BETA_DEGREES
+		&"system_theta":
+			return SUN_PITCH_DEGREES
 		_:
 			return SUN_PITCH_DEGREES
 

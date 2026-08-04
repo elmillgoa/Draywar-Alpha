@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_eta_forge"
+display_name = "Eta Forge"
+system_id = &"system_eta"
+controller_entity_id = &"entity_eta_consortium"
+position_offset = Vector3(240, 0, 420)
+flavor_line = "Consortium forge — ore in, alloy and components out."
+economy_role = &"industrial"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_ore": 220.0,
+&"commodity_scrap": 160.0,
+&"commodity_alloy": 100.0,
+&"commodity_spare_parts": 90.0,
+&"commodity_fuel_cells": 100.0,
+&"commodity_ice": 140.0,
+&"commodity_components": 85.0,
+&"commodity_grain": 180.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_alloy": 3.595,
+&"commodity_components": 4.188
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_ore": 1.4,
+&"commodity_ice": 1.1,
+&"commodity_scrap": 1.2,
+&"commodity_grain": 0.9
+})
+market_scale = 1.3

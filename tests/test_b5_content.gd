@@ -68,7 +68,7 @@ func test_three_contract_destinations_span_systems() -> void:
 func test_commodities_budget_and_positive_prices() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceEconomy.COMMODITY_CONTENT_CATEGORY)
 	assert_gte(ids.size(), 6)
-	assert_lte(ids.size(), 10)
+	assert_lte(ids.size(), 12)
 	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceEconomy.COMMODITY_CONTENT_CATEGORY])
 	for id: StringName in ids:
 		var commodity: Commodity = ContentLibrary.item(id) as Commodity
@@ -126,7 +126,7 @@ func test_grain_pays_more_where_it_is_scarce_than_where_it_is_grown() -> void:
 
 func test_recovery_chain_and_station_surfaces_favor_person() -> void:
 	var chains: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(chains.size(), 4, "S4: four recovery chains")
+	assert_eq(chains.size(), 8, "S9: eight recovery chains")
 	assert_true(ContentLibrary.has_item(CHAIN_MENDI))
 	var chain: RecoveryChain = ContentLibrary.item(CHAIN_MENDI) as RecoveryChain
 	assert_ne(chain, null)

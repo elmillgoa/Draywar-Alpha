@@ -1,20 +1,24 @@
-[gd_resource type="Resource" script_class="Entity" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="Entity" load_steps=5 format=3]
 
-; Holds Gamma Fringe — loose collective of freeports and scrap crews.
+; S9 content fill.
 [ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
 [ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
 
-[sub_resource type="Resource" id="Link_allied_haulers"]
+[sub_resource type="Resource" id="Link_0"]
 script = ExtResource("2")
 target_id = &"entity_free_haulers"
 relation_type = &"allied"
+[sub_resource type="Resource" id="Link_1"]
+script = ExtResource("2")
+target_id = &"entity_theta_watch"
+relation_type = &"rival"
 
 [resource]
 script = ExtResource("1")
 id = &"entity_gamma_collective"
 display_name = "Fringe Collective"
-relationship_links = Array[ExtResource("2")]([SubResource("Link_allied_haulers")])
+relationship_links = Array[ExtResource("2")]([SubResource("Link_0"), SubResource("Link_1")])
 reach_system_ids = Array[StringName]([&"system_gamma", &"system_zeta"])
-reach_station_ids = Array[StringName]([&"station_gamma_outpost", &"station_gamma_rim", &"station_zeta_spur"])
+reach_station_ids = Array[StringName]([&"station_gamma_outpost", &"station_gamma_rim", &"station_gamma_cache", &"station_zeta_spur"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0

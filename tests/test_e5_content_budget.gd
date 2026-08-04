@@ -6,29 +6,30 @@ extends GutTest
 
 const ContentLibraryScript = preload("res://src/systems/ContentLibrary.gd")
 
-## Live pack after E5.2 (was 3/6/15 before the content pack).
-const LIVE_SYSTEMS: int = 6
-const LIVE_STATIONS: int = 10
-const LIVE_PEOPLE: int = 19
+## Live pack after S9 floor fill (E5 was 6/10/19).
+const LIVE_SYSTEMS: int = 8
+const LIVE_STATIONS: int = 16
+const LIVE_PEOPLE: int = 35
 
-const E5_STAR_SYSTEMS_CEILING: int = 8
-const E5_STATIONS_CEILING: int = 10
-const E5_PEOPLE_CEILING: int = 24
+## S9 Steam §10 ceilings (were E5 8/10/24).
+const S9_STAR_SYSTEMS_CEILING: int = 10
+const S9_STATIONS_CEILING: int = 22
+const S9_PEOPLE_CEILING: int = 50
 
 
 func test_e5_content_budget_ceilings() -> void:
-	assert_eq(Balance.CONTENT_BUDGET[&"star_systems"], E5_STAR_SYSTEMS_CEILING)
-	assert_eq(Balance.CONTENT_BUDGET[&"stations"], E5_STATIONS_CEILING)
-	assert_eq(Balance.CONTENT_BUDGET[&"people"], E5_PEOPLE_CEILING)
+	assert_eq(Balance.CONTENT_BUDGET[&"star_systems"], S9_STAR_SYSTEMS_CEILING)
+	assert_eq(Balance.CONTENT_BUDGET[&"stations"], S9_STATIONS_CEILING)
+	assert_eq(Balance.CONTENT_BUDGET[&"people"], S9_PEOPLE_CEILING)
 
 
 func test_live_content_loads_under_e5_ceilings() -> void:
 	var systems: Array[StringName] = ContentLibrary.ids_in(&"star_systems")
 	var stations: Array[StringName] = ContentLibrary.ids_in(&"stations")
 	var people: Array[StringName] = ContentLibrary.ids_in(&"people")
-	assert_eq(systems.size(), LIVE_SYSTEMS, "E5 live systems under ceiling")
-	assert_eq(stations.size(), LIVE_STATIONS, "E5 live stations under ceiling")
-	assert_eq(people.size(), LIVE_PEOPLE, "E5 live people under ceiling")
+	assert_eq(systems.size(), LIVE_SYSTEMS, "S9 live systems under ceiling")
+	assert_eq(stations.size(), LIVE_STATIONS, "S9 live stations under ceiling")
+	assert_eq(people.size(), LIVE_PEOPLE, "S9 live people under ceiling")
 	assert_lte(systems.size(), Balance.CONTENT_BUDGET[&"star_systems"])
 	assert_lte(stations.size(), Balance.CONTENT_BUDGET[&"stations"])
 	assert_lte(people.size(), Balance.CONTENT_BUDGET[&"people"])

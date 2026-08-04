@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="RecoveryChain" load_steps=6 format=3]
+
+; S9 content fill — second Free Haulers chain (no second Reach chain; dock tests).
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryChain.gd" id="1"]
+[ext_resource type="Script" path="res://src/data/shapes/RecoveryStep.gd" id="2"]
+
+[sub_resource type="Resource" id="step_0"]
+script = ExtResource("2")
+id = &"step_deniable"
+display_name = "Off-books package drop"
+personal_standing_delta = 12.0
+entity_standing_delta = 2.0
+requires_prior_success = false
+
+[sub_resource type="Resource" id="step_1"]
+script = ExtResource("2")
+id = &"step_whisper"
+display_name = "Quiet word on the dock"
+personal_standing_delta = 10.0
+entity_standing_delta = 2.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_2"]
+script = ExtResource("2")
+id = &"step_cover"
+display_name = "Cover a short shift"
+personal_standing_delta = 8.0
+entity_standing_delta = 3.0
+requires_prior_success = true
+
+[sub_resource type="Resource" id="step_3"]
+script = ExtResource("2")
+id = &"step_vouch"
+display_name = "A vouch that sticks"
+personal_standing_delta = 8.0
+entity_standing_delta = 4.0
+requires_prior_success = true
+
+[resource]
+script = ExtResource("1")
+id = &"recovery_haulers_reed"
+display_name = "Reed's Haul Path"
+person_id = &"person_fh_reed"
+entity_id = &"entity_free_haulers"
+steps = Array[ExtResource("2")]([SubResource("step_0"), SubResource("step_1"), SubResource("step_2"), SubResource("step_3")])

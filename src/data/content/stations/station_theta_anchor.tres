@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_theta_anchor"
+display_name = "Theta Anchor"
+system_id = &"system_theta"
+controller_entity_id = &"entity_theta_watch"
+position_offset = Vector3(-360, 0, 180)
+flavor_line = "Watch military anchor — munitions stockpiles and stern clerks."
+economy_role = &"military"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_munitions": 80.0,
+&"commodity_fuel_cells": 130.0,
+&"commodity_alloy": 90.0,
+&"commodity_spare_parts": 85.0,
+&"commodity_medical": 60.0,
+&"commodity_components": 75.0,
+&"commodity_grain": 160.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_munitions": 2.702,
+&"commodity_fuel_cells": 3.084
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_alloy": 1.5,
+&"commodity_components": 1.4,
+&"commodity_grain": 0.9,
+&"commodity_medical": 1.0
+})
+market_scale = 1.2

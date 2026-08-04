@@ -43,7 +43,7 @@ func test_commodities_loaded_under_budget() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceEconomy.COMMODITY_CONTENT_CATEGORY)
 	assert_gte(ids.size(), 6, "need at least 6 commodities for trade contrast")
 	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceEconomy.COMMODITY_CONTENT_CATEGORY])
-	assert_lte(ids.size(), 10, "E1 commodity ceiling is 10")
+	assert_lte(ids.size(), 12, "S9 commodity ceiling is 12")
 	for id: StringName in ids:
 		assert_true(ContentLibrary.has_item(id))
 		var item: ContentItem = ContentLibrary.item(id)

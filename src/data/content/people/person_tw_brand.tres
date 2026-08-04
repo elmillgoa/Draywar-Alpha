@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Person" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/Person.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"person_tw_brand"
+display_name = "Marshal Brand"
+primary_entity_id = &"entity_theta_watch"
+rank = &"mid"
+network_person_ids = Array[StringName]([&"person_tw_sera", &"person_tw_ivo"])
+default_player_standing = 0.0

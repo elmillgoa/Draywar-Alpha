@@ -2,9 +2,10 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S8 done 2026-08-04** — Holding + Act III + ignition
-(code + feel gate signed). Maturity = **tech demo** (plan marks **real Alpha at
-S8 accept**). Elliot = playtest + ideas only; LLMs program everything.
+**Current position:** **S9 content floor in 2026-08-04** — map/cast/commodities/chains
+filled to Steam §10 floor. **Content-complete gate OPEN** (Elliot + external hours).
+Maturity = **core complete / real Alpha** until S9 gate; plan **real Beta** only after
+content-complete sign-off. Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
 |-----|------|
@@ -12,7 +13,8 @@ S8 accept**). Elliot = playtest + ideas only; LLMs program everything.
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2–**S8** signed |
+| `docs/gates.md` | E6.6 signed; S2–**S8** signed; **S9 open** |
+| `docs/S9_CONTENT_PLAYTEST.md` | Content floor playtest + hours measure (gate open) |
 | `docs/S8_ENDGAME_PLAYTEST.md` | Holding / climax / sandbox brief (gate closed) |
 | `docs/S7_COLD_START_PLAYTEST.md` | Story / freeroam + cold-start brief (gate closed) |
 | `docs/S6_OPS_PLAYTEST.md` | Ops feel playtest brief (gate closed) |
@@ -35,25 +37,28 @@ S8 accept**). Elliot = playtest + ideas only; LLMs program everything.
 | **S6** Operations | **done** 2026-08-04 — code + Ops feel signed |
 | **S7** Campaign I–II | **done** 2026-08-04 — code + feel gate signed |
 | **S8** Holding + Act III | **done** 2026-08-04 — code + feel gate signed |
-| S9–S10 | queued |
+| **S9** Content complete | **floor in** 2026-08-04 — **gate open** |
+| S10 | queued after S9 gate |
 
 ## What the game can do now
 
-- Everything from S7 (campaign I–II, journal, Story UI, ops, economy…), **plus:**
-- **Act III spine** — 5 Holding milestones + dual-path ignition (papers / force).
-- **Holding purchase** — candidates Epsilon Belt / Zeta Spur; debt clear; milestones
-  cut price; dock-gated purchase; player Holding entity + status moment override.
-- **Ignition** — standing-resolved crisis after claim (not buy-as-ending); epitaph.
-- **Sandbox continue** — boards/markets/Ops still live after `flag_campaign_complete`.
-- **Save** — `campaign.holding` keys + controller override reapplied on load.
+- Everything from S8 (campaign through Holding, ignition, sandbox…), **plus S9 floor:**
+- **Map** — 8 systems (Eta Reach, Theta Rim); 16 stations; outer arm Delta→Eta→Theta→Zeta.
+- **Powers** — Eta Consortium, Theta Watch, Lane Brokers (+ existing + Holding).
+- **Cast** — 35 People; 8 recovery chains (no second Reach chain — dock-refuse tests).
+- **Economy** — 12 commodities (Ice, Components); sector production ratios rebalanced.
+- **Boards** — outer-system couriers/bounties/smuggle + named flashpoint hand jobs.
+- **Save** — no new schema; content-only expansion.
 
-- **Not yet:** Steam-page art floor; content fill toward 30h/80h (**S9**); polish (**S10**).
+- **Not yet:** measured ~30h / external play; mid/top §10 fill; S10 art polish.
 
 ## Next session starts here
 
-1. **S9** Content complete (real Beta) — only when Elliot says go.
-   Follow `docs/STEAM_PHASE_PLAN.md` Phase S9 + §22 (Content primary).
-2. Out of scope until authorized: standing law invention, empire sim, ship budget raise.
+1. **Elliot playtests S9** — `docs/S9_CONTENT_PLAYTEST.md`. Measure hours / dead air.
+2. Optional: external playtester with same brief.
+3. On **content complete** sign-off → close S9, queue **S10**.
+4. If he names holes → another S9 fill pass (still Content tier), not S10.
+5. Out of scope: standing law invention, empire sim, ship budget raise.
 
 ### Locked decisions
 
@@ -65,7 +70,7 @@ S8 accept**). Elliot = playtest + ideas only; LLMs program everything.
 - S3b: distress help with active mission = wallet pay only (no standing invent);
   offered incidents expire on load; customs same-trip skip after cooperate.
 - S4: heat per-Entity; pressure/hunt only in patrolled; no standing writes from
-  EnforcementService; recovery budget 4.
+  EnforcementService; recovery budget raised in S9 (live 8 / ceiling 12).
 - S5: slots by role (BalanceOutfit), not hull fields; hull weapon fields = baseline
   when no weapon installed; 20-ship budget unchanged without evidence.
 - S6: fleet abstract (no world spawn); max 2; hire standing = Friendly floor
@@ -78,15 +83,21 @@ S8 accept**). Elliot = playtest + ideas only; LLMs program everything.
   crisis (papers if prior Neutral+, force bounty if contested + Friendly Haulers/Reach
   backing) not buy button; controller override via StandingService only; owner
   dock_refusal -100.
+- S9 floor: Greek-letter systems Eta/Theta; flashpoints = board hand rows (not spine);
+  one recovery chain per Reach (Mendi only) so dock-refuse + recovery exception stay clean;
+  CONTENT_BUDGET raised to Steam §10 ceilings.
 
 ## Standing decisions
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2–**S8** signed. Plan: real Alpha at S8 accept. Next: S9 when authorized.
+- E6.6 signed; S2–**S8** signed. **S9 gate open.** Next: playtest then S10 when S9 signed.
 
 ## Session history
 
+- **2026-08-04 (S9 floor)** — Budget lift; 8 systems / 16 stations / 8 entities / 35
+  people / 12 commodities / 8 recovery / flashpoint board jobs; markets rebalanced;
+  map presentation for Eta/Theta; tests + S9_CONTENT_PLAYTEST. **S9 gate open.**
 - **2026-08-04 (S8 gate)** — Elliot signed S8 endgame feel (“Signed”). S8 phase
   closed. S9 queued until authorized.
 - **2026-08-04 (S8 code)** — BalanceHolding, CampaignService purchase/ignition,

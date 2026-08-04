@@ -832,3 +832,27 @@ player Holding entity, station Holding UI, save `campaign.holding`. Commit
 **Notes:** Feel gate closed. S8 phase done. Plan marks real Alpha at S8 accept.
 Next phase S9 (content complete) when authorized — do not start until he says so.
 
+---
+
+## S9 — Content complete (real Beta)
+
+**Criteria (plan):** measured playtests (including external) hit ~30h main path
+without dead air; completionist hooks exist. **Gate [Elliot]: content complete.**
+
+**Build (floor):** Steam §10 floor fill — 8 systems / 16 stations / 8 entities /
+35 people / 12 commodities / 8 recovery chains; Ice + Components; Eta/Theta map +
+presentation; board flashpoint hand jobs; markets rebalanced. No new save schema.
+
+**Playtest brief:** **`docs/S9_CONTENT_PLAYTEST.md`**
+
+### Attempt log
+
+- **2026-08-04** — S9 content floor complete. Lint green; full suite green
+  (792+ tests including `test_s9_content_floor`). **Gate open, not signed.**
+  Hours not claimed — needs Elliot (+ external) measure.
+
+**Verdict: open — content complete not signed.**
+
+**Notes:** Do not start S10 until S9 signed. Another content fill pass is still
+S9 if he names holes after play.
+

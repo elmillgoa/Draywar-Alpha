@@ -11,6 +11,8 @@ const REQUIRED_SYSTEMS: Array[StringName] = [
 	&"system_delta",
 	&"system_epsilon",
 	&"system_zeta",
+	&"system_eta",
+	&"system_theta",
 ]
 
 
@@ -19,8 +21,9 @@ func after_each() -> void:
 
 
 func test_exactly_six_systems_including_greek_ids() -> void:
+	# Name historical; S9 ships eight Greek systems (floor of Steam §10).
 	var ids: Array[StringName] = ContentLibrary.ids_in(&"star_systems")
-	assert_eq(ids.size(), 6)
+	assert_eq(ids.size(), 8)
 	for system_id: StringName in REQUIRED_SYSTEMS:
 		assert_true(ContentLibrary.has_item(system_id), "%s loads" % system_id)
 	var problems: PackedStringArray = ContentLibrary.problems()
@@ -28,9 +31,9 @@ func test_exactly_six_systems_including_greek_ids() -> void:
 
 
 func test_stations_nine_to_ten_and_bidirectional_wiring() -> void:
+	# Name historical; S9 floor is 16 docks under Steam §10 (16–22).
 	var station_ids: Array[StringName] = ContentLibrary.ids_in(&"stations")
-	assert_gte(station_ids.size(), 9)
-	assert_lte(station_ids.size(), 10)
+	assert_gte(station_ids.size(), 16)
 	assert_lte(station_ids.size(), Balance.CONTENT_BUDGET[&"stations"])
 	for station_id: StringName in station_ids:
 		var station: Station = ContentLibrary.item(station_id) as Station
@@ -45,7 +48,13 @@ func test_stations_nine_to_ten_and_bidirectional_wiring() -> void:
 
 
 func test_new_systems_have_dock_and_flavor() -> void:
-	for system_id: StringName in [&"system_delta", &"system_epsilon", &"system_zeta"]:
+	for system_id: StringName in [
+		&"system_delta",
+		&"system_epsilon",
+		&"system_zeta",
+		&"system_eta",
+		&"system_theta",
+	]:
 		var system: StarSystem = ContentLibrary.item(system_id) as StarSystem
 		assert_ne(system, null)
 		assert_gte(system.station_ids.size(), 1, "%s needs a dock" % system_id)
@@ -58,6 +67,12 @@ func test_new_dock_controllers_have_contacts() -> void:
 		&"station_delta_yard",
 		&"station_epsilon_belt",
 		&"station_zeta_spur",
+		&"station_alpha_customs",
+		&"station_gamma_cache",
+		&"station_eta_forge",
+		&"station_eta_depot",
+		&"station_theta_gate",
+		&"station_theta_anchor",
 	]
 	for station_id: StringName in new_stations:
 		var station: Station = ContentLibrary.item(station_id) as Station

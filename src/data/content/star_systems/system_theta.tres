@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StarSystem" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/StarSystem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"system_theta"
+display_name = "Theta Rim"
+held_by = &"entity_theta_watch"
+policing = &"patrolled"
+station_ids = Array[StringName]([&"station_theta_gate", &"station_theta_anchor"])
+gate_destination_ids = Array[StringName]([&"system_eta", &"system_zeta"])
+flavor_line = "Outer Watch line — thin patrols, long freights, strict berths."

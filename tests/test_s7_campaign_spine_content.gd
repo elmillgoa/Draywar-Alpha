@@ -34,7 +34,7 @@ func test_spine_count_and_budget() -> void:
 			if ct.is_spine:
 				spine_count += 1
 	assert_gte(spine_count, 8, "S7 ships at least 8 spine beats")
-	assert_eq(Balance.CONTENT_BUDGET[&"contract_types"], 32)
+	assert_eq(Balance.CONTENT_BUDGET[&"contract_types"], 48)
 
 
 func test_all_spine_rows_valid_and_present() -> void:

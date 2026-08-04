@@ -19,17 +19,21 @@ stock_targets = Dictionary[StringName, float]({
 &"commodity_scrap": 200.0,
 &"commodity_alloy": 90.0,
 &"commodity_spare_parts": 80.0,
-&"commodity_fuel_cells": 110.0
+&"commodity_fuel_cells": 110.0,
+&"commodity_ice": 100.0,
+&"commodity_components": 100.0
 })
 produces = Dictionary[StringName, float]({
-&"commodity_alloy": 4.0,
-&"commodity_spare_parts": 4.0
+&"commodity_alloy": 3.196,
+&"commodity_spare_parts": 4.779,
+&"commodity_components": 3.664
 })
 consumes = Dictionary[StringName, float]({
 &"commodity_ore": 1.2,
 &"commodity_scrap": 1.8,
 &"commodity_fuel_cells": 1.4,
 &"commodity_grain": 0.85,
-&"commodity_rations": 0.85
+&"commodity_rations": 0.85,
+&"commodity_ice": 1.2
 })
 market_scale = 1.5

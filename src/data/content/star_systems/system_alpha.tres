@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="StarSystem" load_steps=2 format=3]
 
-; First playable system — Alpha A5 / E1.2 dual docks. Held by Reach Authority.
+; S9 content fill.
 [ext_resource type="Script" path="res://src/data/shapes/StarSystem.gd" id="1"]
 
 [resource]
@@ -9,6 +9,6 @@ id = &"system_alpha"
 display_name = "Alpha Reach"
 held_by = &"entity_reach_authority"
 policing = &"patrolled"
-station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard"])
+station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard", &"station_alpha_customs"])
 gate_destination_ids = Array[StringName]([&"system_beta"])
 flavor_line = "Patrolled Authority space — fees high, refined goods made at the port."

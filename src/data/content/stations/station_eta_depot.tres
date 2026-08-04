@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_eta_depot"
+display_name = "Eta Depot"
+system_id = &"system_eta"
+controller_entity_id = &"entity_eta_consortium"
+position_offset = Vector3(-380, 0, 200)
+flavor_line = "Ice and ore depot on the Consortium rim — cold holds, hard rates."
+economy_role = &"refinery"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_ore": 240.0,
+&"commodity_ice": 240.0,
+&"commodity_fuel_cells": 100.0,
+&"commodity_rations": 140.0,
+&"commodity_spare_parts": 70.0,
+&"commodity_components": 50.0,
+&"commodity_medical": 40.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_ore": 4.981,
+&"commodity_ice": 3.876
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_rations": 0.9,
+&"commodity_spare_parts": 1.4,
+&"commodity_components": 1.6,
+&"commodity_medical": 1.0
+})
+market_scale = 1.0

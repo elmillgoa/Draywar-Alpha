@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StarSystem" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/StarSystem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"system_eta"
+display_name = "Eta Reach"
+held_by = &"entity_eta_consortium"
+policing = &"contested"
+station_ids = Array[StringName]([&"station_eta_forge", &"station_eta_depot"])
+gate_destination_ids = Array[StringName]([&"system_delta", &"system_theta"])
+flavor_line = "Consortium mining reach off Delta — ore, ice, and hard bargaining."

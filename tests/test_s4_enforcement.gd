@@ -186,8 +186,8 @@ func test_hunt_threshold_forces_patrol_response_in_patrolled() -> void:
 
 func test_recovery_four_chains_and_wren_step() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(ids.size(), 4)
-	assert_eq(ids.size(), Balance.CONTENT_BUDGET[&"recovery_chains"])
+	assert_eq(ids.size(), 8, "S9 live recovery chains")
+	assert_lte(ids.size(), Balance.CONTENT_BUDGET[&"recovery_chains"])
 	assert_true(ContentLibrary.has_item(CHAIN_WREN))
 	assert_true(ContentLibrary.has_item(CHAIN_KADE))
 

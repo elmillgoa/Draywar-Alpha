@@ -130,6 +130,9 @@ const SECTOR_MAP_NODE_POSITIONS: Dictionary = {
 	&"system_delta": Vector2(180.0, 40.0),
 	&"system_epsilon": Vector2(380.0, 140.0),
 	&"system_zeta": Vector2(440.0, 220.0),
+	## S9 outer arm: Delta → Eta → Theta → Zeta loop.
+	&"system_eta": Vector2(280.0, 40.0),
+	&"system_theta": Vector2(420.0, 80.0),
 }
 ## Undirected path graph: internal nodes have this degree; ends have 1.
 const GRAPH_PATH_INTERNAL_DEGREE: int = 2

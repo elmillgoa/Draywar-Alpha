@@ -45,9 +45,9 @@ func test_person_requires_entity_and_rank() -> void:
 func test_shipped_entities_and_people_meet_alpha_caps() -> void:
 	var entities: Array[StringName] = ContentLibrary.ids_in(&"entities")
 	var people: Array[StringName] = ContentLibrary.ids_in(&"people")
-	# S8 adds entity_player_holding (5 total under budget of 6).
-	assert_eq(entities.size(), 5, "four powers + player Holding entity")
-	assert_gte(people.size(), 12, "at least A2's 12 people")
+	# S9: 7 powers + player Holding = 8 under Steam §10 (8–12).
+	assert_eq(entities.size(), 8, "seven powers + player Holding entity")
+	assert_gte(people.size(), 35, "S9 floor People count")
 	assert_lte(entities.size(), Balance.CONTENT_BUDGET[&"entities"])
 	assert_lte(people.size(), Balance.CONTENT_BUDGET[&"people"])
 

@@ -96,14 +96,18 @@ func _bootstrap_friendly_mendi() -> void:
 
 
 func test_exactly_two_chains_under_budget() -> void:
-	# Name kept for history; S4 raised live set + budget to 4.
+	# Name kept for history; S9 floor is 8 chains under Steam §10 (8–12).
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceStanding.RECOVERY_CONTENT_CATEGORY)
-	assert_eq(ids.size(), 4, "S4 ships four recovery chains")
-	assert_eq(ids.size(), Balance.CONTENT_BUDGET[BalanceStanding.RECOVERY_CONTENT_CATEGORY])
+	assert_eq(ids.size(), 8, "S9 ships eight recovery chains")
+	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceStanding.RECOVERY_CONTENT_CATEGORY])
 	assert_true(ContentLibrary.has_item(CHAIN_MENDI))
 	assert_true(ContentLibrary.has_item(CHAIN_JAX))
 	assert_true(ContentLibrary.has_item(&"recovery_haulers_wren"))
 	assert_true(ContentLibrary.has_item(&"recovery_fringe_kade"))
+	assert_true(ContentLibrary.has_item(&"recovery_eta_rhea"))
+	assert_true(ContentLibrary.has_item(&"recovery_theta_holt"))
+	assert_true(ContentLibrary.has_item(&"recovery_brokers_cass"))
+	assert_true(ContentLibrary.has_item(&"recovery_haulers_reed"))
 	var problems: PackedStringArray = ContentLibrary.problems()
 	assert_eq(problems.size(), 0, "content problems:\n  %s" % "\n  ".join(problems))
 

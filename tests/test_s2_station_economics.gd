@@ -30,8 +30,10 @@ func test_every_station_has_a_valid_economic_identity() -> void:
 
 
 func test_every_station_offset_is_nonzero_and_all_ten_are_distinct() -> void:
+	# Name historical; S9 live set is under ceiling (not forced equal to budget).
 	var ids: Array[StringName] = ContentLibrary.ids_in(STATION_CATEGORY)
-	assert_eq(ids.size(), Balance.CONTENT_BUDGET[STATION_CATEGORY], "sector holds exactly budget")
+	assert_gte(ids.size(), 16, "S9 floor station count")
+	assert_lte(ids.size(), Balance.CONTENT_BUDGET[STATION_CATEGORY], "under station ceiling")
 	var seen: Array[Vector3] = []
 	for id: StringName in ids:
 		var station: Station = ContentLibrary.item(id) as Station

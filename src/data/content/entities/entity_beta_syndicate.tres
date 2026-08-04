@@ -1,19 +1,23 @@
-[gd_resource type="Resource" script_class="Entity" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="Entity" load_steps=5 format=3]
 
-; Holds Beta Drift — gray-market syndicate, rival of Reach Authority.
+; S9 content fill.
 [ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
 [ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
 
-[sub_resource type="Resource" id="Link_rival_reach"]
+[sub_resource type="Resource" id="Link_0"]
 script = ExtResource("2")
 target_id = &"entity_reach_authority"
+relation_type = &"rival"
+[sub_resource type="Resource" id="Link_1"]
+script = ExtResource("2")
+target_id = &"entity_eta_consortium"
 relation_type = &"rival"
 
 [resource]
 script = ExtResource("1")
 id = &"entity_beta_syndicate"
 display_name = "Drift Syndicate"
-relationship_links = Array[ExtResource("2")]([SubResource("Link_rival_reach")])
+relationship_links = Array[ExtResource("2")]([SubResource("Link_0"), SubResource("Link_1")])
 reach_system_ids = Array[StringName]([&"system_beta", &"system_epsilon"])
 reach_station_ids = Array[StringName]([&"station_beta_hub", &"station_beta_spit", &"station_epsilon_belt"])
 default_player_standing = 0.0

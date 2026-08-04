@@ -7,30 +7,31 @@ extends RefCounted
 ## `scripts/check_magic_numbers.py` fails the build on a numeric literal
 ## anywhere under `src/` outside this layer.
 
-## Content ceilings — keyed by content directory. E5 lifts systems/stations/people
-## past Alpha; see `docs/BETA_E5_CONTENT_SCALE.md` (E5.1). Destination §10 is the
-## hard upper bound for those three.
+## Content ceilings — keyed by content directory. S9 lifts toward Steam §10
+## content-complete aims (docs/STEAM_PHASE_PLAN.md §10). E5 historical notes in
+## `docs/BETA_E5_CONTENT_SCALE.md` remain for archaeology only.
 ##
 ## These are **ceilings, not targets**. Exceeding one is a stop condition, and
 ## `ContentLibrary` turns that into a loud failure at load. Categories listed
 ## with no directory yet cost nothing and document where the pipeline is going.
 const CONTENT_BUDGET: Dictionary[StringName, int] = {
-	## E5.1: Destination v1 ceiling (ship target 6 systems in E5.2+).
-	&"star_systems": 8,
-	## E5.1: Destination §10 (~10 docks).
-	&"stations": 10,
-	&"entities": 6,
-	## E5.1: people ≤24 (small lift under Destination 20–35).
-	&"people": 24,
-	## E1.4 trade contrast: commodities toward 8–10 (E1 cap ≤10).
-	&"commodities": 10,
-	## S8: radiant hand (~12) + Act I–III spine (~16) under one ceiling.
-	&"contract_types": 32,
+	## S9: Steam aim 8–10 systems.
+	&"star_systems": 10,
+	## S9: Steam aim 16–22 docks.
+	&"stations": 22,
+	## S9: Steam aim 8–12 Entities (includes player Holding).
+	&"entities": 12,
+	## S9: Steam aim 35–50 tracked People.
+	&"people": 50,
+	## S9: Steam aim 12 commodities.
+	&"commodities": 12,
+	## S9: spine + hand + flashpoint board rows under one ceiling.
+	&"contract_types": 48,
 	&"hulls": 2,
 	&"weapons": 12,
 	&"equipment": 10,
-	## S4: four personal recovery chains (Mendi/Reach, Jax/Drift, Wren/Haulers, Kade/Fringe).
-	&"recovery_chains": 4,
+	## S9: Steam aim 8–12 personal recovery chains.
+	&"recovery_chains": 12,
 	## E4.1: 3 axes × 3 options (origin / trade / mark). Ceiling is the set size.
 	&"life_path_options": 9,
 }

@@ -39,7 +39,7 @@ const RATIONS: StringName = &"commodity_rations"
 ## at boot and nothing in the suite went red, because eight of ten still paid.
 ## The count of live commodities is asserted against this too, so "all of them"
 ## cannot quietly shrink to "all two of them".
-const MIN_PROFITABLE_COMMODITIES: int = 10
+const MIN_PROFITABLE_COMMODITIES: int = 12
 
 ## Units moved on the worked cross-system route (fits the starter hold).
 const ROUTE_UNITS: int = 4
@@ -70,9 +70,9 @@ func after_each() -> void:
 func test_commodity_count_meets_e1_target() -> void:
 	var ids: Array[StringName] = ContentLibrary.ids_in(BalanceEconomy.COMMODITY_CONTENT_CATEGORY)
 	assert_gte(ids.size(), 8, "E1.4 targets 8–10 commodities")
-	assert_lte(ids.size(), 10, "E1 commodity cap is 10")
+	assert_eq(ids.size(), 12, "S9 Steam §10 commodity aim is 12")
 	assert_lte(ids.size(), Balance.CONTENT_BUDGET[BalanceEconomy.COMMODITY_CONTENT_CATEGORY])
-	assert_eq(Balance.CONTENT_BUDGET[BalanceEconomy.COMMODITY_CONTENT_CATEGORY], 10)
+	assert_eq(Balance.CONTENT_BUDGET[BalanceEconomy.COMMODITY_CONTENT_CATEGORY], 12)
 	for id: StringName in ids:
 		var commodity: Commodity = ContentLibrary.item(id) as Commodity
 		assert_ne(commodity, null, "%s must load as Commodity" % id)

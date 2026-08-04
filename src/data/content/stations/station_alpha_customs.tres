@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Station" load_steps=2 format=3]
+
+; S9 content fill.
+[ext_resource type="Script" path="res://src/data/shapes/Station.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"station_alpha_customs"
+display_name = "Alpha Customs"
+system_id = &"system_alpha"
+controller_entity_id = &"entity_reach_authority"
+position_offset = Vector3(-700, 0, 700)
+flavor_line = "Inspection berth on the Authority approach — forms, fees, and cold stares."
+economy_role = &"trade_hub"
+stock_targets = Dictionary[StringName, float]({
+&"commodity_ore": 160.0,
+&"commodity_scrap": 180.0,
+&"commodity_alloy": 100.0,
+&"commodity_medical": 55.0,
+&"commodity_luxuries": 50.0,
+&"commodity_ice": 90.0,
+&"commodity_components": 70.0
+})
+produces = Dictionary[StringName, float]({
+&"commodity_luxuries": 1.208,
+&"commodity_components": 2.094
+})
+consumes = Dictionary[StringName, float]({
+&"commodity_ore": 1.0,
+&"commodity_ice": 1.2,
+&"commodity_scrap": 1.4
+})
+market_scale = 1.6

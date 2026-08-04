@@ -1,20 +1,24 @@
-[gd_resource type="Resource" script_class="Entity" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="Entity" load_steps=5 format=3]
 
-; Controls Alpha Reach / Alpha Port + Yard — patrolled freight corridor authority.
+; S9 content fill.
 [ext_resource type="Script" path="res://src/data/shapes/Entity.gd" id="1"]
 [ext_resource type="Script" path="res://src/data/shapes/EntityLink.gd" id="2"]
 
-[sub_resource type="Resource" id="Link_rival_beta"]
+[sub_resource type="Resource" id="Link_0"]
 script = ExtResource("2")
 target_id = &"entity_beta_syndicate"
 relation_type = &"rival"
+[sub_resource type="Resource" id="Link_1"]
+script = ExtResource("2")
+target_id = &"entity_theta_watch"
+relation_type = &"allied"
 
 [resource]
 script = ExtResource("1")
 id = &"entity_reach_authority"
 display_name = "Reach Authority"
-relationship_links = Array[ExtResource("2")]([SubResource("Link_rival_beta")])
+relationship_links = Array[ExtResource("2")]([SubResource("Link_0"), SubResource("Link_1")])
 reach_system_ids = Array[StringName]([&"system_alpha", &"system_delta"])
-reach_station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard", &"station_delta_port", &"station_delta_yard"])
+reach_station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard", &"station_alpha_customs", &"station_delta_port", &"station_delta_yard"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0
