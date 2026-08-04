@@ -65,6 +65,27 @@ const TIER_DISPLAY_UNFRIENDLY: String = "Unfriendly"
 const TIER_DISPLAY_HOSTILE: String = "Hostile"
 const TIER_DISPLAY_HATED: String = "Hated"
 
+# --- Tier colours (S10 a11y — never sole cue; text always present) ----------
+# Not pure red/green pairs: blue/amber/violet language so colorblind players
+# still separate bands; display names remain the primary cue.
+
+const TIER_COLOR_REVERED: Color = Color(0.55, 0.85, 1.0, 1.0)
+const TIER_COLOR_ALLIED: Color = Color(0.45, 0.78, 0.95, 1.0)
+const TIER_COLOR_FRIENDLY: Color = Color(0.45, 0.88, 0.72, 1.0)
+const TIER_COLOR_NEUTRAL: Color = Color(0.85, 0.86, 0.88, 1.0)
+const TIER_COLOR_UNFRIENDLY: Color = Color(0.95, 0.72, 0.35, 1.0)
+const TIER_COLOR_HOSTILE: Color = Color(0.95, 0.45, 0.40, 1.0)
+const TIER_COLOR_HATED: Color = Color(0.75, 0.40, 0.95, 1.0)
+
+## Prefix glyphs (shape cue independent of color).
+const TIER_GLYPH_REVERED: String = "◆"
+const TIER_GLYPH_ALLIED: String = "◇"
+const TIER_GLYPH_FRIENDLY: String = "○"
+const TIER_GLYPH_NEUTRAL: String = "·"
+const TIER_GLYPH_UNFRIENDLY: String = "△"
+const TIER_GLYPH_HOSTILE: String = "▽"
+const TIER_GLYPH_HATED: String = "✕"
+
 # --- Stickiness (A3) -------------------------------------------------------
 
 ## Everyday positives lose most effect at or below this floor.
@@ -487,3 +508,45 @@ static func format_kill_attributed(entity_display_name: String) -> String:
 ## Plain-language unattributed-kill line for HUD / tests. Pure formatter.
 static func format_kill_unattributed() -> String:
 	return HUD_KILL_UNATTRIBUTED
+
+
+## HUD/sheet color for a tier id. Falls back to neutral (S10 a11y).
+static func tier_color(tier: StringName) -> Color:
+	match tier:
+		TIER_REVERED:
+			return TIER_COLOR_REVERED
+		TIER_ALLIED:
+			return TIER_COLOR_ALLIED
+		TIER_FRIENDLY:
+			return TIER_COLOR_FRIENDLY
+		TIER_NEUTRAL:
+			return TIER_COLOR_NEUTRAL
+		TIER_UNFRIENDLY:
+			return TIER_COLOR_UNFRIENDLY
+		TIER_HOSTILE:
+			return TIER_COLOR_HOSTILE
+		TIER_HATED:
+			return TIER_COLOR_HATED
+		_:
+			return TIER_COLOR_NEUTRAL
+
+
+## Shape glyph for a tier (pairs with color; text name still required).
+static func tier_glyph(tier: StringName) -> String:
+	match tier:
+		TIER_REVERED:
+			return TIER_GLYPH_REVERED
+		TIER_ALLIED:
+			return TIER_GLYPH_ALLIED
+		TIER_FRIENDLY:
+			return TIER_GLYPH_FRIENDLY
+		TIER_NEUTRAL:
+			return TIER_GLYPH_NEUTRAL
+		TIER_UNFRIENDLY:
+			return TIER_GLYPH_UNFRIENDLY
+		TIER_HOSTILE:
+			return TIER_GLYPH_HOSTILE
+		TIER_HATED:
+			return TIER_GLYPH_HATED
+		_:
+			return TIER_GLYPH_NEUTRAL

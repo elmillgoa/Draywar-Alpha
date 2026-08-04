@@ -64,10 +64,10 @@ const SECTOR_MAP_CANVAS_LAYER: int = 37
 # --- Menu layout -----------------------------------------------------------
 
 const MENU_WIDTH: float = 380.0
-## Room for optional tagline under title (E4.5).
-const MENU_HEIGHT: float = 360.0
+## Room for optional tagline + Options button (E4.5 / S10).
+const MENU_HEIGHT: float = 420.0
 const MENU_HALF_WIDTH: float = 190.0
-const MENU_HALF_HEIGHT: float = 180.0
+const MENU_HALF_HEIGHT: float = 210.0
 const MENU_BUTTON_WIDTH: float = 240.0
 const MENU_BUTTON_HEIGHT: float = 44.0
 const MENU_DIM_ALPHA: float = 0.62
@@ -136,9 +136,9 @@ const SECTOR_MAP_NODE_POSITIONS: Dictionary = {
 }
 ## Undirected path graph: internal nodes have this degree; ends have 1.
 const GRAPH_PATH_INTERNAL_DEGREE: int = 2
-## Pause panel taller with sector map + journal buttons (S7).
-const MENU_HEIGHT_WITH_MAP: float = 470.0
-const MENU_HALF_HEIGHT_WITH_MAP: float = 235.0
+## Pause panel taller with sector map + journal + options (S7/S10).
+const MENU_HEIGHT_WITH_MAP: float = 520.0
+const MENU_HALF_HEIGHT_WITH_MAP: float = 260.0
 
 const SHEET_TITLE: String = "CAPTAIN"
 const SHEET_STANDING_HEADER: String = "Standing"

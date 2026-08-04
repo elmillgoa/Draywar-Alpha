@@ -479,7 +479,8 @@ func _update_facing(dt: float) -> void:
 	if to_aim.length_squared() < BalanceFlight.DIRECTION_EPSILON:
 		return
 	var current_forward: Vector3 = -global_transform.basis.z
-	var new_forward: Vector3 = FlightMath.turn_toward(current_forward, to_aim, _turn_rate, dt)
+	var effective_turn: float = _turn_rate * SettingsService.turn_rate_multiplier()
+	var new_forward: Vector3 = FlightMath.turn_toward(current_forward, to_aim, effective_turn, dt)
 	if new_forward.length_squared() < BalanceFlight.DIRECTION_EPSILON:
 		return
 	# Keep a stable up; bank lightly by reconstructing basis.
@@ -590,10 +591,7 @@ func _build_hauler_mesh() -> void:
 	var prism: PrismMesh = PrismMesh.new()
 	prism.size = BalanceFlight.SHIP_PRISM_SIZE
 	body.mesh = prism
-	var hull_mat: StandardMaterial3D = StandardMaterial3D.new()
-	hull_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	hull_mat.albedo_color = BalanceFlight.COLOR_SHIP
-	body.material_override = hull_mat
+	body.material_override = BalancePresentation.hull_material(BalanceFlight.COLOR_SHIP)
 	# Prism default points +Y; lay it so the point faces ship forward (-Z).
 	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
 	add_child(body)
@@ -602,10 +600,7 @@ func _build_hauler_mesh() -> void:
 	var engine_box: BoxMesh = BoxMesh.new()
 	engine_box.size = BalanceFlight.SHIP_ENGINE_SIZE
 	engine.mesh = engine_box
-	var engine_mat: StandardMaterial3D = StandardMaterial3D.new()
-	engine_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	engine_mat.albedo_color = BalanceFlight.COLOR_SHIP_ENGINE
-	engine.material_override = engine_mat
+	engine.material_override = BalancePresentation.engine_material(BalanceFlight.COLOR_SHIP_ENGINE)
 	engine.position = Vector3(
 		0.0, 0.0, BalanceFlight.SHIP_PRISM_SIZE.z * BalanceFlight.SHIP_ENGINE_Z_FACTOR
 	)
@@ -615,10 +610,7 @@ func _build_hauler_mesh() -> void:
 	var canopy_box: BoxMesh = BoxMesh.new()
 	canopy_box.size = BalanceFlight.SHIP_CANOPY_SIZE
 	canopy.mesh = canopy_box
-	var canopy_mat: StandardMaterial3D = StandardMaterial3D.new()
-	canopy_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	canopy_mat.albedo_color = BalanceFlight.COLOR_SHIP_CANOPY
-	canopy.material_override = canopy_mat
+	canopy.material_override = BalancePresentation.accent_material(BalanceFlight.COLOR_SHIP_CANOPY)
 	canopy.position = BalanceFlight.SHIP_CANOPY_OFFSET
 	add_child(canopy)
 
@@ -626,10 +618,7 @@ func _build_hauler_mesh() -> void:
 	var wing_box: BoxMesh = BoxMesh.new()
 	wing_box.size = BalanceFlight.SHIP_WING_SIZE
 	wings.mesh = wing_box
-	var wing_mat: StandardMaterial3D = StandardMaterial3D.new()
-	wing_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	wing_mat.albedo_color = BalanceFlight.COLOR_SHIP_WING
-	wings.material_override = wing_mat
+	wings.material_override = BalancePresentation.hull_material(BalanceFlight.COLOR_SHIP_WING)
 	wings.position = BalanceFlight.SHIP_WING_OFFSET
 	add_child(wings)
 
@@ -640,10 +629,7 @@ func _build_fighter_mesh() -> void:
 	var prism: PrismMesh = PrismMesh.new()
 	prism.size = BalanceFlight.SHIP_FIGHTER_PRISM_SIZE
 	body.mesh = prism
-	var hull_mat: StandardMaterial3D = StandardMaterial3D.new()
-	hull_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	hull_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER
-	body.material_override = hull_mat
+	body.material_override = BalancePresentation.hull_material(BalanceFlight.COLOR_SHIP_FIGHTER)
 	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
 	add_child(body)
 
@@ -651,10 +637,9 @@ func _build_fighter_mesh() -> void:
 	var engine_box: BoxMesh = BoxMesh.new()
 	engine_box.size = BalanceFlight.SHIP_FIGHTER_ENGINE_SIZE
 	engine.mesh = engine_box
-	var engine_mat: StandardMaterial3D = StandardMaterial3D.new()
-	engine_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	engine_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER_ENGINE
-	engine.material_override = engine_mat
+	engine.material_override = BalancePresentation.engine_material(
+		BalanceFlight.COLOR_SHIP_FIGHTER_ENGINE
+	)
 	engine.position = Vector3(
 		0.0,
 		0.0,
@@ -666,10 +651,9 @@ func _build_fighter_mesh() -> void:
 	var canopy_box: BoxMesh = BoxMesh.new()
 	canopy_box.size = BalanceFlight.SHIP_FIGHTER_CANOPY_SIZE
 	canopy.mesh = canopy_box
-	var canopy_mat: StandardMaterial3D = StandardMaterial3D.new()
-	canopy_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	canopy_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER_CANOPY
-	canopy.material_override = canopy_mat
+	canopy.material_override = BalancePresentation.accent_material(
+		BalanceFlight.COLOR_SHIP_FIGHTER_CANOPY
+	)
 	canopy.position = BalanceFlight.SHIP_FIGHTER_CANOPY_OFFSET
 	add_child(canopy)
 
@@ -677,10 +661,7 @@ func _build_fighter_mesh() -> void:
 	var fin_box: BoxMesh = BoxMesh.new()
 	fin_box.size = BalanceFlight.SHIP_FIGHTER_FIN_SIZE
 	fin.mesh = fin_box
-	var fin_mat: StandardMaterial3D = StandardMaterial3D.new()
-	fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fin_mat.albedo_color = BalanceFlight.COLOR_SHIP_FIGHTER_FIN
-	fin.material_override = fin_mat
+	fin.material_override = BalancePresentation.hull_material(BalanceFlight.COLOR_SHIP_FIGHTER_FIN)
 	fin.position = BalanceFlight.SHIP_FIGHTER_FIN_OFFSET
 	add_child(fin)
 

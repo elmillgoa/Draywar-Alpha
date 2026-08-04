@@ -703,7 +703,7 @@ func _make_gate_body(pos: Vector3, dest_id: StringName) -> Node3D:
 	torus.rings = BalanceFlight.GATE_RING_SEGMENTS
 	torus.ring_segments = BalanceFlight.GATE_RING_RING_SEGMENTS
 	ring.mesh = torus
-	ring.material_override = _unshaded(BalanceFlight.COLOR_GATE)
+	ring.material_override = BalancePresentation.gate_material(BalanceFlight.COLOR_GATE)
 	# Stand the ring upright so it reads as a jump aperture from approach.
 	ring.rotation_degrees = Vector3(BalanceFlight.GATE_RING_PITCH_DEGREES, 0.0, 0.0)
 	root.add_child(ring)
@@ -713,7 +713,7 @@ func _make_gate_body(pos: Vector3, dest_id: StringName) -> Node3D:
 	core_mesh.radius = BalanceFlight.GATE_RING_INNER * BalanceFlight.GATE_CORE_RADIUS_FACTOR
 	core_mesh.height = BalanceFlight.GATE_RING_INNER * BalanceFlight.GATE_CORE_HEIGHT_FACTOR
 	core.mesh = core_mesh
-	core.material_override = _unshaded(BalanceFlight.COLOR_GATE_CORE)
+	core.material_override = BalancePresentation.gate_material(BalanceFlight.COLOR_GATE_CORE)
 	root.add_child(core)
 
 	var beacon: MeshInstance3D = MeshInstance3D.new()
@@ -778,7 +778,5 @@ func _content_display_name(id: StringName) -> String:
 
 
 func _unshaded(color: Color) -> StandardMaterial3D:
-	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = color
-	return material
+	## Stations use lit presentation (S10). Name kept for call sites.
+	return BalancePresentation.station_material(color)

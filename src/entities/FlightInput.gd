@@ -67,3 +67,19 @@ static func _bind_mouse(action: StringName, button: MouseButton) -> void:
 	var mouse: InputEventMouseButton = InputEventMouseButton.new()
 	mouse.button_index = button
 	InputMap.action_add_event(action, mouse)
+
+
+## Replace keyboard events for an action (keeps mouse bindings). S10 rebinds.
+static func rebind_key(action: StringName, physical_key: Key) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var keep_mouse: Array[InputEvent] = []
+	for existing: InputEvent in InputMap.action_get_events(action):
+		if existing is InputEventMouseButton:
+			keep_mouse.append(existing)
+	InputMap.action_erase_events(action)
+	for mouse_event: InputEvent in keep_mouse:
+		InputMap.action_add_event(action, mouse_event)
+	var key: InputEventKey = InputEventKey.new()
+	key.physical_keycode = physical_key
+	InputMap.action_add_event(action, key)

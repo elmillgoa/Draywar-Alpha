@@ -229,6 +229,15 @@ signal on_manual_save_requested
 ## Pause menu: load the most recent career save.
 signal on_manual_load_requested
 
+## Main / pause: open the options panel (S10).
+signal on_options_open_requested
+
+## Options panel: close.
+signal on_options_close_requested
+
+## SettingsService: any option value or rebind applied (S10).
+signal on_settings_changed
+
 ## UI: request to buy this commodity quantity at the docked station.
 signal on_trade_buy_requested(commodity_id: StringName, quantity: int)
 

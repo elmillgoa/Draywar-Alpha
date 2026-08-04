@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="Draywar Alpha"
-config/description="The empire fell. The contracts didn't. Alpha prove-it slice."
+config/name="Draywar"
+config/description="The empire fell. The contracts didn't."
 run/main_scene="res://src/Main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
@@ -28,6 +28,9 @@ MarketService="*res://src/systems/market/MarketService.gd"
 BoardService="*res://src/systems/board/BoardService.gd"
 IncidentService="*res://src/systems/incident/IncidentService.gd"
 EnforcementService="*res://src/systems/enforcement/EnforcementService.gd"
+SettingsService="*res://src/systems/settings/SettingsService.gd"
+AudioService="*res://src/systems/audio/AudioService.gd"
+SteamService="*res://src/systems/steam/SteamService.gd"
 MCPScreenshot="*res://addons/godot_mcp/mcp_screenshot_service.gd"
 MCPInputService="*res://addons/godot_mcp/mcp_input_service.gd"
 MCPGameInspector="*res://addons/godot_mcp/mcp_game_inspector_service.gd"

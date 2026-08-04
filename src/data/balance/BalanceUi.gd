@@ -7,24 +7,25 @@ extends RefCounted
 ##
 ## Station menu and FlightHUD both read these so presentation stays one look.
 
-const PANEL_BG: Color = Color(0.08, 0.10, 0.14, 0.92)
-const PANEL_BORDER: Color = Color(0.35, 0.55, 0.72, 0.85)
-const BUTTON_BG: Color = Color(0.16, 0.22, 0.30, 1.0)
-const BUTTON_HOVER: Color = Color(0.22, 0.32, 0.42, 1.0)
-const BUTTON_PRESSED: Color = Color(0.12, 0.18, 0.24, 1.0)
-const BUTTON_BORDER: Color = Color(0.45, 0.65, 0.80, 0.9)
-const BUTTON_DISABLED_BG: Color = Color(0.12, 0.12, 0.14, 0.7)
-const FONT_COLOR: Color = Color(0.92, 0.94, 0.96, 1.0)
-const FONT_COLOR_MUTED: Color = Color(0.72, 0.78, 0.86, 1.0)
+## S10 chrome pass — deeper navy panels, sharper cyan edge, gold titles.
+const PANEL_BG: Color = Color(0.06, 0.09, 0.14, 0.94)
+const PANEL_BORDER: Color = Color(0.32, 0.58, 0.78, 0.9)
+const BUTTON_BG: Color = Color(0.14, 0.20, 0.30, 1.0)
+const BUTTON_HOVER: Color = Color(0.20, 0.32, 0.44, 1.0)
+const BUTTON_PRESSED: Color = Color(0.10, 0.16, 0.24, 1.0)
+const BUTTON_BORDER: Color = Color(0.42, 0.68, 0.88, 0.95)
+const BUTTON_DISABLED_BG: Color = Color(0.10, 0.11, 0.14, 0.75)
+const FONT_COLOR: Color = Color(0.94, 0.96, 0.98, 1.0)
+const FONT_COLOR_MUTED: Color = Color(0.70, 0.78, 0.88, 1.0)
 ## Credits / funds warning (E3.1 low-funds HUD).
-const FONT_COLOR_WARNING: Color = Color(0.95, 0.72, 0.28, 1.0)
-const TITLE_COLOR: Color = Color(0.95, 0.88, 0.55, 1.0)
-const ACCENT: Color = Color(0.35, 0.78, 0.95, 1.0)
-const CORNER_RADIUS: int = 6
+const FONT_COLOR_WARNING: Color = Color(0.96, 0.74, 0.30, 1.0)
+const TITLE_COLOR: Color = Color(0.98, 0.90, 0.52, 1.0)
+const ACCENT: Color = Color(0.38, 0.82, 0.98, 1.0)
+const CORNER_RADIUS: int = 8
 const BORDER_WIDTH: int = 2
 const BUTTON_BORDER_WIDTH: int = 1
-const CONTENT_MARGIN: int = 12
-const BUTTON_CONTENT_MARGIN: int = 8
+const CONTENT_MARGIN: int = 14
+const BUTTON_CONTENT_MARGIN: int = 10
 
 ## Brief full-screen dock / undock flash (FlightHUD ColorRect — E1.1).
 const DOCK_FADE_COLOR: Color = Color(0.12, 0.22, 0.35, 1.0)

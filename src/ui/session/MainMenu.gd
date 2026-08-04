@@ -88,6 +88,9 @@ func _build_ui() -> void:
 	_continue_btn = _make_button(layout, button_size, BalanceSession.MAIN_CONTINUE)
 	_continue_btn.pressed.connect(_on_continue_pressed)
 
+	var options_btn: Button = _make_button(layout, button_size, BalanceSettings.MAIN_OPTIONS)
+	options_btn.pressed.connect(_on_options_pressed)
+
 	var quit_btn: Button = _make_button(layout, button_size, BalanceSession.MAIN_QUIT)
 	quit_btn.pressed.connect(_on_quit_pressed)
 
@@ -116,3 +119,8 @@ func _on_continue_pressed() -> void:
 
 func _on_quit_pressed() -> void:
 	EventBus.on_quit_to_desktop_requested.emit()
+
+
+func _on_options_pressed() -> void:
+	AudioService.play_ui_click()
+	EventBus.on_options_open_requested.emit()

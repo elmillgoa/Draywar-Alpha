@@ -15,8 +15,19 @@ var _has_look: bool = false
 
 
 func _ready() -> void:
-	fov = BalanceFlight.CAMERA_FOV
+	add_to_group(BalanceFlight.GROUP_CHASE_CAMERA)
+	fov = SettingsService.fov()
 	current = true
+	EventBus.on_settings_changed.connect(_on_settings_changed)
+
+
+func _exit_tree() -> void:
+	if EventBus.on_settings_changed.is_connected(_on_settings_changed):
+		EventBus.on_settings_changed.disconnect(_on_settings_changed)
+
+
+func _on_settings_changed() -> void:
+	fov = SettingsService.fov()
 
 
 ## Ship (or any Node3D) to follow.

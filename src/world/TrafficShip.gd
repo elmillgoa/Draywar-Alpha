@@ -125,9 +125,7 @@ func build_visual(color: Color) -> void:
 	capsule.height = BalanceEconomy.NPC_MESH_SIZE.z
 	capsule.radial_segments = BalanceEconomy.NPC_CAPSULE_RADIAL_SEGMENTS
 	hull.mesh = capsule
-	_body_mat = StandardMaterial3D.new()
-	_body_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_body_mat.albedo_color = _color_body
+	_body_mat = BalancePresentation.hull_material(_color_body)
 	hull.material_override = _body_mat
 	hull.rotation_degrees = Vector3(BalanceEconomy.NPC_MESH_PITCH_DEGREES, 0.0, 0.0)
 	add_child(hull)
@@ -136,9 +134,9 @@ func build_visual(color: Color) -> void:
 	var fin_box: BoxMesh = BoxMesh.new()
 	fin_box.size = BalanceEconomy.NPC_FIN_SIZE
 	fin.mesh = fin_box
-	_fin_mat = StandardMaterial3D.new()
-	_fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_fin_mat.albedo_color = _color_body.lightened(BalanceEconomy.NPC_FIN_LIGHTEN)
+	_fin_mat = BalancePresentation.hull_material(
+		_color_body.lightened(BalanceEconomy.NPC_FIN_LIGHTEN)
+	)
 	fin.material_override = _fin_mat
 	fin.position = BalanceEconomy.NPC_FIN_OFFSET
 	add_child(fin)

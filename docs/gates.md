@@ -862,3 +862,26 @@ presentation; board flashpoint hand jobs; markets rebalanced. No new save schema
 **Notes:** Content-complete gate closed. Maturity = **real Beta** per plan.
 S9 phase done. **S10** (polish + RC) next when authorized — Standard tier (§22).
 
+---
+
+## S10 — Production polish + launch prep (RC)
+
+**Criteria (plan):** art/audio floor, UI, performance, accessibility (rebinds,
+sensitivity, FOV, colorblind-safe standing colors, controller decision),
+Steamworks hooks as needed, bug smash. **Gate [Elliot]: release candidate.**
+
+**Build (floor):** Options (FOV / sensitivity / volumes / fullscreen / rebinds);
+keyboard+mouse only for 1.0; standing tier color + glyph + text; lit ship/station
+materials; thin procedural audio; product name Draywar; SteamService stub;
+Windows export preset; ship budget still 20. Playtest: `docs/S10_RC_PLAYTEST.md`.
+
+### Attempt log
+
+- **2026-08-04** — S10 code floor complete. Lint green; full suite green
+  (818 tests including `test_s10_*`). **Gate open, not signed.**
+
+**Verdict: open — release candidate not signed.**
+
+**Notes:** Full GodotSteam SDK not added (no new dependency without approval).
+Gamepad intentionally out for 1.0. Another polish pass stays S10 if he names holes.
+

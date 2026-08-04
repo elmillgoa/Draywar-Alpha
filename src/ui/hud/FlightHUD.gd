@@ -350,20 +350,33 @@ func _variant_to_name(value: Variant) -> StringName:
 func _refresh_status_line() -> void:
 	if _docked_station_id != &"":
 		var station_status: Dictionary = StandingService.status_for_station(_docked_station_id)
+		var dock_tier: StringName = _status_tier(station_status)
+		var dock_display: String = str(station_status[StandingService.STATUS_KEY_TIER_DISPLAY])
 		_status_label.text = (
 			BalanceStanding.DOCKED_STATUS_FORMAT
 			% [
 				_content_name(_docked_station_id),
-				station_status[StandingService.STATUS_KEY_TIER_DISPLAY],
+				"%s %s" % [BalanceStanding.tier_glyph(dock_tier), dock_display],
 				station_status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
 			]
 		)
+		_status_label.add_theme_color_override("font_color", BalanceStanding.tier_color(dock_tier))
 		return
 	if _current_system_id != &"":
 		var system_status: Dictionary = StandingService.status_for_system(_current_system_id)
-		_status_label.text = system_status[StandingService.STATUS_KEY_LINE]
+		var sys_tier: StringName = _status_tier(system_status)
+		var base_line: String = str(system_status[StandingService.STATUS_KEY_LINE])
+		_status_label.text = "%s %s" % [BalanceStanding.tier_glyph(sys_tier), base_line]
+		_status_label.add_theme_color_override("font_color", BalanceStanding.tier_color(sys_tier))
 		return
 	_status_label.text = ""
+	_status_label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
+
+
+func _status_tier(status: Dictionary) -> StringName:
+	if status.has(StandingService.STATUS_KEY_TIER):
+		return _variant_to_name(status[StandingService.STATUS_KEY_TIER])
+	return BalanceStanding.TIER_NEUTRAL
 
 
 func _refresh_prompt() -> void:
@@ -616,13 +629,21 @@ func _on_dock_refused(
 	_station_id: StringName, _entity_id: StringName, _standing: float, _tier: StringName
 ) -> void:
 	var status: Dictionary = StandingService.status_for_station(_station_id)
+	var refuse_tier: StringName = _status_tier(status)
 	_prompt_label.text = (
 		BalanceStanding.DOCK_REFUSED_PROMPT_FORMAT
 		% [
-			status[StandingService.STATUS_KEY_TIER_DISPLAY],
+			(
+				"%s %s"
+				% [
+					BalanceStanding.tier_glyph(refuse_tier),
+					status[StandingService.STATUS_KEY_TIER_DISPLAY],
+				]
+			),
 			status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
 		]
 	)
+	_prompt_label.add_theme_color_override("font_color", BalanceStanding.tier_color(refuse_tier))
 
 
 func _on_docked(station_id: StringName) -> void:

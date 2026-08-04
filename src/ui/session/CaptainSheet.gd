@@ -377,7 +377,20 @@ func _refresh_status() -> void:
 			system_id = StringName(str(world.get("system_id")))
 	var status: Dictionary = StandingService.status_for_system(system_id)
 	var line: String = str(status.get(StandingService.STATUS_KEY_LINE, ""))
-	_status_label.text = BalanceSession.SHEET_STATUS_FORMAT % line
+	var status_tier: StringName = BalanceStanding.TIER_NEUTRAL
+	if status.has(StandingService.STATUS_KEY_TIER):
+		var tier_raw: Variant = status[StandingService.STATUS_KEY_TIER]
+		if typeof(tier_raw) == TYPE_STRING_NAME:
+			var as_sn: StringName = tier_raw
+			status_tier = as_sn
+		elif typeof(tier_raw) == TYPE_STRING:
+			var as_s: String = tier_raw
+			status_tier = StringName(as_s)
+	_status_label.text = (
+		BalanceSession.SHEET_STATUS_FORMAT
+		% ("%s %s" % [BalanceStanding.tier_glyph(status_tier), line])
+	)
+	_status_label.add_theme_color_override("font_color", BalanceStanding.tier_color(status_tier))
 
 
 func _refresh_standings() -> void:
@@ -406,9 +419,14 @@ func _refresh_standings() -> void:
 		var tier: StringName = StandingService.tier_for(standing)
 		var tier_name: String = StandingService.tier_display_name(tier)
 		var line: Label = Label.new()
-		line.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
+		line.add_theme_color_override("font_color", BalanceStanding.tier_color(tier))
 		line.text = (
-			BalanceSession.SHEET_STANDING_LINE_FORMAT % [row[&"name"], tier_name, str(standing)]
+			BalanceSession.SHEET_STANDING_LINE_FORMAT
+			% [
+				row[&"name"],
+				"%s %s" % [BalanceStanding.tier_glyph(tier), tier_name],
+				str(standing),
+			]
 		)
 		_standing_box.add_child(line)
 		shown += 1

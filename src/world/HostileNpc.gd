@@ -541,9 +541,7 @@ func _build_mesh() -> void:
 	capsule.radial_segments = BalanceCombat.HOSTILE_CAPSULE_RADIAL
 	capsule.rings = BalanceCombat.HOSTILE_CAPSULE_RINGS
 	body.mesh = capsule
-	_body_mat = StandardMaterial3D.new()
-	_body_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_body_mat.albedo_color = _color_body
+	_body_mat = BalancePresentation.hull_material(_color_body)
 	body.material_override = _body_mat
 	# Lay capsule along forward (-Z) so it reads as a ship, not a buoy.
 	body.rotation_degrees = Vector3(BalanceFlight.SHIP_MESH_PITCH_DEGREES, 0.0, 0.0)
@@ -553,9 +551,7 @@ func _build_mesh() -> void:
 	var nose_box: BoxMesh = BoxMesh.new()
 	nose_box.size = BalanceCombat.HOSTILE_NOSE_SIZE
 	nose.mesh = nose_box
-	_nose_mat = StandardMaterial3D.new()
-	_nose_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_nose_mat.albedo_color = _color_accent
+	_nose_mat = BalancePresentation.accent_material(_color_accent)
 	nose.material_override = _nose_mat
 	nose.position = Vector3(0.0, 0.0, BalanceCombat.HOSTILE_NOSE_Z)
 	add_child(nose)
@@ -565,9 +561,7 @@ func _build_mesh() -> void:
 	var fin_box: BoxMesh = BoxMesh.new()
 	fin_box.size = BalanceCombat.HOSTILE_FIN_SIZE
 	fins.mesh = fin_box
-	_fin_mat = StandardMaterial3D.new()
-	_fin_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_fin_mat.albedo_color = _color_fin
+	_fin_mat = BalancePresentation.hull_material(_color_fin)
 	fins.material_override = _fin_mat
 	fins.position = BalanceCombat.HOSTILE_FIN_OFFSET
 	add_child(fins)

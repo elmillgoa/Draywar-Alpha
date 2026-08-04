@@ -23,6 +23,9 @@ const FIGHTER_HULL_ID: StringName = &"hull_fighter"
 ## Scene-tree group for the session ShipService (single writer for active hull).
 const GROUP_SHIP_SERVICE: StringName = &"ship_service"
 
+## Scene-tree group for chase cameras that should receive FOV from SettingsService (S10).
+const GROUP_CHASE_CAMERA: StringName = &"chase_camera"
+
 ## Optional save section `ship` (schema v1, no envelope bump) — E2.5.
 const SAVE_SECTION_SHIP: StringName = &"ship"
 const SAVE_KEY_ACTIVE_HULL_ID: StringName = &"active_hull_id"

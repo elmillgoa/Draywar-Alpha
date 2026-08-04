@@ -103,3 +103,21 @@ Per-Entity heat for patrol pressure (S4). Not standing and never writes
 standing. Heat accrues on attributed crime in patrolled/contested space, customs
 flee, and contraband seizure; decays on security steps. IncidentService asks it
 for pressure/hunt in patrolled systems only.
+
+### `SettingsService` -> `res://src/systems/settings/SettingsService.gd`
+
+Player options (FOV, sensitivity, volumes, fullscreen, key rebinds) for the
+whole app (S10). Menus, camera, flight turn rate and audio all read one writer;
+two would desync binds and display; it holds only preferences in `user://`, not
+career save state.
+
+### `AudioService` -> `res://src/systems/audio/AudioService.gd`
+
+Thin SFX/UI audio floor (S10). Weapon, dock and menu clicks share one player set
+and bus routing; two would double-fire or fight volume; it holds no career state.
+
+### `SteamService` -> `res://src/systems/steam/SteamService.gd`
+
+Steam packaging hook (S10). Presence and achievement call sites stay stable
+without requiring the SDK yet; two stubs would diverge; it holds only ephemeral
+presence/debug marks, not career state.

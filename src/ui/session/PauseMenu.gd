@@ -97,6 +97,9 @@ func _build_ui() -> void:
 	var load_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_LOAD)
 	load_btn.pressed.connect(_on_load_pressed)
 
+	var options_btn: Button = _make_button(layout, button_size, BalanceSettings.PAUSE_OPTIONS)
+	options_btn.pressed.connect(_on_options_pressed)
+
 	var quit_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_QUIT_TO_MENU)
 	quit_btn.pressed.connect(_on_quit_to_menu_pressed)
 
@@ -142,3 +145,8 @@ func _on_load_pressed() -> void:
 
 func _on_quit_to_menu_pressed() -> void:
 	EventBus.on_quit_to_menu_requested.emit()
+
+
+func _on_options_pressed() -> void:
+	AudioService.play_ui_click()
+	EventBus.on_options_open_requested.emit()

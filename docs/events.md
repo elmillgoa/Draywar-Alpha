@@ -891,6 +891,33 @@ No parameters.
 **Emitted by** `PauseMenu`.
 **Listened to by** `Main`.
 
+### `on_options_open_requested()`
+
+Main or pause menu asked to open the options panel (S10).
+
+No parameters.
+
+**Emitted by** `MainMenu`, `PauseMenu`.
+**Listened to by** `OptionsMenu`.
+
+### `on_options_close_requested()`
+
+Options panel closed (S10).
+
+No parameters.
+
+**Emitted by** `OptionsMenu`.
+**Listened to by** `OptionsMenu` (self), optional UI.
+
+### `on_settings_changed()`
+
+SettingsService applied an option or rebind (S10).
+
+No parameters.
+
+**Emitted by** `SettingsService`.
+**Listened to by** `ChaseCamera`, `OptionsMenu`, optional HUD.
+
 ## Trade / cargo
 
 ### `on_trade_buy_requested(commodity_id: StringName, quantity: int)`

@@ -8,7 +8,7 @@ extends Node
 ## Recovery / Wallet / Fuel / Hull / Cargo / Ship / Ops / Campaign / MoneyLog
 ## services, boots play from the main menu, and rebuilds the world on gate jumps.
 
-const BOOT_BANNER: String = "Draywar Alpha — boot OK"
+const BOOT_BANNER: String = BalanceSettings.BOOT_BANNER
 
 ## The debug console's parser and roster. Not a global.
 var _console: ConsoleService = null
@@ -31,6 +31,7 @@ var _station_menu: StationMenu = null
 
 var _main_menu: MainMenu = null
 var _pause_menu: PauseMenu = null
+var _options_menu: OptionsMenu = null
 var _captain_sheet: CaptainSheet = null
 var _campaign_journal: CampaignJournal = null
 var _sector_map: SectorMapPanel = null
@@ -81,8 +82,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
-## Close map / captain sheet / journal if open. True when an overlay was closed.
+## Close map / captain sheet / journal / options if open. True when an overlay was closed.
 func _try_close_play_overlay() -> bool:
+	if _options_menu != null and _options_menu.visible:
+		EventBus.on_options_close_requested.emit()
+		return true
 	if _sector_map != null and _sector_map.visible:
 		EventBus.on_sector_map_close_requested.emit()
 		return true
@@ -123,6 +127,10 @@ func _create_session_ui() -> void:
 	_pause_menu.name = "PauseMenu"
 	add_child(_pause_menu)
 
+	_options_menu = OptionsMenu.new()
+	_options_menu.name = "OptionsMenu"
+	add_child(_options_menu)
+
 	_captain_sheet = CaptainSheet.new()
 	_captain_sheet.name = "CaptainSheet"
 	add_child(_captain_sheet)
@@ -158,6 +166,7 @@ func _show_main_menu() -> void:
 		_main_menu.visible = true
 		_main_menu.refresh_continue(not SaveService.most_recent_path().is_empty())
 		_main_menu.show_feedback("")
+	SteamService.set_presence(BalanceSettings.STEAM_PRESENCE_MENU)
 	_raise_debug_console()
 
 
@@ -261,6 +270,7 @@ func _on_annexation_continue_requested() -> void:
 	# Storyboard entry: always wake up docked at the starter station.
 	_enter_career_docked()
 	_in_play = true
+	SteamService.set_presence(BalanceSettings.STEAM_PRESENCE_DOCKED)
 	_set_pause(false)
 	if _new_game_tip != null:
 		_new_game_tip.show_tip()
@@ -323,6 +333,7 @@ func _continue_career() -> void:
 	if _opening_annexation != null:
 		_opening_annexation.hide_annexation()
 	_in_play = true
+	SteamService.set_presence(BalanceSettings.STEAM_PRESENCE_FLIGHT)
 	_hide_main_menu()
 	_set_pause(false)
 	if _new_game_tip != null:
