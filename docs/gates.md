@@ -880,8 +880,14 @@ Windows export preset; ship budget still 20. Playtest: `docs/S10_RC_PLAYTEST.md`
 - **2026-08-04** — S10 code floor complete. Lint green; full suite green
   (818 tests including `test_s10_*`). **Gate open, not signed.**
 
-**Verdict: open — release candidate not signed.**
+### Attempt 1 — 2026-08-04
 
-**Notes:** Full GodotSteam SDK not added (no new dependency without approval).
-Gamepad intentionally out for 1.0. Another polish pass stays S10 if he names holes.
+**Verdict: signed — release candidate.**
+
+**Elliot (verbatim):**
+
+> Pass
+
+**Notes:** RC gate closed. S10 phase done. Steam plan S0–S10 complete for this
+queue. Full GodotSteam SDK still optional later; gamepad still out for 1.0.
 

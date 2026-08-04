@@ -1,8 +1,7 @@
 # S10 release-candidate playtest brief
 
 **Phase:** S10 — Production polish + launch prep  
-**Status:** Code floor in. **Gate open** — you sign **release candidate**.  
-**Do not treat launch-ready as proven** until you play this brief.
+**Status:** **Gate closed** 2026-08-04 — Elliot signed **release candidate** (“Pass”).
 
 ---
 
