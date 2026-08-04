@@ -775,17 +775,28 @@ the same session (framework + content unless Content-tier switch forced).
 
 ## S7 — Story / freeroam + cold start
 
-**Status:** **open** (code complete 2026-08-04 — not signed)
+**Criteria (plan):** new player can follow spine ~half campaign without console;
+cold start does not refund-bait in the first 2h; freeroam still works around spine.
 
 **Build:** CampaignService + 9 Act I–II spine beats, Story station section,
-Journal (pause), `campaign` save section. Boards exclude spine.
+Journal (pause), `campaign` save section. Boards exclude spine. Commit `4ca17dc`.
 
 **Playtest brief:** **`docs/S7_COLD_START_PLAYTEST.md`**
 
-**Gate question:** Can a new player follow Story ~half campaign without console?
-Does freeroam still work? Would you refund in 2 hours?
+### Attempt log
 
-**History:**
 - **2026-08-04** — S7 code complete (framework + content). Lint green; full
   suite green (779 tests). **Gate open, not signed.**
+- **2026-08-04** — **Signed pass** (Elliot: “Pass”). Story / freeroam + cold
+  start accepted; S8 authorized when he says go.
+
+**Verdict: signed — S7 story / freeroam + cold start passes.**
+
+**Signed by:** Elliot  
+**Date:** 2026-08-04  
+**Verbatim:**
+> Pass
+
+**Notes:** Feel gate closed. S7 phase done. Next phase S8 (Holding + Act III)
+when authorized — do not start until he says so.
 
