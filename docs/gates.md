@@ -851,8 +851,14 @@ presentation; board flashpoint hand jobs; markets rebalanced. No new save schema
   (792+ tests including `test_s9_content_floor`). **Gate open, not signed.**
   Hours not claimed — needs Elliot (+ external) measure.
 
-**Verdict: open — content complete not signed.**
+### Attempt 1 — 2026-08-04
 
-**Notes:** Do not start S10 until S9 signed. Another content fill pass is still
-S9 if he names holes after play.
+**Verdict: signed — content complete.**
+
+**Elliot (verbatim):**
+
+> Pass.
+
+**Notes:** Content-complete gate closed. Maturity = **real Beta** per plan.
+S9 phase done. **S10** (polish + RC) next when authorized — Standard tier (§22).
 

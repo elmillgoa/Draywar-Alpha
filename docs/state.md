@@ -2,10 +2,8 @@
 
 **Where the build is right now.** Keep short. Detail lives in `docs/journal/`.
 
-**Current position:** **S9 content floor in 2026-08-04** — map/cast/commodities/chains
-filled to Steam §10 floor. **Content-complete gate OPEN** (Elliot + external hours).
-Maturity = **core complete / real Alpha** until S9 gate; plan **real Beta** only after
-content-complete sign-off. Elliot = playtest + ideas only; LLMs program everything.
+**Current position:** **S9 signed 2026-08-04** — content complete (real Beta).
+**S10** queued (polish + launch prep / RC). Elliot = playtest + ideas only; LLMs program everything.
 
 | Doc | Role |
 |-----|------|
@@ -13,8 +11,8 @@ content-complete sign-off. Elliot = playtest + ideas only; LLMs program everythi
 | `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing law |
 | `docs/OUTSIDE_REVIEW_2026-08-02.md` | Fable findings (v1.1 source) |
-| `docs/gates.md` | E6.6 signed; S2–**S8** signed; **S9 open** |
-| `docs/S9_CONTENT_PLAYTEST.md` | Content floor playtest + hours measure (gate open) |
+| `docs/gates.md` | E6.6 signed; S2–**S9** signed; **S10 open when authorized** |
+| `docs/S9_CONTENT_PLAYTEST.md` | Content floor playtest (gate **closed**) |
 | `docs/S8_ENDGAME_PLAYTEST.md` | Holding / climax / sandbox brief (gate closed) |
 | `docs/S7_COLD_START_PLAYTEST.md` | Story / freeroam + cold-start brief (gate closed) |
 | `docs/S6_OPS_PLAYTEST.md` | Ops feel playtest brief (gate closed) |
@@ -37,28 +35,23 @@ content-complete sign-off. Elliot = playtest + ideas only; LLMs program everythi
 | **S6** Operations | **done** 2026-08-04 — code + Ops feel signed |
 | **S7** Campaign I–II | **done** 2026-08-04 — code + feel gate signed |
 | **S8** Holding + Act III | **done** 2026-08-04 — code + feel gate signed |
-| **S9** Content complete | **floor in** 2026-08-04 — **gate open** |
-| S10 | queued after S9 gate |
+| **S9** Content complete | **done** 2026-08-04 — floor in + **gate signed** (real Beta) |
+| **S10** Polish + RC | **queued** until authorized |
 
 ## What the game can do now
 
-- Everything from S8 (campaign through Holding, ignition, sandbox…), **plus S9 floor:**
-- **Map** — 8 systems (Eta Reach, Theta Rim); 16 stations; outer arm Delta→Eta→Theta→Zeta.
-- **Powers** — Eta Consortium, Theta Watch, Lane Brokers (+ existing + Holding).
-- **Cast** — 35 People; 8 recovery chains (no second Reach chain — dock-refuse tests).
-- **Economy** — 12 commodities (Ice, Components); sector production ratios rebalanced.
-- **Boards** — outer-system couriers/bounties/smuggle + named flashpoint hand jobs.
-- **Save** — no new schema; content-only expansion.
-
-- **Not yet:** measured ~30h / external play; mid/top §10 fill; S10 art polish.
+- Full Steam path through Holding + sandbox (S0–S8).
+- **S9 content floor (signed complete):** 8 systems / 16 stations / 8 entities /
+  35 people / 12 commodities / 8 recovery; Eta/Theta; Ice + Components; flashpoint boards.
+- **Not yet:** S10 art/audio/UI polish, a11y, Steamworks hooks, RC bug smash.
 
 ## Next session starts here
 
-1. **Elliot playtests S9** — `docs/S9_CONTENT_PLAYTEST.md`. Measure hours / dead air.
-2. Optional: external playtester with same brief.
-3. On **content complete** sign-off → close S9, queue **S10**.
-4. If he names holes → another S9 fill pass (still Content tier), not S10.
-5. Out of scope: standing law invention, empire sim, ship budget raise.
+1. **Authorize S10** — Standard tier (§22): Claude Sonnet **or** Grok coding session.
+2. Paste S10 kickoff from `docs/STEAM_PHASE_PLAN.md` §22.5 (or this session’s handoff).
+3. Scope: art/audio floor, UI, performance, a11y, Steam hooks, bug smash. **No new pillars.**
+4. Gate: Elliot signs **release candidate**.
+5. Out of scope: standing law invention, empire sim, ship budget raise, content budget expansion (that was S9).
 
 ### Locked decisions
 
@@ -86,15 +79,18 @@ content-complete sign-off. Elliot = playtest + ideas only; LLMs program everythi
 - S9 floor: Greek-letter systems Eta/Theta; flashpoints = board hand rows (not spine);
   one recovery chain per Reach (Mendi only) so dock-refuse + recovery exception stay clean;
   CONTENT_BUDGET raised to Steam §10 ceilings.
+- **S9 gate:** Elliot signed content complete 2026-08-04 (“Pass”).
 
 ## Standing decisions
 
 - Steam plan v1.2 is the build queue.
 - Campaign through debts + Holding → sandbox; real economy sim; 30h/80h.
-- E6.6 signed; S2–**S8** signed. **S9 gate open.** Next: playtest then S10 when S9 signed.
+- E6.6 signed; S2–**S9** signed. **Next: S10 when authorized** (Standard tier).
 
 ## Session history
 
+- **2026-08-04 (S9 gate)** — Elliot signed content complete (“Pass”). Real Beta.
+  S10 queued until authorized.
 - **2026-08-04 (S9 floor)** — Budget lift; 8 systems / 16 stations / 8 entities / 35
   people / 12 commodities / 8 recovery / flashpoint board jobs; markets rebalanced;
   map presentation for Eta/Theta; tests + S9_CONTENT_PLAYTEST. **S9 gate open.**
