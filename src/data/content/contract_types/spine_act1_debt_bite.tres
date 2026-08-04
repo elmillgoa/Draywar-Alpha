@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act I — debt lesson: Free Haulers, no hard debt gate (clean life path OK).
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act1_debt_bite"
+display_name = "Haulers bond run — Spit paperwork"
+offering_entity_id = &"entity_free_haulers"
+kind = &"delivery"
+standing_complete = 8.0
+standing_fail = -3.0
+standing_abandon = -8.0
+pay_credits = 130
+destination_station_id = &"station_beta_spit"
+is_spine = true
+spine_act = 1
+requires_flags = PackedStringArray("flag_trade_lesson")
+sets_flags = PackedStringArray("flag_debt_lesson")
+min_entity_standing = -100.0
+requires_debt = false
+offer_station_id = &"station_beta_hub"
+journal_blurb = "Free Haulers keep a desk on Beta Hub for freighters who run short. Their bond paperwork wants a courier drop at Beta Spit — small pay, clean trail. If you ever take their emergency loan under Services, garnish and grace docks will teach you faster than any lecture. Whether you borrow or not, finish the run. Debt is a tool, not a personality."
+sort_index = 40

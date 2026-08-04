@@ -279,6 +279,8 @@ func _hand_templates_for(controller: StringName) -> Array[ContractType]:
 		if item == null or not (item is ContractType):
 			continue
 		var ct: ContractType = item as ContractType
+		if ct.is_spine:
+			continue
 		if ct.offering_entity_id != controller:
 			continue
 		out.append(ct)

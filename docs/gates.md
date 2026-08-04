@@ -758,4 +758,34 @@ a second menu toy.
 - **2026-08-03** — S6 code complete (OperationService, station Ops UI, save
   `operation`, 18 ops tests after adversary harden). Lint green; full suite
   green. **Gate open, not signed.**
+- **2026-08-04** — **Signed pass** (Elliot: “Signed.” Full S7 authorized this
+  chat unless stronger model required). Ops feel accepted; S7 authorized.
+
+**Verdict: signed — S6 Ops feel passes.**
+
+**Signed by:** Elliot  
+**Date:** 2026-08-04  
+**Verbatim:**
+> Signed. This chat should run it all unless a stronger model is required.
+
+**Notes:** Feel gate closed. S7 campaign framework + Acts I–II authorized in
+the same session (framework + content unless Content-tier switch forced).
+
+---
+
+## S7 — Story / freeroam + cold start
+
+**Status:** **open** (code complete 2026-08-04 — not signed)
+
+**Build:** CampaignService + 9 Act I–II spine beats, Story station section,
+Journal (pause), `campaign` save section. Boards exclude spine.
+
+**Playtest brief:** **`docs/S7_COLD_START_PLAYTEST.md`**
+
+**Gate question:** Can a new player follow Story ~half campaign without console?
+Does freeroam still work? Would you refund in 2 hours?
+
+**History:**
+- **2026-08-04** — S7 code complete (framework + content). Lint green; full
+  suite green (779 tests). **Gate open, not signed.**
 

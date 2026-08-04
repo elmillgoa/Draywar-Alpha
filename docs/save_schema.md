@@ -16,10 +16,10 @@ what is inside a section.
 **Version 1 stores the envelope only** (no schema bump for optional sections).
 Debug `save`/`load` and menu save write `sections` that may include optional
 **`standing`** (A2), **`world_clock`** (S1), **`market`** (S2), **`wallet`** (A5),
-**`cargo`** (B3), **`ship`** (E2.5), **`operation`** (S6), **`world`** (B2),
-**`mission`** (B2), **`boards`** (S3a), **`incidents`** (S3b), **`enforcement`**
-(S4), and **`career`** (E4.6) maps. Missing `standing` means all-neutral content
-defaults.
+**`cargo`** (B3), **`ship`** (E2.5), **`operation`** (S6), **`campaign`** (S7),
+**`world`** (B2), **`mission`** (B2), **`boards`** (S3a), **`incidents`** (S3b),
+**`enforcement`** (S4), and **`career`** (E4.6) maps. Missing `standing` means
+all-neutral content defaults.
 Missing `world_clock` means elapsed game time starts at zero. Missing `market`
 means every station market is re-seeded from its station profile. Missing
 `boards` means job boards re-derive from the clock with no mid-cycle claims.
@@ -27,9 +27,10 @@ Missing `incidents` means security steps re-derive from the clock; offered
 prompts are never restored. Missing `enforcement` means no per-Entity heat.
 Missing `wallet` means starting credits/fuel/condition. Missing `cargo` means
 empty hold. Missing `ship` means Hauler only (starter owned, active Hauler).
-Missing `operation` means empty fleet and empty warehouses. Missing `world`
-keeps the boot system/spawn. Missing `mission` means no active job. Missing
-`career` means no life-path ids on the captain sheet (old saves).
+Missing `operation` means empty fleet and empty warehouses. Missing `campaign`
+means Act I with no spine progress. Missing `world` keeps the boot system/spawn.
+Missing `mission` means no active job. Missing `career` means no life-path ids
+on the captain sheet (old saves).
 Tests may still use a hostile probe fixture. New required career fields later
 bump the version with a migration step in `SaveMigrations.gd`.
 
@@ -164,6 +165,22 @@ abstract (no world spawn ids).
 | `warehouse` | `Dictionary` | station id string → { commodity id string → int qty }. Capacity is per-station volume (`BalanceOps.WAREHOUSE_CAPACITY`). |
 
 Missing section → empty fleet and empty warehouses.
+
+### Optional section: `campaign` (schema v1)
+
+Written by `CampaignService.to_section()` / applied by `apply_section()` when a
+campaign service is present (S7). Always gathered when the service exists
+(Act I with no progress is valid). Applied **after `operation`** and **before
+`mission`**. No envelope version bump. Holding is a stub dict reserved for S8.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `act` | `int` | Current campaign act (`1` Act I, `2` Act II, `3` reserved Act III). |
+| `flags` | `Dictionary` | flag name string → `true` for set campaign flags. |
+| `completed_spine` | `Array` of `String` | Spine contract template ids completed. |
+| `holding` | `Dictionary` | Holding stub for S8 (empty in S7). |
+
+Missing section → Act I, `flag_act1_started` only, no completed spines, empty holding.
 
 ### Optional section: `world` (schema v1)
 

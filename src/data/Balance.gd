@@ -24,8 +24,8 @@ const CONTENT_BUDGET: Dictionary[StringName, int] = {
 	&"people": 24,
 	## E1.4 trade contrast: commodities toward 8–10 (E1 cap ≤10).
 	&"commodities": 10,
-	## E3.4 smuggle kind + denser boards; budget raised to 12 (E3 caps).
-	&"contract_types": 12,
+	## S7: radiant hand (~12) + campaign spine (~9) under one ceiling.
+	&"contract_types": 24,
 	&"hulls": 2,
 	&"weapons": 12,
 	&"equipment": 10,

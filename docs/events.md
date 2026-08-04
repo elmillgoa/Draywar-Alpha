@@ -1288,3 +1288,65 @@ Warehouse contents at a station changed (deposit / withdraw / load).
 
 **Emitted by** `OperationService`.
 **Listened to by** `StationMenu`.
+
+### `on_campaign_flag_set(flag_name: StringName)`
+
+A campaign flag became true (spine progress / act start).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `flag_name` | `StringName` | Flag constant (e.g. `flag_wake_done`). |
+
+**Emitted by** `CampaignService`.
+**Listened to by** `CampaignJournal`, `StationCampaignUi` (via StationMenu refresh).
+
+### `on_spine_completed(template_id: StringName)`
+
+A campaign spine beat completed successfully (after mission complete + flags).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | Spine `ContractType` content id. |
+
+**Emitted by** `CampaignService`.
+**Listened to by** `CampaignJournal`, `StationCampaignUi`.
+
+### `on_campaign_act_changed(act: int)`
+
+Career campaign act advanced (1 = Act I, 2 = Act II, 3 = reserved Act III).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `act` | `int` | New act number. |
+
+**Emitted by** `CampaignService`.
+**Listened to by** `CampaignJournal`, `StationCampaignUi`.
+
+### `on_spine_accept_requested(template_id: StringName)`
+
+UI asked to accept a campaign spine template (Story section).
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `template_id` | `StringName` | Spine content id. |
+
+**Emitted by** `StationCampaignUi` (Story accept buttons).
+**Listened to by** `CampaignService` → `MissionService.accept` (library path).
+
+### `on_campaign_journal_open_requested()`
+
+UI asked to open the campaign journal panel.
+
+No parameters.
+
+**Emitted by** `PauseMenu` (Journal button).
+**Listened to by** `CampaignJournal`.
+
+### `on_campaign_journal_close_requested()`
+
+UI asked to close the campaign journal panel.
+
+No parameters.
+
+**Emitted by** `CampaignJournal` close button / Esc path via Main.
+**Listened to by** `CampaignJournal`.

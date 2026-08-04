@@ -369,3 +369,21 @@ signal on_ops_charter_breached(ops_ship_id: StringName, entity_id: StringName)
 
 ## OperationService: warehouse contents at a station changed.
 signal on_warehouse_changed(station_id: StringName)
+
+## CampaignService: a campaign flag became true.
+signal on_campaign_flag_set(flag_name: StringName)
+
+## CampaignService: a spine beat was completed successfully.
+signal on_spine_completed(template_id: StringName)
+
+## CampaignService: career act advanced (1 / 2 / 3).
+signal on_campaign_act_changed(act: int)
+
+## UI: accept a campaign spine template (Story section / journal).
+signal on_spine_accept_requested(template_id: StringName)
+
+## UI: open campaign journal panel.
+signal on_campaign_journal_open_requested
+
+## UI: close campaign journal panel.
+signal on_campaign_journal_close_requested

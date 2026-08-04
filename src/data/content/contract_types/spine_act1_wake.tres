@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act I — wake: first real work after annexation fallout. Alpha Port → Yard.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act1_wake"
+display_name = "Wake haul — parts to Alpha Yard"
+offering_entity_id = &"entity_reach_authority"
+kind = &"delivery"
+standing_complete = 6.0
+standing_fail = -2.0
+standing_abandon = -6.0
+pay_credits = 90
+destination_station_id = &"station_alpha_yard"
+is_spine = true
+spine_act = 1
+requires_flags = PackedStringArray()
+sets_flags = PackedStringArray("flag_wake_done")
+min_entity_standing = -100.0
+requires_debt = false
+offer_station_id = &"station_alpha_port"
+journal_blurb = "The annexation papers dried and the bay lights still work. Reach Authority has a short haul to Alpha Yard — spare parts, sealed, no speeches. First real work since the fall. Take it, undock, fly the system, dock, turn in. The rest of the sector can wait until you remember how your hands move."
+sort_index = 10

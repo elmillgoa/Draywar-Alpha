@@ -99,6 +99,7 @@ const PAUSE_SECTOR_MAP: String = "Sector map"
 const PAUSE_SAVE: String = "Save"
 const PAUSE_LOAD: String = "Load"
 const PAUSE_QUIT_TO_MENU: String = "Quit to menu"
+## Label lives on BalanceCampaign.PAUSE_JOURNAL (S7); PauseMenu uses that const.
 
 ## Sector chart (E5.5) — functional layout for 6 systems.
 const SECTOR_MAP_TITLE: String = "SECTOR CHART"
@@ -132,9 +133,9 @@ const SECTOR_MAP_NODE_POSITIONS: Dictionary = {
 }
 ## Undirected path graph: internal nodes have this degree; ends have 1.
 const GRAPH_PATH_INTERNAL_DEGREE: int = 2
-## Pause panel taller with sector map button.
-const MENU_HEIGHT_WITH_MAP: float = 420.0
-const MENU_HALF_HEIGHT_WITH_MAP: float = 210.0
+## Pause panel taller with sector map + journal buttons (S7).
+const MENU_HEIGHT_WITH_MAP: float = 470.0
+const MENU_HALF_HEIGHT_WITH_MAP: float = 235.0
 
 const SHEET_TITLE: String = "CAPTAIN"
 const SHEET_STANDING_HEADER: String = "Standing"
@@ -183,9 +184,9 @@ const LOAD_NONE: String = "No save to load."
 const NEW_GAME_TIP_CANVAS_LAYER: int = 32
 
 const NEW_GAME_TIP_WIDTH: float = 420.0
-const NEW_GAME_TIP_HEIGHT: float = 220.0
+const NEW_GAME_TIP_HEIGHT: float = 260.0
 const NEW_GAME_TIP_HALF_WIDTH: float = 210.0
-const NEW_GAME_TIP_HALF_HEIGHT: float = 110.0
+const NEW_GAME_TIP_HALF_HEIGHT: float = 130.0
 const NEW_GAME_TIP_BUTTON_WIDTH: float = 160.0
 const NEW_GAME_TIP_BUTTON_HEIGHT: float = 40.0
 const NEW_GAME_TIP_SPACER: float = 10.0
@@ -197,8 +198,9 @@ const NEW_GAME_TIP_BODY: String = (
 	+ "F  dock at station / jump at gate\n"
 	+ "Tab  lock · put reticle on red lead diamond\n"
 	+ "Space or left mouse  fire (no auto-aim)\n"
-	+ "Esc  pause · captain sheet · save\n"
-	+ "Pirates sit near gates — not on the undock pad"
+	+ "Esc  pause · captain sheet · save · journal\n"
+	+ "Pirates sit near gates — not on the undock pad\n"
+	+ "Story work shows under Story at the station. Journal is in the pause menu."
 )
 const NEW_GAME_TIP_DISMISS: String = "Got it"
 

@@ -36,6 +36,35 @@ extends ContentItem
 ## Smuggle: units loaded on accept; must still be held at turn-in.
 @export var cargo_quantity: int = 0
 
+# --- Campaign spine (Steam S7) — optional; default keeps radiant hand rows ---
+
+## When true, excluded from BoardService hand templates; offered via CampaignService.
+@export var is_spine: bool = false
+
+## Campaign act for this beat (1 or 2 in S7). Ignored when not spine.
+@export var spine_act: int = 0
+
+## All of these CampaignService flags must be set before the beat is available.
+@export var requires_flags: PackedStringArray = PackedStringArray()
+
+## Set these flags on successful mission complete (CampaignService).
+@export var sets_flags: PackedStringArray = PackedStringArray()
+
+## Standing floor vs offering entity. BalanceCampaign.STANDING_NO_FLOOR = open.
+@export var min_entity_standing: float = BalanceCampaign.STANDING_NO_FLOOR
+
+## When true, only available while WalletService debt owed > 0.
+@export var requires_debt: bool = false
+
+## Station where the Story offer appears. Required when is_spine.
+@export var offer_station_id: StringName = &""
+
+## Short journal line (2–4 sentences). Required when is_spine.
+@export var journal_blurb: String = ""
+
+## Order within the act (lower first).
+@export var sort_index: int = 0
+
 
 ## Everything wrong with this contract template. Empty means valid.
 func validation_errors() -> PackedStringArray:
@@ -54,6 +83,9 @@ func validation_errors() -> PackedStringArray:
 
 	if pay_credits < 0:
 		problems.append("`pay_credits` is negative. Mission pay cannot be below zero.")
+
+	if is_spine:
+		problems.append_array(_spine_validation_errors())
 
 	if kind == BalanceStanding.MISSION_KIND_BOUNTY:
 		if String(target_system_id).strip_edges().is_empty():
@@ -106,6 +138,27 @@ func validation_errors() -> PackedStringArray:
 	problems.append_array(_delta_problems(standing_complete, "standing_complete"))
 	problems.append_array(_delta_problems(standing_fail, "standing_fail"))
 	problems.append_array(_delta_problems(standing_abandon, "standing_abandon"))
+	return problems
+
+
+func _spine_validation_errors() -> PackedStringArray:
+	var problems: PackedStringArray = []
+	if spine_act < BalanceCampaign.ACT_MIN or spine_act > BalanceCampaign.ACT_MAX_S7:
+		problems.append(
+			(
+				"`spine_act` is %s; S7 spine beats use act %s or %s."
+				% [spine_act, BalanceCampaign.ACT_I, BalanceCampaign.ACT_II]
+			)
+		)
+	if String(offer_station_id).strip_edges().is_empty():
+		problems.append(
+			(
+				"`offer_station_id` is empty. Spine contracts name the station "
+				+ "where the Story offer appears."
+			)
+		)
+	if journal_blurb.strip_edges().is_empty():
+		problems.append("`journal_blurb` is empty. Spine contracts need a short journal line.")
 	return problems
 
 

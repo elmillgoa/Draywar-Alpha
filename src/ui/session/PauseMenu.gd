@@ -85,6 +85,9 @@ func _build_ui() -> void:
 	var sheet_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_CAPTAIN_SHEET)
 	sheet_btn.pressed.connect(_on_sheet_pressed)
 
+	var journal_btn: Button = _make_button(layout, button_size, BalanceCampaign.PAUSE_JOURNAL)
+	journal_btn.pressed.connect(_on_journal_pressed)
+
 	var map_btn: Button = _make_button(layout, button_size, BalanceSession.PAUSE_SECTOR_MAP)
 	map_btn.pressed.connect(_on_map_pressed)
 
@@ -119,6 +122,10 @@ func _on_resume_pressed() -> void:
 
 func _on_sheet_pressed() -> void:
 	EventBus.on_captain_sheet_open_requested.emit()
+
+
+func _on_journal_pressed() -> void:
+	EventBus.on_campaign_journal_open_requested.emit()
 
 
 func _on_map_pressed() -> void:

@@ -5,8 +5,8 @@ extends Node
 ## Implements: Alpha/ALPHA_PHASE_PLAN.md A1–A5, Alpha/ALPHA_DECISION_PHASE_PLAN.md B2–B3
 ##
 ## Owns ConsoleService, wires DebugConsole, holds Save / Attribution / Mission /
-## Recovery / Wallet / Fuel / Hull / Cargo / Ship / Ops / MoneyLog services, boots
-## play from the main menu, and rebuilds the world on gate jumps.
+## Recovery / Wallet / Fuel / Hull / Cargo / Ship / Ops / Campaign / MoneyLog
+## services, boots play from the main menu, and rebuilds the world on gate jumps.
 
 const BOOT_BANNER: String = "Draywar Alpha — boot OK"
 
@@ -25,12 +25,14 @@ var _cargo: CargoService = null
 var _money_log: MoneyLog = null
 var _ship_service: ShipService = null
 var _operation: OperationService = null
+var _campaign: CampaignService = null
 var _hud: FlightHUD = null
 var _station_menu: StationMenu = null
 
 var _main_menu: MainMenu = null
 var _pause_menu: PauseMenu = null
 var _captain_sheet: CaptainSheet = null
+var _campaign_journal: CampaignJournal = null
 var _sector_map: SectorMapPanel = null
 var _new_game_tip: NewGameTip = null
 var _life_path_create: LifePathCreate = null
@@ -72,16 +74,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not _in_play or _console_open or _jump_busy or _opening_in_progress:
 		return
-	if _sector_map != null and _sector_map.visible:
-		EventBus.on_sector_map_close_requested.emit()
-		get_viewport().set_input_as_handled()
-		return
-	if _captain_sheet != null and _captain_sheet.visible:
-		EventBus.on_captain_sheet_close_requested.emit()
+	if _try_close_play_overlay():
 		get_viewport().set_input_as_handled()
 		return
 	_set_pause(not _pause_open)
 	get_viewport().set_input_as_handled()
+
+
+## Close map / captain sheet / journal if open. True when an overlay was closed.
+func _try_close_play_overlay() -> bool:
+	if _sector_map != null and _sector_map.visible:
+		EventBus.on_sector_map_close_requested.emit()
+		return true
+	if _captain_sheet != null and _captain_sheet.visible:
+		EventBus.on_captain_sheet_close_requested.emit()
+		return true
+	if _campaign_journal != null and _campaign_journal.visible:
+		EventBus.on_campaign_journal_close_requested.emit()
+		return true
+	return false
 
 
 ## Connected in Main.tscn to the console view's line_submitted.
@@ -115,6 +126,10 @@ func _create_session_ui() -> void:
 	_captain_sheet = CaptainSheet.new()
 	_captain_sheet.name = "CaptainSheet"
 	add_child(_captain_sheet)
+
+	_campaign_journal = CampaignJournal.new()
+	_campaign_journal.name = "CampaignJournal"
+	add_child(_campaign_journal)
 
 	_sector_map = SectorMapPanel.new()
 	_sector_map.name = "SectorMapPanel"
@@ -439,6 +454,12 @@ func _boot_play_session() -> void:
 	add_child(_operation)
 	_operation.reset()
 
+	# S7: campaign after ops; spine uses MissionService (created in scene / later).
+	_campaign = CampaignService.new()
+	_campaign.name = "CampaignService"
+	add_child(_campaign)
+	_campaign.reset()
+
 	_station_menu = StationMenu.new()
 	_station_menu.name = "StationMenu"
 	add_child(_station_menu)
@@ -504,6 +525,9 @@ func _tear_down_play_session() -> void:
 	if _operation != null:
 		_operation.queue_free()
 		_operation = null
+	if _campaign != null:
+		_campaign.queue_free()
+		_campaign = null
 	if _wallet != null:
 		_wallet.queue_free()
 		_wallet = null

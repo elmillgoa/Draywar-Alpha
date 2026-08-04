@@ -60,7 +60,9 @@ func test_three_contract_destinations_span_systems() -> void:
 		offering[contract.offering_entity_id] = true
 		assert_false(String(station.system_id).is_empty())
 	assert_gte(destinations.size(), 2, "jobs deliver across at least two stations")
-	assert_eq(offering.size(), 3, "each system controller offers a job")
+	# Radiant controllers + Free Haulers spine offers (S7) — at least the three system
+	# powers; Free Haulers is a fourth offering entity when spine content is loaded.
+	assert_gte(offering.size(), 3, "multiple entities offer jobs (controllers + lenders)")
 
 
 func test_commodities_budget_and_positive_prices() -> void:

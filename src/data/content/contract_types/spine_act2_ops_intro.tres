@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act II close — Reach ops intro; needs any lane + Friendly standing.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act2_ops_intro"
+display_name = "Ops brief — Authority to Port"
+offering_entity_id = &"entity_reach_authority"
+kind = &"delivery"
+standing_complete = 10.0
+standing_fail = -3.0
+standing_abandon = -9.0
+pay_credits = 200
+destination_station_id = &"station_alpha_port"
+is_spine = true
+spine_act = 2
+requires_flags = PackedStringArray()
+sets_flags = PackedStringArray("flag_ops_intro", "flag_act2_done")
+min_entity_standing = 20.0
+requires_debt = false
+offer_station_id = &"station_alpha_port"
+journal_blurb = "Reach Authority will only brief captains they already trust. Friendly standing required. The job itself is a short sealed run back to Port — the point is the conversation after: Operations. Hire abstract haulers and escorts from the Operations section when standing allows. You are no longer only a solo courier. Act II closes when this lands."
+sort_index = 40

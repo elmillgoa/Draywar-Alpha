@@ -41,6 +41,7 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 	_merge_cargo_section(tree, sections)
 	_merge_ship_section(tree, sections)
 	_merge_operation_section(tree, sections)
+	_merge_campaign_section(tree, sections)
 
 	var world_section: Dictionary = _world_section(tree)
 	if not world_section.is_empty():
@@ -80,6 +81,8 @@ static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_clamp_ship_to_cargo_fit(tree)
 	# S6: operation after cargo (warehouse deposit/withdraw uses hold state).
 	_apply_operation_from_sections(tree, sections)
+	# S7: campaign before mission so spine flags exist if mission restore needs them.
+	_apply_campaign_from_sections(tree, sections)
 	_apply_mission_from_sections(tree, sections)
 	_apply_career_from_sections(sections)
 
@@ -213,6 +216,33 @@ static func _apply_operation_from_sections(tree: SceneTree, sections: Dictionary
 		ops.call(&"apply_section", sections[BalanceOps.SAVE_SECTION_KEY])
 	elif ops.has_method(&"reset"):
 		ops.call(&"reset")
+
+
+## Always write when CampaignService is present (Act I empty progress is valid).
+static func _merge_campaign_section(tree: SceneTree, sections: Dictionary) -> void:
+	var campaign: Node = _node_in_group(tree, BalanceCampaign.GROUP_CAMPAIGN_SERVICE)
+	if campaign == null or not campaign.has_method(&"to_section"):
+		return
+	var section: Variant = campaign.call(&"to_section")
+	if typeof(section) != TYPE_DICTIONARY:
+		sections[BalanceCampaign.SAVE_SECTION_KEY] = {
+			BalanceCampaign.KEY_ACT: BalanceCampaign.ACT_I,
+			BalanceCampaign.KEY_FLAGS: {},
+			BalanceCampaign.KEY_COMPLETED_SPINE: [],
+			BalanceCampaign.KEY_HOLDING: {},
+		}
+		return
+	sections[BalanceCampaign.SAVE_SECTION_KEY] = section
+
+
+static func _apply_campaign_from_sections(tree: SceneTree, sections: Dictionary) -> void:
+	var campaign: Node = _node_in_group(tree, BalanceCampaign.GROUP_CAMPAIGN_SERVICE)
+	if campaign == null:
+		return
+	if sections.has(BalanceCampaign.SAVE_SECTION_KEY) and campaign.has_method(&"apply_section"):
+		campaign.call(&"apply_section", sections[BalanceCampaign.SAVE_SECTION_KEY])
+	elif campaign.has_method(&"reset"):
+		campaign.call(&"reset")
 
 
 static func _apply_ship_from_sections(tree: SceneTree, sections: Dictionary) -> void:

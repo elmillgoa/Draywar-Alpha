@@ -6,6 +6,7 @@ extends CanvasLayer
 const StationHullUiScript = preload("res://src/ui/station/StationHullUi.gd")
 const StationOutfitUiScript = preload("res://src/ui/station/StationOutfitUi.gd")
 const StationOpsUiScript = preload("res://src/ui/station/StationOpsUi.gd")
+const StationCampaignUiScript = preload("res://src/ui/station/StationCampaignUi.gd")
 const StationTradeUiScript = preload("res://src/ui/station/StationTradeUi.gd")
 const StationBoardUiScript = preload("res://src/ui/station/StationBoardUi.gd")
 const StationLoanUiScript = preload("res://src/ui/station/StationLoanUi.gd")
@@ -39,6 +40,7 @@ var _buy_fighter_btn: Button = null
 var _switch_hull_btn: Button = null
 var _outfit_box: VBoxContainer = null
 var _ops_box: VBoxContainer = null
+var _story_box: VBoxContainer = null
 var _dock_fee_label: Label = null
 var _undock_btn: Button = null
 var _status_label: Label = null
@@ -80,6 +82,7 @@ func _ready() -> void:
 	EventBus.on_market_ticked.connect(_on_market_ticked)
 	EventBus.on_market_changed.connect(_on_market_changed)
 	StationOpsUiScript.connect_refresh(_request_ops_refresh)
+	StationCampaignUiScript.connect_refresh(_request_story_refresh)
 
 
 func _exit_tree() -> void:
@@ -109,6 +112,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_market_ticked, _on_market_ticked)
 	_disconnect(EventBus.on_market_changed, _on_market_changed)
 	StationOpsUiScript.disconnect_refresh(_request_ops_refresh)
+	StationCampaignUiScript.disconnect_refresh(_request_story_refresh)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -128,7 +132,6 @@ func _build_ui() -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(dim)
 
-	# Viewport-anchored height so the footer (Undock) is never clipped off-screen.
 	_panel = PanelContainer.new()
 	_panel.theme = DraywarUiTheme.build()
 	_panel.clip_contents = true
@@ -166,8 +169,6 @@ func _build_ui() -> void:
 	_flavor_label.visible = false
 	outer.add_child(_flavor_label)
 
-	# Sector headline above the scroll: a captain docking after a jump reads it
-	# without scrolling, which is the whole point of the S2 ticker.
 	_news_label = StationNewsUiScript.make_label(outer)
 
 	_status_label = Label.new()
@@ -179,7 +180,6 @@ func _build_ui() -> void:
 	_status_label.visible = false
 	outer.add_child(_status_label)
 
-	# Body scrolls; footer Undock stays pinned below.
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -190,7 +190,6 @@ func _build_ui() -> void:
 
 	var layout: VBoxContainer = VBoxContainer.new()
 	layout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# Shrink-begin so content height drives scroll (expand would steal the bar).
 	layout.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_scroll.add_child(layout)
 
@@ -198,7 +197,8 @@ func _build_ui() -> void:
 		BalanceFlight.STATION_MENU_BUTTON_WIDTH, BalanceFlight.STATION_MENU_BUTTON_HEIGHT
 	)
 
-	# --- Jobs ---
+	_story_box = StationCampaignUiScript.make_box(layout)
+
 	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_JOBS)
 	_jobs_box = VBoxContainer.new()
 	_jobs_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -216,7 +216,6 @@ func _build_ui() -> void:
 	_abandon_job_btn.pressed.connect(_on_abandon_job_pressed)
 	_abandon_job_btn.visible = false
 
-	# --- Services ---
 	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_SERVICES)
 	_dock_fee_label = Label.new()
 	_dock_fee_label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR_MUTED)
@@ -251,10 +250,8 @@ func _build_ui() -> void:
 
 	_outfit_box = StationOutfitUiScript.make_box(layout)
 
-	# --- Operations (S6 abstract fleet + warehouse) ---
 	_ops_box = StationOpsUiScript.make_box(layout)
 
-	# --- Trade ---
 	Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_TRADE)
 	_trade_denied_label = Label.new()
 	_trade_denied_label.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
@@ -266,7 +263,6 @@ func _build_ui() -> void:
 	_trade_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	layout.add_child(_trade_box)
 
-	# --- Contacts / recovery foothold (B5 drama when deep negative) ---
 	_contacts_header = Chrome.add_section_header(layout, BalanceEconomy.STATION_SECTION_CONTACTS)
 	_contacts_list = VBoxContainer.new()
 	_contacts_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -302,7 +298,6 @@ func _build_ui() -> void:
 	_betray_btn.pressed.connect(_on_betray_pressed)
 	_betray_btn.visible = false
 
-	# Footer always visible — leave dock without scrolling past trade/contacts.
 	var undock_spacer: Control = Control.new()
 	undock_spacer.custom_minimum_size = Vector2(0.0, BalanceEconomy.STATION_UNDOCK_SPACER)
 	undock_spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -331,7 +326,6 @@ func _on_docked(station_id: StringName) -> void:
 	_title.text = Chrome.content_name(station_id)
 	_refresh_flavor()
 	_set_status("")
-	# visible first so section refresh can show jobs/trade/services.
 	visible = true
 	_refresh_all()
 
@@ -421,7 +415,6 @@ func _on_accept_job_pressed(template_id: StringName) -> void:
 
 
 func _on_turn_in_job_pressed() -> void:
-	# Prefer direct complete at this menu's docked station (no silent dock lookup miss).
 	var service: Node = _mission_service_node()
 	if service != null and service.has_method(&"try_complete_at"):
 		var before_active: bool = _mission_is_active()
@@ -444,7 +437,6 @@ func _on_turn_in_job_pressed() -> void:
 		if not before_active:
 			_set_status(BalanceEconomy.STATION_TURN_IN_NO_JOB)
 			return
-	# Fallback: EventBus (console / tests).
 	EventBus.on_mission_complete_requested.emit()
 	_refresh_all()
 
@@ -503,7 +495,6 @@ func _on_repair_pressed() -> void:
 
 
 func _on_borrow_pressed() -> void:
-	# Deferred refresh — never rebuild mid-pressed (trap #11).
 	EventBus.on_loan_borrow_requested.emit()
 	call_deferred(&"_after_borrow")
 
@@ -535,7 +526,6 @@ func _on_buy_fighter_pressed() -> void:
 		_set_status(BalanceEconomy.STATION_BUY_FIGHTER_BROKE)
 		return
 	EventBus.on_buy_fighter_requested.emit()
-	# Deferred refresh — never rebuild mid-pressed (trap #11).
 	call_deferred(&"_after_buy_fighter")
 
 
@@ -576,7 +566,6 @@ func _after_switch_hull(target: StringName) -> void:
 
 
 func _on_mission_accepted(_template_id: StringName, _entity_id: StringName) -> void:
-	# Defer: accept is often fired from a job button still inside pressed();
 	# rebuilding the jobs box must not free that button mid-signal.
 	call_deferred(&"_refresh_all")
 
@@ -639,7 +628,6 @@ func _on_entity_standing_changed(
 func _on_wallet_changed(_credits: int) -> void:
 	if visible:
 		_refresh_services()
-		# Deferred: a trade moves credits from inside a row's pressed handler.
 		call_deferred(&"_refresh_trade")
 		call_deferred(&"_refresh_ops")
 
@@ -661,7 +649,6 @@ func _on_condition_changed(_condition: float, _condition_max: float) -> void:
 
 func _on_cargo_changed() -> void:
 	if visible:
-		# Deferred: a trade fires this from inside a row's pressed handler.
 		call_deferred(&"_refresh_trade")
 		call_deferred(&"_refresh_ops")
 		_refresh_services()
@@ -680,7 +667,6 @@ func _on_hull_changed(_old_hull_id: StringName, _new_hull_id: StringName) -> voi
 
 func _on_loadout_changed(_hull_id: StringName) -> void:
 	if visible:
-		# Deferred: install/remove fire from button pressed handlers.
 		call_deferred(&"_refresh_services")
 
 
@@ -706,6 +692,7 @@ func _refresh_news() -> void:
 
 
 func _refresh_all() -> void:
+	_refresh_story()
 	_refresh_job_buttons()
 	_refresh_contacts_list()
 	_refresh_recovery_buttons()
@@ -735,7 +722,6 @@ func _refresh_job_buttons() -> void:
 
 
 func _clear_jobs_box() -> void:
-	# remove + queue_free (never free() mid-pressed): trap #11.
 	StationBoardUiScript.clear_box(_jobs_box)
 
 
@@ -793,7 +779,6 @@ func _refresh_recovery_buttons() -> void:
 
 	_abandon_recovery_btn.visible = recovery_busy and visible
 
-	# Deep-negative path: always surface the recovery contact by name via favor.
 	var favor_visible: bool = (
 		not String(_favor_person_id).is_empty() and not recovery_busy and visible
 	)
@@ -872,6 +857,17 @@ func _request_ops_refresh() -> void:
 		call_deferred(&"_refresh_ops")
 
 
+func _refresh_story() -> void:
+	if _story_box == null:
+		return
+	StationCampaignUiScript.refresh_for_tree(_story_box, get_tree(), _docked_station_id, visible)
+
+
+func _request_story_refresh() -> void:
+	if visible:
+		call_deferred(&"_refresh_story")
+
+
 func _clear_trade_rows() -> void:
 	StationTradeUiScript.clear_rows(_trade_box)
 
@@ -889,7 +885,6 @@ func _refresh_trade() -> void:
 
 func _on_trade_buy_pressed(commodity_id: StringName, units: int) -> void:
 	EventBus.on_trade_buy_requested.emit(commodity_id, units)
-	# Never rebuild the board from inside a row's own pressed handler (trap #11).
 	call_deferred(&"_refresh_trade")
 
 

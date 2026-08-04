@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ContractType" load_steps=2 format=3]
+
+; Act II lane — gun: Drift bounty in Beta, turn-in Spit.
+[ext_resource type="Script" path="res://src/data/shapes/ContractType.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"spine_act2_lane_gun"
+display_name = "Lane: Clear the Beta approaches"
+offering_entity_id = &"entity_beta_syndicate"
+kind = &"bounty"
+standing_complete = 10.0
+standing_fail = -4.0
+standing_abandon = -10.0
+pay_credits = 220
+destination_station_id = &"station_beta_spit"
+target_system_id = &"system_beta"
+is_spine = true
+spine_act = 2
+requires_flags = PackedStringArray("flag_act1_done")
+sets_flags = PackedStringArray("flag_lane_gun")
+min_entity_standing = -100.0
+requires_debt = false
+offer_station_id = &"station_beta_spit"
+journal_blurb = "Drift Syndicate wants hostiles off the Beta approaches — kill confirmed in-system, turn in at Spit. This lane is guns and heat, not manifests. Pick it and the trade and shadow offers fold. Tab lock, lead the diamond, survive the gate. Then dock and collect."
+sort_index = 20
