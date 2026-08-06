@@ -139,3 +139,8 @@ func _scale_event(index: int) -> float:
 	if index < 0 or index >= _scale_events.size():
 		return NAN
 	return _scale_events[index]
+
+
+func test_deliberate_ci_gate_proof() -> void:
+	# TEMPORARY: proves the CI gate actually fails a build. Reverted immediately.
+	assert_eq(1, 2, "deliberate failure to prove the CI gate bites")
