@@ -52,6 +52,8 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-06 (REPAIR-10)** — `export_presets.cfg` tracked (was gitignored).
+  Fresh clones get Windows Desktop preset; no secrets/absolute paths.
 - **2026-08-04 (S10 gate)** — Elliot signed RC (“Pass”). S10 phase closed.
 - **2026-08-04 (S10 floor)** — Options/a11y, presentation, audio, packaging.
 - **2026-08-04 (S9 gate)** — Content complete signed.
