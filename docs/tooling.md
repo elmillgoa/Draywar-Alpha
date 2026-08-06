@@ -34,6 +34,8 @@ C:\Godot\Godot_v4.6.1-stable_win64_console.exe --path . --headless --quit-after 
 
 **To use:** open this project in the Godot editor with the Godot MCP Pro plugin enabled. The MCP server talks to the editor over WebSocket (default port 6505).
 
+**After a fresh clone you must enable the plugin once**, via Project > Project Settings > Plugins > Godot MCP Pro. This is deliberate: `project.godot` no longer commits the plugin entry or its three `MCP*` autoloads, because they point into the gitignored `addons/godot_mcp/` and made every fresh clone fail to boot with nine autoload errors. The plugin injects those autoloads itself when it starts and removes them when it stops, so nothing needs committing — and CI now fails the build if `addons/godot_mcp` reappears in `project.godot`. See `docs/traps.md` #24.
+
 **If the addon is missing:** copy from `C:\Godot\godot-mcp-pro` packaging or from the purchased zip; do not commit it.
 
 ## Strict typing

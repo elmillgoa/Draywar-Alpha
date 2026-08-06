@@ -99,3 +99,30 @@ encode it in `scripts/checkin.py` when possible.
     `src/systems/market/*.gd`, `BalanceMarket.gd` and `docs/economy_sim.md`.
     There is no safety net behind any edit in this phase — check what is tracked
     before assuming a mistake is revertible.
+23. **A fresh clone could not boot, and CI reported "success" 22 times while it
+    couldn't.** Two separate faults, both fixed 2026-08-06 in
+    `.github/workflows/tests.yml`. **(a) There was no import step.** A clean
+    checkout has no `.godot/` directory and therefore no global script class
+    cache, so every `class_name` reference fails to parse — a fresh clone booted
+    with **1,454 errors**. `--headless --import` before anything else takes that
+    to **0**. This is trap #14 at repository scale: the class cache is *build
+    output*, and CI was never building it. **(b) `--quit-after` exits 0 no matter
+    what.** Godot returned status 0 having printed 1,454 errors and failed every
+    autoload, so the smoke step passed. GUT's own exit code is honest *when GUT
+    runs* (a failing assert does exit 1) — but with the class cache missing
+    `gut_cmdln` never reached a test and the step still exited 0, in 9–21 seconds.
+    **The rule: for a Godot headless run, the process exit code is not evidence.
+    Count the error lines in the log, and assert the test totals block exists.**
+24. **Never commit the Godot MCP Pro autoloads.** `addons/godot_mcp/` is
+    gitignored — the addon is proprietary and purchased, and its licence forbids
+    redistribution — so three `MCP*` autoloads and an `[editor_plugins]` entry in
+    `project.godot` pointed at files no clone would ever have. That was the nine
+    remaining autoload errors on a fresh checkout (Blocker B2). **The addon
+    manages those entries itself**: `plugin.gd` injects the three autoloads in
+    `_enter_tree()` and removes them in `_exit_tree()` — but only the ones *it*
+    injected that session. Anything already in `project.godot` is treated as
+    project-owned and never cleaned up, which is precisely how they got welded in
+    permanently. With the committed file clean, the plugin injects on editor open
+    and tidies up on close, and nothing leaks into git. After a fresh clone,
+    enable the plugin once via Project > Project Settings > Plugins. CI now fails
+    the build if `addons/godot_mcp` reappears in `project.godot`.

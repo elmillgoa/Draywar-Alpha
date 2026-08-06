@@ -31,9 +31,6 @@ EnforcementService="*res://src/systems/enforcement/EnforcementService.gd"
 SettingsService="*res://src/systems/settings/SettingsService.gd"
 AudioService="*res://src/systems/audio/AudioService.gd"
 SteamService="*res://src/systems/steam/SteamService.gd"
-MCPScreenshot="*res://addons/godot_mcp/mcp_screenshot_service.gd"
-MCPInputService="*res://addons/godot_mcp/mcp_input_service.gd"
-MCPGameInspector="*res://addons/godot_mcp/mcp_game_inspector_service.gd"
 
 [debug]
 
@@ -62,7 +59,7 @@ gdscript/warnings/function_used_as_property=2
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/gut/plugin.cfg")
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 [input]
 
