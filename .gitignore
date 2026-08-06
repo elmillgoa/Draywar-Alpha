@@ -3,7 +3,6 @@
 /android/
 .import/
 export.cfg
-export_presets.cfg
 *.translation
 
 # Build output
@@ -35,3 +34,4 @@ desktop.ini
 # Vendor zips (install from C:\Godot\godot-mcp-pro)
 godot-mcp-pro*.zip
 
+.aider*
