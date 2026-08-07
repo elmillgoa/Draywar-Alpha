@@ -24,6 +24,10 @@ const CONTROLLER_DECISION_NOTE: String = (
 # --- Persist path ----------------------------------------------------------
 
 const SETTINGS_PATH: String = "user://settings.cfg"
+## Sibling of SETTINGS_PATH — temp write for atomic replace (REPAIR-23).
+const SETTINGS_TMP_PATH: String = "user://settings.cfg.tmp"
+## Previous good file after a successful replace (REPAIR-23).
+const SETTINGS_BAK_PATH: String = "user://settings.cfg.bak"
 const CFG_SECTION: String = "options"
 const CFG_SECTION_BINDS: String = "binds"
 

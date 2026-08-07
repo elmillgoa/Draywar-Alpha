@@ -8,6 +8,12 @@ extends Node
 ## Applies FOV, sensitivity, volumes, fullscreen, and key rebinds via InputMap
 ## (does not reach into the entities layer).
 
+## Tests only — empty means BalanceSettings.SETTINGS_PATH.
+var settings_path_override: String = ""
+## Tests only — empty means sibling `.tmp` of the resolved settings path.
+## Point at a missing directory to force a failed temp write (REPAIR-23).
+var settings_tmp_path_override: String = ""
+
 var _fov: float = BalanceSettings.DEFAULT_FOV
 var _sensitivity: float = BalanceSettings.DEFAULT_SENSITIVITY
 var _master_volume: float = BalanceSettings.DEFAULT_MASTER_VOLUME
@@ -129,6 +135,12 @@ func apply_all() -> void:
 
 
 func save_to_disk() -> void:
+	## Atomic write (REPAIR-23): temp → check OK → optional bak of previous →
+	## rename over the live file. Same ConfigFile format as before.
+	var path: String = _settings_path()
+	var tmp_path: String = _settings_tmp_path()
+	var bak_path: String = _settings_bak_path()
+
 	var cfg: ConfigFile = ConfigFile.new()
 	cfg.set_value(BalanceSettings.CFG_SECTION, BalanceSettings.KEY_FOV, _fov)
 	cfg.set_value(BalanceSettings.CFG_SECTION, BalanceSettings.KEY_SENSITIVITY, _sensitivity)
@@ -139,12 +151,34 @@ func save_to_disk() -> void:
 	for action_key: Variant in _binds.keys():
 		var action_name: String = _as_string(action_key)
 		cfg.set_value(BalanceSettings.CFG_SECTION_BINDS, action_name, _as_int(_binds[action_key]))
-	cfg.save(BalanceSettings.SETTINGS_PATH)
+
+	var save_err: Error = cfg.save(tmp_path)
+	if save_err != OK:
+		if FileAccess.file_exists(tmp_path):
+			DirAccess.remove_absolute(tmp_path)
+		return
+
+	## Move previous good file aside (cheap bak). Abort if we cannot — never
+	## delete the original without a successful replace lined up.
+	if FileAccess.file_exists(path):
+		if FileAccess.file_exists(bak_path):
+			DirAccess.remove_absolute(bak_path)
+		var bak_err: Error = DirAccess.rename_absolute(path, bak_path)
+		if bak_err != OK:
+			DirAccess.remove_absolute(tmp_path)
+			return
+
+	var ren_err: Error = DirAccess.rename_absolute(tmp_path, path)
+	if ren_err != OK:
+		if FileAccess.file_exists(bak_path) and not FileAccess.file_exists(path):
+			DirAccess.rename_absolute(bak_path, path)
+		if FileAccess.file_exists(tmp_path):
+			DirAccess.remove_absolute(tmp_path)
 
 
 func load_from_disk() -> void:
 	var cfg: ConfigFile = ConfigFile.new()
-	if cfg.load(BalanceSettings.SETTINGS_PATH) != OK:
+	if cfg.load(_settings_path()) != OK:
 		return
 	_fov = clampf(
 		_as_float(cfg.get_value(BalanceSettings.CFG_SECTION, BalanceSettings.KEY_FOV, _fov)),
@@ -193,6 +227,22 @@ func load_from_disk() -> void:
 			if not _is_rebindable(action):
 				continue
 			_binds[action] = _as_int(cfg.get_value(BalanceSettings.CFG_SECTION_BINDS, key))
+
+
+func _settings_path() -> String:
+	if not settings_path_override.is_empty():
+		return settings_path_override
+	return BalanceSettings.SETTINGS_PATH
+
+
+func _settings_tmp_path() -> String:
+	if not settings_tmp_path_override.is_empty():
+		return settings_tmp_path_override
+	return _settings_path() + ".tmp"
+
+
+func _settings_bak_path() -> String:
+	return _settings_path() + ".bak"
 
 
 func _emit_changed() -> void:

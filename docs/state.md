@@ -52,6 +52,20 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (REPAIR-23 — atomic settings save)** — Audit finding **#14**:
+  options were written straight over `user://settings.cfg`. A crash mid-write
+  left a half file; the next boot treated that as "no settings" and every option
+  (FOV, sensitivity, volumes, fullscreen, rebinds) fell back to defaults. Quiet,
+  and easy to hit because the options menu saves on every slider drag.
+  **`SettingsService.save_to_disk()`** (now ~lines 136–177) writes
+  `settings.cfg.tmp` first, aborts without touching the live file if that write
+  fails, then renames the previous good file to `settings.cfg.bak` and the temp
+  over `settings.cfg`. Format, keys, and defaults unchanged — still not a career
+  save. Save-call frequency left alone (debounce is a separate brief). **Proved
+  red then green:** `test_failed_save_preserves_existing_settings` (force temp
+  path into a missing directory) and `test_atomic_save_round_trips_and_leaves_bak`
+  both failed on the in-place write; both pass after the atomic path. Full suite
+  864/864; lint clean.
 - **2026-08-07 (Job 12 continuation — `on_kill_reported` removed, catalog caught
   up)** — Executed the verdict Opus Job 4 recorded but could not ship, because a
   removal is atomic and one of its four parts is `docs/events.md`, which was Job
