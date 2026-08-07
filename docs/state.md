@@ -52,6 +52,16 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-06 (Job 2 — gates)** — `lint.ps1` green now means the gates ran. The
+  strict-typing gate re-parses all 219 scripts (`check_types.gd`, previously dead
+  code) instead of booting for two frames; a missing gdlint/gdformat **fails**
+  instead of printing SKIP and passing; `run_tests.ps1` gained the import step,
+  a zero-error smoke assertion and a `Scripts` count check, and CI got the same
+  count check. `checkin.py --deep` now fault-injects all three static gates for
+  real. New gate `check_groups.py` + `docs/groups.md` police group lookups (the
+  cross-boundary channel `check_boundaries.py` cannot see); `check_globals.py`
+  now also polices the 60 `class_name` static namespaces. Verdicts written to
+  `DRAYWAR_CONVENTIONS.md` §2.3, `docs/globals.md`, `docs/traps.md` #25-27.
 - **2026-08-06 (REPAIR-41)** — Deleted dead Alpha content ceilings
   (`/alpha-scope` skill + AGENTS old §8). Guardrails reading order points at
   Steam plan stack. Live brake remains `Balance.CONTENT_BUDGET` + ContentLibrary.

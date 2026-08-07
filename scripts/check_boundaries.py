@@ -10,8 +10,11 @@ a rule that gets skimmed. This makes it fail the build.
 Exit 0 = clean. Exit 1 = a violation. Exit 2 = setup incomplete.
 
 Run by scripts/lint.ps1 as one of the static gates, and re-proved by
-`python scripts/checkin.py --deep`, which writes a deliberate violation into
-src/ and confirms this script catches and names it.
+`python scripts/checkin.py --deep`, which copies src/ and docs/events.md into
+a disposable temp directory, confirms this script (pointed at the copy via
+--root) still passes clean, then plants a deliberate cross-layer reference in
+the copy and confirms this script catches it and names the planted file. The
+real src/ is never written to.
 
 
 WHAT COUNTS AS A BOUNDARY
@@ -95,6 +98,22 @@ legitimate composition. The directory READMEs forbid reaching into another
 entity's *internals*, which is a judgement no text scan can make.
 
 
+ARGUMENTS
+
+    python scripts/check_boundaries.py --root X
+
+With no argument it scans PROJECT_DIR - this file's grandparent, the real
+project. The override exists for the same reason check_globals.py's
+--project-file/--globals-doc pair does: proving this gate bites means writing
+a violation into src/, and a harness that plants that violation in the live
+tree would eventually leave one behind if a run were killed mid-way - and a
+poison file left in src/ is a poison file that gets committed. Pointed at a
+disposable copy of the tree instead, checkin.py --deep can plant the
+violation, watch this script catch it, and delete the copy - the real src/ is
+never at risk. Everything under PROJECT_DIR is resolved from --root, so a
+copy needs only src/ and docs/events.md to be a complete target.
+
+
 ENCODING
 
 Everything is read as UTF-8 and printed as ASCII. The project's docs are full of
@@ -104,6 +123,7 @@ it read crashes on the punctuation rather than on the problem (docs/traps.md).
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -124,8 +144,15 @@ DECIDING_LAYERS = ("systems", "entities", "ui", "world")
 
 # File types that can carry a reference. .tscn and .tres matter as much as .gd -
 # wiring two layers together in the editor produces an ext_resource line, and
-# that is exactly as much of a violation as a preload.
-SCANNED_SUFFIXES = (".gd", ".tscn", ".tres")
+# that is exactly as much of a violation as a preload. .cfg and .json were
+# added by audit finding #82: a hand-written config or data file under one of
+# the four deciding layers can carry a res://src/... string as easily as a
+# script can, and until this line existed that string was invisible to the
+# gate no matter which layer it named. The scan is still confined to
+# DECIDING_LAYERS above - only .cfg/.json files that live inside src/systems,
+# src/entities, src/ui or src/world are read. A .cfg or .json under src/data,
+# or anywhere outside src/ entirely, is still not seen by this gate.
+SCANNED_SUFFIXES = (".gd", ".tscn", ".tres", ".cfg", ".json")
 
 RES_PATH_RE = re.compile(r"res://src/[A-Za-z0-9_./-]+")
 CLASS_NAME_RE = re.compile(r"^\s*class_name\s+([A-Za-z_][A-Za-z0-9_]*)", re.MULTILINE)
@@ -452,6 +479,23 @@ def check_catalog_matches(signals: list[tuple[str, str, list[str]]]) -> None:
 
 
 def main() -> int:
+    global PROJECT_DIR, SRC_DIR
+
+    parser = argparse.ArgumentParser(
+        description="Draywar boundary gate: the four deciding layers under "
+        "src/ must not reference each other directly."
+    )
+    parser.add_argument(
+        "--root",
+        default=str(PROJECT_DIR),
+        help="the project root to scan (default: this project). See "
+        "ARGUMENTS in this file's header for why this exists.",
+    )
+    args = parser.parse_args()
+
+    PROJECT_DIR = Path(args.root).resolve()
+    SRC_DIR = PROJECT_DIR / "src"
+
     missing = [
         name
         for name in (BUS_RELATIVE, CATALOG_RELATIVE)

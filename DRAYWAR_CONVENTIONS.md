@@ -59,6 +59,44 @@ The owning node listens for `on_damage_applied`, applies the change to its own s
 
 Every EventBus signal is declared in `EventBus.gd` **and** documented in `/docs/events.md` (name, payload type, emitter, known listeners) in the same commit that adds it. A signal referenced anywhere but absent from the catalog is a bug. Signal names are `snake_case`, prefixed `on_` (e.g. `on_system_entered`, `on_contract_completed`, `on_upkeep_cycle_due`).
 
+### 2.3 Group lookups — the second channel, and it is declared
+
+**Verdict on audit finding #79, decided 2026-08-06.**
+
+A signal has no return value. A caller that must *ask* something rather than
+announce it needs a handle to the thing it is asking, and this project answers
+that in two ways: an autoload reached by bare name, and a **node group lookup** —
+`tree.get_first_node_in_group(&"wallet_service")`.
+
+The group lookup is a service locator, and it crosses the same boundaries
+`scripts/check_boundaries.py` polices. It carries no `res://` path and no
+`class_name`, so that gate could not see the mechanism at all — not a file type
+it missed, the entire route. Measured on 2026-08-06: **85 call sites across
+`src/`, in 28 files.** Of the **37 under `src/systems/`, 21 reach another
+system** — which is what rule 2 of the boundary gate forbids in its static form —
+and **15 reach another layer**, which is rule 1. Eight of the group names in play
+were raw strings with no constant anywhere. There are **20 groups** in total —
+two of them (`impact_body`, `money_log`) are added by a producer and looked up by
+nobody, which nothing in the project had noticed until the registry was built.
+
+**This is sanctioned, and it is not a blanket exemption.** Thirty-seven call
+sites cannot be waived by naming two of them, and forbidding the mechanism would
+mean redesigning the architecture rather than enforcing it. So the pattern stays
+legal and becomes **declared**: every group is listed in **`docs/groups.md`**
+with the file that adds its members, that file's layer, and the layers permitted
+to look it up. **`scripts/check_groups.py`** enforces the list in both
+directions and fails the build on a group that is looked up but undeclared, a
+lookup from a layer the registry does not permit, or a declared group nobody
+produces.
+
+The consequence that matters: **a group lookup added tomorrow is not covered by
+this decision.** It fails the gate until somebody adds it to the registry, which
+is the point — the old hole was that new ones arrived silently.
+
+A call site that computes its group name at runtime cannot be resolved
+statically. Those are listed by name in `docs/groups.md`; an unresolvable site
+that is not on that list fails the gate.
+
 ---
 
 ## 3. Node & Scene Structure

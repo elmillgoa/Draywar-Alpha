@@ -65,6 +65,15 @@ encode it in `scripts/checkin.py` when possible.
     broken file turned 71 scripts / 659 tests into 70 / 647 and still reported
     everything passing. A GUT `for` iterator named after one of GutTest's own
     methods (`_pass`) is the same failure with a different cause.
+    **Encoded 2026-08-06 — it is no longer only advice.** `scripts/run_tests.ps1`
+    and the CI GUT step both count `test_*.gd` on disk and fail when GUT's
+    `Scripts` number disagrees. It was re-proved the day it was written: an
+    untyped `var` appended to `tests/test_attribution.gd` produced
+    `Scripts 92 / Tests 806`, *"All tests passed!"* and exit 0, against 93 files
+    and 818 real tests. **Note the count floor would not have saved you** — CI
+    asserted `Tests >= 800` and 806 clears it, so the run was green on both
+    machines. A floor catches a suite that stops collecting; only the script
+    count catches one file going missing.
 19. **"Buy then sell loses" is only half the money-pump invariant, and the
     other half was open.** The plan and `economy_sim.md` both wrote the rule as
     *buy-then-sell at one station is always a net loss*, and the tests proved
@@ -128,3 +137,52 @@ encode it in `scripts/checkin.py` when possible.
     and tidies up on close, and nothing leaks into git. After a fresh clone,
     enable the plugin once via Project > Project Settings > Plugins. CI now fails
     the build if `addons/godot_mcp` reappears in `project.godot`.
+25. **What the boundary gate scans, and what it still cannot see.** *(Verdict on
+    audit finding #82, decided 2026-08-06.)* `scripts/check_boundaries.py` used to
+    read only `.gd`, `.tscn` and `.tres`, so a cross-layer reference carried by a
+    `.cfg` or `.json` was invisible. Checked before deciding: **no `.cfg` or
+    `.json` in this repo contains a `res://src/` reference**, so extending the
+    scan cost nothing and closed the hole before it opened. `.cfg` and `.json`
+    are now scanned. **What is still not seen, deliberately:** the scan is
+    confined to the four deciding-layer directories under `src/`
+    (`systems`, `entities`, `ui`, `world`), so a data file living anywhere else
+    is not read, and no file type outside that list is either. If content ever
+    starts carrying `res://src/` paths from outside `src/`, this gate will not
+    tell you. That is the known edge — it is written here rather than left in the
+    script's header, because a hole recorded only in the code that has it is a
+    hole nobody reads.
+26. **Before 2026-08-06, a green `lint.ps1` run proved almost nothing.** Three
+    faults, each of which turned a gate that never ran into a reported PASS.
+    **(a) The strict-typing gate never checked types.** It booted the project for
+    two frames and searched the output for `ERROR:`. A script the boot does not
+    load is never parsed — an untyped `var` appended to a test file gave a clean
+    boot, exit 0 and no error lines. Meanwhile `scripts/check_types.gd`, a
+    working project-wide re-parser whose own docstring said *"Run it via
+    scripts/lint.ps1"*, was called by nothing in the repository. It now runs, and
+    it covers all 219 scripts, not the handful the boot happens to touch.
+    **(b) A missing linter was a silent pass** — gdlint and gdformat ran only if
+    `.venv\Scripts\*.exe` existed, and `.venv` is gitignored, so on any fresh
+    machine both printed a yellow SKIP, never counted as failures, and the run
+    still ended *"All required gates passed."* **There is no SKIP path left in
+    `lint.ps1`** — a missing tool, a missing checker script, or a checker
+    reporting setup-incomplete is now a failure. **(c) The `ERROR:` test was a
+    substring search** over the whole output blob, matching the word anywhere,
+    including inside a path or a quoted message. Error detection is now anchored
+    to the start of a line and matches both `ERROR:` and `SCRIPT ERROR:`.
+    **The rule this leaves behind: a gate that can quietly not run is not a
+    gate.** If you add one, make its absence loud.
+27. **A `.ps1` file in this repo must be pure ASCII — PowerShell 5.1 misdecodes
+    it when it *runs* it, not just when `Get-Content` reads it.** Trap #21 covers
+    the round-trip; this is the other half and it is nastier. A `.ps1` saved as
+    UTF-8 **without a BOM** is correct on disk and verifiably correct — and
+    Windows PowerShell 5.1 still reads the bytes as CP-1252 when executing, so an
+    em dash inside a `Write-Host` string becomes garbage and throws a *parser*
+    error pointing at a line that looks fine. Hit twice on 2026-08-06, once while
+    rewriting `run_tests.ps1` and once in `lint.ps1`, whose header comments were
+    full of em dashes. The docs and `.gd` files use em dashes freely and should
+    keep doing so — this applies **only** to `.ps1`. Check before trusting a
+    file: `python -c "import sys;b=open(sys.argv[1],'rb').read();print(sum(1 for x in b if x>127))" scripts/lint.ps1`
+    must print `0`. Note `grep -P '[^\x00-\x7F]'` is **not** a reliable check
+    here: under this environment's locale it can report zero matches on a file
+    that genuinely holds non-ASCII bytes, which is how the second one slipped
+    through the first check.

@@ -10,8 +10,11 @@ the rule fail a build instead of relying on review.
 Exit 0 = clean. Exit 1 = a violation. Exit 2 = setup incomplete.
 
 Run by scripts/lint.ps1 as one of the static gates, and re-proved by
-`python scripts/checkin.py --deep`, which writes a deliberate magic number into
-src/ and confirms this script catches and names it.
+`python scripts/checkin.py --deep`, which copies src/ into a disposable temp
+directory, confirms this script (pointed at the copy via --root) still passes
+clean, then plants a deliberate magic number in the copy and confirms this
+script catches it and names the planted file. The real src/ is never written
+to.
 
 
 WHY THIS RULE IS WORTH A GATE
@@ -91,6 +94,21 @@ character scan rather than a regex because a `#` inside a string is not a
 comment and a quote inside a comment does not open a string.
 
 
+ARGUMENTS
+
+    python scripts/check_magic_numbers.py --root X
+
+With no argument it scans PROJECT_DIR - this file's grandparent, the real
+project. The override exists for the same reason check_globals.py's
+--project-file/--globals-doc pair does: proving this gate bites means writing
+a magic number into src/, and a harness that plants that literal in the live
+tree would eventually leave one behind if a run were killed mid-way - and a
+poison file left in src/ is a poison file that gets committed. Pointed at a
+disposable copy of the tree instead, checkin.py --deep can plant the literal,
+watch this script catch it, and delete the copy - the real src/ is never at
+risk. A copy needs only src/ to be a complete target.
+
+
 ENCODING
 
 Everything is read as UTF-8 and printed as ASCII, because the project's docs and
@@ -100,6 +118,7 @@ comments are full of em dashes and a Windows console is cp1252 by default
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -320,6 +339,24 @@ def check_file(path: Path) -> int:
 
 
 def main() -> int:
+    global PROJECT_DIR, SRC_DIR
+
+    parser = argparse.ArgumentParser(
+        description="Draywar balance gate: every numeric literal outside the "
+        "balance layer must be 0, 1, or otherwise tolerated (see this file's "
+        "header)."
+    )
+    parser.add_argument(
+        "--root",
+        default=str(PROJECT_DIR),
+        help="the project root to scan (default: this project). See "
+        "ARGUMENTS in this file's header for why this exists.",
+    )
+    args = parser.parse_args()
+
+    PROJECT_DIR = Path(args.root).resolve()
+    SRC_DIR = PROJECT_DIR / "src"
+
     missing: list[str] = []
     if not SRC_DIR.is_dir():
         missing.append("src/ is missing")

@@ -10,7 +10,7 @@
 # WHY THIS FILE LOOKS PARANOID — read before "simplifying" it
 # ---------------------------------------------------------------------------
 # Until 2026-08-06 this workflow reported "success" on 22 consecutive runs while
-# the game could not boot at all. Two independent faults made green meaningless:
+# the game could not boot at all. Three independent faults made green meaningless:
 #
 #   1. NO IMPORT STEP. A fresh checkout has no `.godot/` directory, so Godot has
 #      no global script class cache. Every script that references a `class_name`
@@ -25,8 +25,21 @@
 #      GUT actually ran; when the class cache was missing, gut_cmdln never
 #      reached a test and the step still exited 0.
 #
+#   3. GUT SILENTLY DROPS A SCRIPT IT CANNOT PARSE. A `.gd` test file with a
+#      parse error (an untyped var is enough under this project's strict
+#      warning settings) is dropped from the run with no warning and no
+#      failure. GUT still prints "---- All tests passed! ----" and exits 0,
+#      just with a smaller `Scripts` count than it should have. The old
+#      `MIN_TESTS` floor did NOT catch this: proven 2026-08-06 by planting one
+#      bad line in a test file — Scripts dropped 93 -> 92, Tests dropped
+#      820 -> 806, and 806 still cleared the floor of 800. docs/traps.md #18
+#      says the Scripts count is the only tell. The GUT step below now counts
+#      the test_*.gd files actually in the checkout and fails if GUT collected
+#      fewer than that — computed fresh every run, never hardcoded.
+#
 # So: the smoke step asserts ZERO error lines, and the GUT step asserts a real
-# totals block with a plausible test count — not just an exit code.
+# totals block, a Scripts count that matches the checkout, a plausible test
+# count, and zero failures — not just an exit code.
 #
 # This job is also the fresh-clone regression test. actions/checkout produces
 # exactly what a new machine or a buyer would get, and `.godot/` is gitignored,
@@ -68,7 +81,7 @@ on:
 
 env:
   # Floor for "did the suite actually run", not an exact expected count.
-  # 818 tests as of 2026-08-06. Raise this as the suite grows — its job is to
+  # 820 tests / 93 scripts as of 2026-08-06. Raise this as the suite grows — its job is to
   # turn a run that silently stops collecting tests red instead of green.
   MIN_TESTS: 800
 
@@ -184,28 +197,44 @@ jobs:
           set -e
           cat "$RUNNER_TEMP/gut.log"
 
-          # Totals block shape (verified against a real 818-test run):
+          # Totals block shape (verified against a real 93-script / 820-test run):
           #   Totals
           #   ------
           #   Scripts              93
-          #   Tests               818
-          #   Passing Tests       818
+          #   Tests               820
+          #   Passing Tests       820
           #   Failing Tests         1   <- line absent entirely when zero
           # `|| true` matters: with pipefail a missing Totals block would abort
           # this step before the explicit diagnostics below could print.
+          scripts_run="$(grep -E '^Scripts +[0-9]+' "$RUNNER_TEMP/gut.log" | tail -1 | awk '{print $2}' || true)"
           tests_run="$(grep -E '^Tests +[0-9]+' "$RUNNER_TEMP/gut.log" | tail -1 | awk '{print $2}' || true)"
           failing="$(grep -E '^Failing Tests +[0-9]+' "$RUNNER_TEMP/gut.log" | tail -1 | awk '{print $3}' || true)"
+          scripts_run="${scripts_run:-0}"
           tests_run="${tests_run:-0}"
           failing="${failing:-0}"
 
+          # THE SCRIPTS GATE. Not hardcoded — counted fresh from the checkout
+          # every run, because the only way to catch "a script silently
+          # vanished from the collection" (reason 3 above / docs/traps.md #18)
+          # is to compare GUT's count against ground truth every time. Same
+          # rule scripts/run_tests.ps1 uses locally: recursive under tests/,
+          # matching test_*.gd. Verified 2026-08-06 that this currently
+          # returns 93, the same number GUT reports on a clean run.
+          expected_scripts="$(find tests -type f -name 'test_*.gd' | wc -l | tr -d ' ')"
+
           echo "----------------------------------------"
           echo "GUT exit status : $gut_status"
+          echo "Scripts run     : $scripts_run (expected: $expected_scripts test_*.gd file(s) in checkout)"
           echo "Tests run       : $tests_run (floor: $MIN_TESTS)"
           echo "Failing tests   : $failing"
           echo "----------------------------------------"
 
           if [ "$tests_run" -eq 0 ]; then
             echo "::error::GUT reported no totals block — the suite never ran. This is the exact failure that made 22 consecutive runs green while the build was broken."
+            exit 1
+          fi
+          if [ "$scripts_run" -ne "$expected_scripts" ]; then
+            echo "::error::GUT collected $scripts_run script(s) but $expected_scripts test_*.gd file(s) exist in this checkout. A script that fails to parse is silently dropped from the run with no warning and no failure — GUT still prints 'All tests passed!' and exits 0 (docs/traps.md #18). Proven 2026-08-06: one bad line in a test file dropped Scripts 93 -> 92 and Tests 820 -> 806, and 806 still cleared MIN_TESTS. Find the file that no longer parses and fix it; do not lower this check."
             exit 1
           fi
           if [ "$tests_run" -lt "$MIN_TESTS" ]; then
@@ -220,4 +249,4 @@ jobs:
             echo "::error::GUT exited $gut_status."
             exit "$gut_status"
           fi
-          echo "PASS — $tests_run tests, 0 failures."
+          echo "PASS — $scripts_run/$expected_scripts scripts, $tests_run tests, 0 failures."
