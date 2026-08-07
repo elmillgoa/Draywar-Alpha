@@ -52,6 +52,28 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (REPAIR-6 — audio buses + rebind integrity)** — External audit
+  findings on options: UI/SFX buses never existed so volume sliders did nothing;
+  Reset defaults cleared stored binds but left the live InputMap on old keys;
+  boot `FlightInput.ensure_actions()` re-stacked default keys over saved rebinds;
+  rebind accepted Escape/backtick and other actions' keys with no feedback; and
+  **IF-12** — Job 10's twelfth rebind row `call_tow` had no `_default_keycode`
+  case so the Options row showed a blank key. **Fix:** `project.godot`
+  `audio/buses/default_bus_layout` → `default_bus_layout.tres`, plus
+  `_ensure_bus_exists` create-if-missing in `SettingsService` (`_set_bus_linear`
+  ~297); `_apply_binds` always writes every REBIND_ROWS action (defaults when
+  empty) so reset restores InputMap immediately; `FlightInput._bind` skips
+  adding the default when any keyboard event is already present; `set_bind`
+  returns a reject string for reserved keys (Escape, backtick) and conflicts,
+  surfaced on the Options feedback label; `_default_keycode(&"call_tow")` →
+  `KEY_T` matching `FlightInput._bind(ACTION_TOW, KEY_T)` at line 48.
+  **Proved red then green on IF-12:** per-row loop over `REBIND_ROWS` failed
+  with `Call a tow (call_tow): bind_label empty` before the case; passes after.
+  Tests: mute at zero volume, reset restores InputMap, rebind survives
+  ensure_actions, reserved/conflict refused, every-row non-empty bind label.
+  Full suite 869/869; lint clean. Chose project.godot bus layout key (not
+  `AudioServer.load_bus_layout`, which this strict-typing project rejects as a
+  static call) + create-if-missing so headless tests still get buses.
 - **2026-08-07 (REPAIR-23 — atomic settings save)** — Audit finding **#14**:
   options were written straight over `user://settings.cfg`. A crash mid-write
   left a half file; the next boot treated that as "no settings" and every option

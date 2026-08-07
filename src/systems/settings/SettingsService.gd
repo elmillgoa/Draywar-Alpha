@@ -25,6 +25,7 @@ var _binds: Dictionary = {}
 
 
 func _ready() -> void:
+	_ensure_audio_buses()
 	load_from_disk()
 	apply_all()
 
@@ -94,14 +95,19 @@ func set_fullscreen(enabled: bool) -> void:
 
 
 ## Store a keyboard rebind for a rebindable action.
-func set_bind(action: StringName, physical_key: Key) -> void:
+## Returns empty string on success; a player-facing reject reason otherwise (REPAIR-6).
+func set_bind(action: StringName, physical_key: Key) -> String:
 	if not _is_rebindable(action):
-		return
-	if physical_key == KEY_ESCAPE:
-		return
+		return ""
+	if _is_reserved_rebind_key(physical_key):
+		return BalanceSettings.OPTIONS_REBIND_RESERVED
+	var conflict_label: String = _conflict_label_for_key(action, physical_key)
+	if not conflict_label.is_empty():
+		return BalanceSettings.OPTIONS_REBIND_CONFLICT % conflict_label
 	_binds[action] = int(physical_key)
 	_apply_binds()
 	_emit_changed()
+	return ""
 
 
 func bind_keycode(action: StringName) -> int:
@@ -260,13 +266,36 @@ func _apply_fov() -> void:
 
 
 func _apply_volumes() -> void:
+	_ensure_audio_buses()
 	_set_bus_linear(BalanceSettings.BUS_MASTER, _master_volume)
 	_set_bus_linear(BalanceSettings.BUS_UI, _ui_volume)
 	_set_bus_linear(BalanceSettings.BUS_SFX, _sfx_volume)
 
 
-func _set_bus_linear(bus_name: StringName, linear: float) -> void:
+## Ensure UI/SFX buses exist. Layout is also declared in project.godot
+## (`audio/buses/default_bus_layout`); this creates them if the layout did not
+## load (headless tests, missing resource). REPAIR-6.
+func _ensure_audio_buses() -> void:
+	_ensure_bus_exists(BalanceSettings.BUS_UI)
+	_ensure_bus_exists(BalanceSettings.BUS_SFX)
+
+
+## Create the named bus under Master if missing (REPAIR-6).
+func _ensure_bus_exists(bus_name: StringName) -> int:
 	var idx: int = AudioServer.get_bus_index(bus_name)
+	if idx >= 0:
+		return idx
+	if bus_name == BalanceSettings.BUS_MASTER:
+		return AudioServer.get_bus_index(BalanceSettings.BUS_MASTER)
+	AudioServer.add_bus()
+	idx = AudioServer.bus_count - 1
+	AudioServer.set_bus_name(idx, String(bus_name))
+	AudioServer.set_bus_send(idx, String(BalanceSettings.BUS_MASTER))
+	return idx
+
+
+func _set_bus_linear(bus_name: StringName, linear: float) -> void:
+	var idx: int = _ensure_bus_exists(bus_name)
 	if idx < 0:
 		return
 	var clamped: float = clampf(linear, 0.0, 1.0)
@@ -286,6 +315,8 @@ func _apply_fullscreen() -> void:
 
 
 func _apply_binds() -> void:
+	## Always write every rebindable action into InputMap (REPAIR-6). Empty
+	## `_binds` (reset / first boot) must restore defaults live — not leave old keys.
 	for row: Dictionary in BalanceSettings.REBIND_ROWS:
 		var action_raw: Variant = row.get("action", &"")
 		var action: StringName = &""
@@ -294,9 +325,11 @@ func _apply_binds() -> void:
 		elif typeof(action_raw) == TYPE_STRING:
 			var action_s: String = action_raw
 			action = StringName(action_s)
-		if action == &"" or not _binds.has(action):
+		if action == &"":
 			continue
-		var keycode: int = _as_int(_binds[action])
+		var keycode: int = bind_keycode(action)
+		if keycode == int(KEY_NONE):
+			continue
 		_rebind_key(action, keycode as Key)
 
 
@@ -348,9 +381,36 @@ func _default_keycode(action: StringName) -> int:
 			result = int(KEY_1)
 		&"incident_b":
 			result = int(KEY_2)
+		&"call_tow":
+			## Must match FlightInput._bind(ACTION_TOW, KEY_T) (IF-12 / REPAIR-6).
+			result = int(KEY_T)
 		_:
 			result = int(KEY_NONE)
 	return result
+
+
+func _is_reserved_rebind_key(physical_key: Key) -> bool:
+	for reserved: Key in BalanceSettings.RESERVED_REBIND_KEYS:
+		if physical_key == reserved:
+			return true
+	return false
+
+
+## Empty when free; otherwise the display label of the conflicting rebind row.
+func _conflict_label_for_key(for_action: StringName, physical_key: Key) -> String:
+	for row: Dictionary in BalanceSettings.REBIND_ROWS:
+		var action_raw: Variant = row.get("action", &"")
+		var other: StringName = &""
+		if typeof(action_raw) == TYPE_STRING_NAME:
+			other = action_raw
+		elif typeof(action_raw) == TYPE_STRING:
+			var action_s: String = action_raw
+			other = StringName(action_s)
+		if other == &"" or other == for_action:
+			continue
+		if bind_keycode(other) == int(physical_key):
+			return str(row.get("label", String(other)))
+	return ""
 
 
 func _as_int(value: Variant) -> int:

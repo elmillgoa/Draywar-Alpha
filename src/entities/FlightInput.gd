@@ -51,10 +51,18 @@ static func ensure_actions() -> void:
 static func _bind(action: StringName, physical_key: Key) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)
+	## REPAIR-6: if the action already has any keyboard event (player rebind from
+	## SettingsService), do not stack the default key back on top of it.
+	var has_keyboard: bool = false
 	for existing: InputEvent in InputMap.action_get_events(action):
 		var existing_key: InputEventKey = existing as InputEventKey
-		if existing_key != null and existing_key.physical_keycode == physical_key:
+		if existing_key == null:
+			continue
+		has_keyboard = true
+		if existing_key.physical_keycode == physical_key:
 			return
+	if has_keyboard:
+		return
 	var key: InputEventKey = InputEventKey.new()
 	key.physical_keycode = physical_key
 	InputMap.action_add_event(action, key)

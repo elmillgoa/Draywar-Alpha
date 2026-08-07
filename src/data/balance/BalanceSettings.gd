@@ -65,6 +65,12 @@ const DEFAULT_FULLSCREEN: bool = false
 const BUS_MASTER: StringName = &"Master"
 const BUS_UI: StringName = &"UI"
 const BUS_SFX: StringName = &"SFX"
+## Bus layout resource (UI + SFX under Master). Loaded at boot (REPAIR-6).
+const BUS_LAYOUT_PATH: String = "res://default_bus_layout.tres"
+
+## Keys that must never be offered as rebinds (REPAIR-6). Escape = pause;
+## backtick = debug console toggle (console itself is Brief 24).
+const RESERVED_REBIND_KEYS: Array[Key] = [KEY_ESCAPE, KEY_QUOTELEFT]
 
 # --- Rebindable actions (display label, action name) -----------------------
 # Pause stays Escape-only for safety (not rebindable here).
@@ -102,6 +108,10 @@ const OPTIONS_RESET: String = "Reset defaults"
 const OPTIONS_CLOSE: String = "Close"
 const OPTIONS_CONTROLLER_NOTE: String = "Input: keyboard + mouse (no gamepad in 1.0)"
 const OPTIONS_APPLY_FEEDBACK: String = "Settings saved."
+## Shown when a rebind key collides with another rebindable action (REPAIR-6).
+const OPTIONS_REBIND_CONFLICT: String = "That key is already bound to %s."
+## Shown when the key is reserved (Escape, debug-console backtick) (REPAIR-6).
+const OPTIONS_REBIND_RESERVED: String = "That key is reserved."
 
 const MAIN_OPTIONS: String = "Options"
 const PAUSE_OPTIONS: String = "Options"

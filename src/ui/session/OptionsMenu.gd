@@ -60,7 +60,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		_refresh_bind_labels()
 		get_viewport().set_input_as_handled()
 		return
-	SettingsService.set_bind(_listening_action, key_event.physical_keycode)
+	var reject: String = SettingsService.set_bind(_listening_action, key_event.physical_keycode)
+	if not reject.is_empty():
+		_listening_action = &""
+		_refresh_bind_labels()
+		_feedback.text = reject
+		get_viewport().set_input_as_handled()
+		return
 	SettingsService.save_to_disk()
 	_listening_action = &""
 	_refresh_bind_labels()

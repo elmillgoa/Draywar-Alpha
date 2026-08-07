@@ -185,6 +185,113 @@ func test_failed_save_preserves_existing_settings() -> void:
 	assert_eq(SettingsService.bind_keycode(&"dock"), int(KEY_G))
 
 
+## REPAIR-6: UI/SFX buses exist after ensure, and zero volume mutes them.
+func test_ui_sfx_buses_exist_and_mute_at_zero() -> void:
+	SettingsService._ensure_audio_buses()
+	var ui_idx: int = AudioServer.get_bus_index(BalanceSettings.BUS_UI)
+	var sfx_idx: int = AudioServer.get_bus_index(BalanceSettings.BUS_SFX)
+	assert_true(ui_idx >= 0, "UI bus must exist after ensure")
+	assert_true(sfx_idx >= 0, "SFX bus must exist after ensure")
+
+	SettingsService.set_ui_volume(0.0)
+	SettingsService.set_sfx_volume(0.0)
+	assert_true(AudioServer.is_bus_mute(ui_idx), "UI bus must mute at zero volume")
+	assert_true(AudioServer.is_bus_mute(sfx_idx), "SFX bus must mute at zero volume")
+
+	SettingsService.set_ui_volume(1.0)
+	SettingsService.set_sfx_volume(1.0)
+	assert_false(AudioServer.is_bus_mute(ui_idx), "UI bus must unmute above zero")
+	assert_false(AudioServer.is_bus_mute(sfx_idx), "SFX bus must unmute above zero")
+
+
+## REPAIR-6: Reset defaults restores live InputMap keys immediately (no reboot).
+func test_reset_defaults_restores_input_map() -> void:
+	FlightInput.ensure_actions()
+	SettingsService.set_bind(&"dock", KEY_G)
+	var had_g: bool = false
+	for event: InputEvent in InputMap.action_get_events(&"dock"):
+		var key: InputEventKey = event as InputEventKey
+		if key != null and key.physical_keycode == KEY_G:
+			had_g = true
+	assert_true(had_g, "precondition: dock rebound to G")
+
+	SettingsService.reset_to_defaults()
+	var has_default_f: bool = false
+	var has_g: bool = false
+	for event: InputEvent in InputMap.action_get_events(&"dock"):
+		var key: InputEventKey = event as InputEventKey
+		if key == null:
+			continue
+		if key.physical_keycode == KEY_F:
+			has_default_f = true
+		if key.physical_keycode == KEY_G:
+			has_g = true
+	assert_true(has_default_f, "reset must put default F back on dock in InputMap")
+	assert_false(has_g, "reset must remove the custom G bind from InputMap")
+	assert_eq(SettingsService.bind_keycode(&"dock"), int(KEY_F))
+
+
+## REPAIR-6: a saved rebind must survive ensure_actions (boot re-register).
+func test_rebind_survives_ensure_actions_without_default_stack() -> void:
+	FlightInput.ensure_actions()
+	SettingsService.set_bind(&"throttle_up", KEY_I)
+	FlightInput.ensure_actions()
+	var has_i: bool = false
+	var has_w: bool = false
+	for event: InputEvent in InputMap.action_get_events(&"throttle_up"):
+		var key: InputEventKey = event as InputEventKey
+		if key == null:
+			continue
+		if key.physical_keycode == KEY_I:
+			has_i = true
+		if key.physical_keycode == KEY_W:
+			has_w = true
+	assert_true(has_i, "custom rebind KEY_I must remain after ensure_actions")
+	assert_false(has_w, "default KEY_W must not be re-stacked on top of rebind")
+
+
+## REPAIR-6: backtick (debug console) and keys used by other rows are refused.
+func test_set_bind_rejects_reserved_and_conflict() -> void:
+	FlightInput.ensure_actions()
+	var reserved: String = SettingsService.set_bind(&"dock", KEY_QUOTELEFT)
+	assert_eq(reserved, BalanceSettings.OPTIONS_REBIND_RESERVED)
+	assert_ne(SettingsService.bind_keycode(&"dock"), int(KEY_QUOTELEFT))
+
+	## throttle_up defaults to W — docking to W must conflict.
+	var conflict: String = SettingsService.set_bind(&"dock", KEY_W)
+	assert_true(conflict.begins_with("That key is already bound"), conflict)
+	assert_ne(SettingsService.bind_keycode(&"dock"), int(KEY_W))
+
+	var ok: String = SettingsService.set_bind(&"dock", KEY_G)
+	assert_eq(ok, "")
+	assert_eq(SettingsService.bind_keycode(&"dock"), int(KEY_G))
+
+
+## IF-12 / REPAIR-6: every REBIND_ROWS entry has an action and a non-empty key
+## string. Per-row loop so a thirteenth blank row fails on arrival, not only call_tow.
+func test_every_rebind_row_has_nonempty_bind_label() -> void:
+	FlightInput.ensure_actions()
+	var blank_rows: Array[String] = []
+	for row: Dictionary in BalanceSettings.REBIND_ROWS:
+		var action_raw: Variant = row.get("action", &"")
+		var action: StringName = &""
+		if typeof(action_raw) == TYPE_STRING_NAME:
+			action = action_raw
+		elif typeof(action_raw) == TYPE_STRING:
+			var action_s: String = action_raw
+			action = StringName(action_s)
+		var label: String = str(row.get("label", String(action)))
+		if action == &"":
+			blank_rows.append("%s: missing action" % label)
+			continue
+		if not InputMap.has_action(action):
+			blank_rows.append("%s (%s): InputMap missing action" % [label, String(action)])
+		var key_str: String = SettingsService.bind_label(action)
+		if key_str.is_empty():
+			blank_rows.append("%s (%s): bind_label empty" % [label, String(action)])
+	assert_eq(blank_rows.size(), 0, "rebind rows with blank/missing keys: %s" % str(blank_rows))
+
+
 ## REPAIR-23: normal atomic save round-trips and leaves no .tmp behind.
 ## Second save keeps the previous good file as settings.cfg.bak.
 func test_atomic_save_round_trips_and_leaves_bak() -> void:
