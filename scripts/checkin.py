@@ -1,9 +1,10 @@
-"""Draywar Alpha check-in — deterministic facts about the build.
+"""Draywar check-in — deterministic facts about the build.
 
     python scripts/checkin.py
     python scripts/checkin.py --deep
 
 Exit 0 = ground is solid enough to start work.
+Live authorities: AGENTS, guardrails, Steam plan, product direction, standing.
 """
 
 from __future__ import annotations
@@ -53,14 +54,14 @@ def main() -> int:
     # project.godot
     check("project.godot", (PROJECT / "project.godot").is_file())
 
-    # Authority docs
+    # Live authority docs (Steam plan stack — not closed Alpha queues)
     for rel in (
         "AGENTS.md",
-        "Alpha/ALPHA_VISION.md",
-        "Alpha/ALPHA_SCOPE.md",
-        "Alpha/ALPHA_PHASE_PLAN.md",
-        "docs/state.md",
+        "DRAYWAR_AGENT_GUARDRAILS_v2.md",
+        "docs/STEAM_PHASE_PLAN.md",
+        "docs/PRODUCT_DIRECTION.md",
         "docs/reputation_and_standing.md",
+        "docs/state.md",
     ):
         check(f"doc {rel}", (PROJECT / rel).is_file())
 

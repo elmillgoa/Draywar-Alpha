@@ -6,7 +6,8 @@ description: Standing system rules for Draywar. Use when implementing or testing
 # Standing law
 
 **Source of truth:** `docs/reputation_and_standing.md`  
-**Alpha population:** `Alpha/ALPHA_SCOPE.md` (4–6 Entities, 12–18 People) — not the full-doc 8–12 / 20–35.
+**Population caps:** `/alpha-scope` and `AGENTS.md` §8 — not the full Destination
+population ranges.
 
 ## Locked
 

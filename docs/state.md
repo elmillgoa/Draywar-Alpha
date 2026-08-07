@@ -52,6 +52,10 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-06 (REPAIR-2)** — Session boot paths repointed to live Steam
+  authorities (start/work/gate skills, checkin.py, README, eras Era 2,
+  AGENTS §6 gate row). Alpha ceilings + guardrails reading order left for
+  Brief 41.
 - **2026-08-06 (REPAIR-1)** — New-game "How to fly" tip: panel capped to design
   height with scrollable body; Escape dismisses. Got it stays on-screen at
   shipping 1152×648 (was fully below the window).

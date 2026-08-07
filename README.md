@@ -1,9 +1,10 @@
-# Draywar Alpha
+# Draywar
 
 *The empire fell. The contracts didn't.*
 
-Greenfield **prove-it** slice of Draywar: jurisdictional identity + personal recovery.
-Built in Godot 4.6.x. Alpha docs govern; the full game is the destination after the Final Alpha Gate.
+Steam 1.0 product path for Draywar: jurisdictional identity, recovery, economy,
+Ops, campaign, Holding. Built in Godot 4.6.x. The **Steam phase plan** (S0–S10)
+is the live work queue; prove-it Alpha docs under `Alpha/` are historical only.
 
 ---
 
@@ -13,11 +14,12 @@ Built in Godot 4.6.x. Alpha docs govern; the full game is the destination after 
 |----------|------|
 | `AGENTS.md` | Always-on rules for agents |
 | `DRAYWAR_AGENT_GUARDRAILS_v2.md` | Autonomy and stop conditions |
-| `Alpha/ALPHA_VISION.md` | Why Alpha exists |
-| `Alpha/ALPHA_SCOPE.md` | Hard ceilings |
-| `Alpha/ALPHA_PHASE_PLAN.md` | A0 → A5 work queue |
+| `docs/STEAM_PHASE_PLAN.md` | S0 → S10 work queue (what we build now) |
+| `docs/PRODUCT_DIRECTION.md` | Steam 1.0 intent locks |
 | `docs/reputation_and_standing.md` | Standing system law |
 | `docs/state.md` | Where the build is right now |
+
+Historical (not the work queue): `Alpha/*`, closed E-phases, old phase sketches.
 
 ---
 
@@ -46,8 +48,8 @@ src/           Game code (systems, entities, ui, data, world)
 addons/gut/    Test framework (committed)
 addons/godot_mcp/  MCP Pro plugin (local only, gitignored)
 scripts/       Lint, tests, journal, checkin
-docs/          State, events, tooling, journal
-Alpha/         Alpha authority documents
+docs/          State, Steam plan, events, tooling, journal
+Alpha/         Historical prove-it Alpha docs (closed)
 .grok/skills/  Session skills (start, work, verify, …)
 ```
 

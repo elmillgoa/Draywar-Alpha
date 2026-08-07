@@ -1,24 +1,26 @@
 ---
 name: work
-description: Execute the current Draywar Alpha contract as orchestrator — plan, implement or delegate, verify, record. Use when starting or continuing work from the Alpha phase plan. /work
+description: Execute the current Draywar contract as orchestrator — plan, implement or delegate, verify, record. Use when starting or continuing work from the Steam phase plan or post-plan repair. /work
 ---
 
-# Execute a contract (Alpha)
+# Execute a contract (Steam plan)
 
-**One contract at a time, in Alpha phase order (A0→A5).** No future-phase work
-because you happen to be in the file.
+**One contract at a time, in Steam phase order (S0→S10) as listed in
+`docs/STEAM_PHASE_PLAN.md` and current position in `docs/state.md`.** No future-
+phase work because you happen to be in the file. After S10, work is post-plan
+(repairs, launch ops) that Elliot chooses — still one contract at a time.
 
 ## Step 1 — Restate criteria in one line
 
-If you cannot, re-read. If a criterion is untestable or conflicts with Alpha
-scope / reputation law, `/escalate`. Do not reinterpret into something convenient.
+If you cannot, re-read. If a criterion is untestable or conflicts with scope
+ceilings / reputation law, `/escalate`. Do not reinterpret into something convenient.
 
 ## Step 2 — Plan
 
 - Separable pieces; what can parallelize; what must serialize.
 - Proof for each criterion (test, scene, console exit code).
 - Constraints: EventBus-only, numbers in balance, content as data, full-sized
-  data shapes, Alpha ceilings.
+  data shapes, scope ceilings.
 
 ## Step 3 — Implement or delegate
 
@@ -45,7 +47,7 @@ Run `/adversary` when there is non-trivial logic, then `/verify`. All points mus
 ## Step 6 — Record and commit
 
 ```
-python scripts/journal.py add CONTRACT "Ax complete" --detail "criteria + evidence"
+python scripts/journal.py add CONTRACT "Sx complete" --detail "criteria + evidence"
 ```
 
 Update `docs/state.md`. Commit with contract-ID prefix.

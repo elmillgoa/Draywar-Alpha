@@ -109,7 +109,7 @@ Between contracts, re-read `docs/state.md`. Never start work you cannot finish a
 | Session start | `/start` — orient, toolchain, restate contract, **stop** |
 | Build | `/work` — one contract; **subagents build** |
 | Before complete | `/adversary` then `/verify` |
-| Human feel gates | `/gate` (A1 flight, A4 recovery, Final Alpha) |
+| Human feel gates | `/gate` (S2–S10 Steam plan; see `docs/gates.md`) |
 | Plan vs reality | `/escalate` — implement nothing while open |
 | Phase complete | Commit + `/wrap` + push — **automatic** (do not wait for "wrap") |
 | Session end | `/wrap` (also used mid-session if room dies) |

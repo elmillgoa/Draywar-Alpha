@@ -1,17 +1,26 @@
 ---
 name: gate
-description: Run a human sign-off gate for Draywar Alpha. Prepare play; record Elliot's verdict verbatim. Alpha gates include A1 flight feel, A4 recovery path, Final Alpha. /gate
+description: Run a human sign-off gate for Draywar. Prepare play; record Elliot's verdict verbatim. Steam plan gates are S2–S10 (see docs/gates.md). /gate
 ---
 
 # Human sign-off gate
 
 **You cannot sign these.** Only Elliot playing the game.
 
-Alpha gates (at minimum):
+Steam plan human feel gates (S0–S10; S1 has no feel gate):
 
-- **A1** — flight not nauseating; controllable
-- **A4** — personal recovery feels earned, not a menu grind
-- **Final Alpha** — core fantasy legible and worth expanding
+- **S2** — economy: can plan a trade route; market fights back
+- **S3** — living activity density: not a thin menu loop
+- **S4** — jurisdictional identity: crime feels local; recovery still works
+- **S5** — ship fantasy: outfitting and long careers, not bored
+- **S6** — Ops feel: progression past solo courier
+- **S7** — story / freeroam + cold start
+- **S8** — endgame feel + structural rhyme
+- **S9** — content complete (real Beta)
+- **S10** — production polish + launch prep (RC)
+
+Records and scripts live in `docs/gates.md`. Plan marks which phase needs a
+gate; `docs/state.md` says which are already signed.
 
 ## Steps
 
