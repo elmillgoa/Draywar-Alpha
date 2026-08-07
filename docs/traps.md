@@ -18,7 +18,9 @@ encode it in `scripts/checkin.py` when possible.
 
 ## Alpha-specific
 
-9. **Full-plan population counts (8–12 Entities) are not Alpha caps.** Alpha Scope wins (4–6 / 12–18).
+9. **Content ceilings are `Balance.CONTENT_BUDGET`**, enforced at load by
+   `ContentLibrary`. The old Alpha Scope caps (3–4 systems / 12–18 people / …)
+   are dead — do not treat them as the brake.
 10. **Do not rebuild the older Desktop\Draywar tree into this repo.** Steal patterns; do not merge histories as if this were a continuation.
 
 ## UI / EventBus (E1+)

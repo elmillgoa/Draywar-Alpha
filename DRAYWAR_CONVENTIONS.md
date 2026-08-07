@@ -101,7 +101,7 @@ func _on_sell_pressed() -> void:
 
 ```gdscript
 # StandingService.gd
-# Implements: DRAYWAR_PHASE_PLAN.md P4.1
+# Implements: docs/STEAM_PHASE_PLAN.md S4.1
 ```
 
 - Commit messages are contract-ID-prefixed: `P4.1: faction standing service + transition tests`.

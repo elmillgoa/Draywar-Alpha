@@ -136,21 +136,7 @@ Chat ready to close.
 
 ---
 
-## 8. Alpha ceilings (hard)
-
-| Element | Cap |
-|---------|-----|
-| Systems | 3–4 |
-| Entities | 4–6 |
-| People | 12–18 |
-| Recovery chains | 1 |
-| Contract types | 2–3 |
-
-If a task would exceed these, stop and ask. `/alpha-scope` encodes this.
-
----
-
-## 9. Tooling
+## 8. Tooling
 
 - Godot: see `docs/tooling.md`
 - Lint: `powershell -ExecutionPolicy Bypass -File scripts/lint.ps1`

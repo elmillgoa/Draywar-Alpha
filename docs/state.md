@@ -52,10 +52,12 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-06 (REPAIR-41)** — Deleted dead Alpha content ceilings
+  (`/alpha-scope` skill + AGENTS old §8). Guardrails reading order points at
+  Steam plan stack. Live brake remains `Balance.CONTENT_BUDGET` + ContentLibrary.
 - **2026-08-06 (REPAIR-2)** — Session boot paths repointed to live Steam
   authorities (start/work/gate skills, checkin.py, README, eras Era 2,
-  AGENTS §6 gate row). Alpha ceilings + guardrails reading order left for
-  Brief 41.
+  AGENTS §6 gate row).
 - **2026-08-06 (REPAIR-1)** — New-game "How to fly" tip: panel capped to design
   height with scrollable body; Escape dismisses. Got it stays on-screen at
   shipping 1152×648 (was fully below the window).

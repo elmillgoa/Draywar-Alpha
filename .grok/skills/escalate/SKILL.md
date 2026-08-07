@@ -30,7 +30,6 @@ Real options only. Consequences in outcome terms. Never present a scope cut as n
 ## Standing / Alpha special cases
 
 - **Standing rules missing:** do not invent. Cite `docs/reputation_and_standing.md` gap.
-- **Alpha ceiling breach:** `/alpha-scope` — stop.
 - **Save schema after first save lands:** irreversibility line — say if old saves die.
 - **New dependency/asset:** name licence and whether it can be committed.
 

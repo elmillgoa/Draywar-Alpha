@@ -2,7 +2,7 @@
 
 **Version:** 2.0 (updated 2026-07-29)  
 **Applies to:** Any agent executing the Draywar phase plan.  
-**Reading order on session start:** This file → `DRAYWAR_CONVENTIONS.md` → `DRAYWAR_DESTINATION.md` → `docs/reputation_and_standing.md` → current phase in `DRAYWAR_PHASE_PLAN.md` → `/docs/state.md`.
+**Reading order on session start:** This file → `DRAYWAR_CONVENTIONS.md` → `docs/STEAM_PHASE_PLAN.md` (the live build queue) → `docs/PRODUCT_DIRECTION.md` → `docs/reputation_and_standing.md` → `DRAYWAR_DESTINATION_v2.md` → `docs/state.md`.
 
 ---
 

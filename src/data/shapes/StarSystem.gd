@@ -3,7 +3,7 @@ extends ContentItem
 
 ## A star system as data — full-sized Alpha shape, tiny A0 content.
 ##
-## Alpha Scope: 3–4 systems with distinct controllers and security levels.
+## Content ceilings live in Balance.CONTENT_BUDGET, not here.
 ## A0 ships empty gray boxes so "empty systems can load" is real. Gates and
 ## stations arrive as empty attachment points; A1 fills them without redesign.
 ##
