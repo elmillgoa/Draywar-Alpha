@@ -46,9 +46,15 @@ Console save also merges recovery chain progress into this section (A4).
 | `person_success` | `Dictionary` | Person id → int successful personal work count (A4). |
 | `person_closed` | `Dictionary` | Person id → close reason string (A4; missing = open). |
 | `recovery_progress` | `Dictionary` | Chain id → Array of completed step id strings (A4). |
+| `recovery_active` | `Dictionary` | Optional (Job 3). The step still running when the save was written: `chain_id`, `step_id` (both `String`). Empty dictionary = nothing running. |
 
 Ids not listed use content `default_player_standing` (else 0).
 Missing A4 maps mean no history, nobody closed, no chain progress.
+Missing `recovery_active` (a save written before Job 3) means nothing running,
+which is what every earlier build did with an in-progress step anyway.
+On restore an unknown chain id, or a step the chain no longer has, also means
+nothing running — the file is not repaired. A restored step re-emits
+`on_recovery_accepted` so the station menu shows the job again.
 No envelope version bump — these keys are optional inside schema v1.
 
 ### Optional section: `world_clock` (schema v1)
@@ -117,9 +123,12 @@ Old saves written by the pre-split god `WalletService` (all keys in one
 | `debt_owed` | `int` | Optional (E3.2). Flat amount still owed on the Free Haulers emergency loan. Missing or ≤0 → no debt. |
 | `debt_lender_id` | `String` | Optional (E3.2). Lender Entity id while debt is open (default Free Haulers when owed > 0 and key empty). |
 | `debt_grace_docks_left` | `int` | Optional (E3.2). Fee-charging docks left before Free Haulers standing hit while broke with debt. Missing with other debt keys → 0. |
+| `upkeep_debt` | `float` | Optional (Job 3). Fractional upkeep run up since the last whole credit was charged, `0.0 <= x < 1.0`. Missing → 0. |
 
 Missing section → boot defaults from `BalanceEconomy` (each service resets).
 Missing debt keys (old saves) → no debt.
+Missing `upkeep_debt` (a save written before Job 3) → nothing owed, which is the
+old forgiving behaviour. Non-finite or negative values are read as 0.
 No envelope version bump — optional inside schema v1.
 
 ### Optional section: `cargo` (schema v1)
@@ -199,8 +208,9 @@ Missing section → Act I, `flag_act1_started` only, no completed spines, empty 
 ### Optional section: `world` (schema v1)
 
 Written by `CareerSave` when a `system_world` and player ship are present (B2).
-Applied by `Main` after boot (system rebuild + free-fly position). Docked
-restore is not required (free-fly at saved position is OK).
+Applied by `Main` after boot: system rebuild, then position, then the berth.
+**Docked restore is real as of Job 3** — a save written at a station comes back
+at that station.
 
 | Key | Type | Meaning |
 |---|---|---|
@@ -210,7 +220,24 @@ restore is not required (free-fly at saved position is OK).
 | `pos_z` | `float` | Ship world Z. |
 | `docked_station_id` | `String` | Docked station id, or empty when free-flying. |
 
-Missing section → boot system and spawn. No envelope version bump.
+**Restore order, and it matters.** `Main._apply_world_section()`:
+
+1. Rebuilds the system if the saved one differs from the live one.
+2. If the save was written free-flying and the live session is docked, leaves
+   the berth first (`on_undock_requested`) — otherwise the undock would fling
+   the ship back to the station anchor after it had been placed.
+3. Applies `pos_x/y/z`, zeroes velocity, enables flight.
+4. If the save names a berth, calls `DockingService.begin_session_docked()` —
+   the **same** call a new career uses to wake up docked. That parks the ship
+   at the anchor, hides it, cuts flight, and emits `on_docked`, which opens the
+   station menu and re-shows the station status moment. No separate rule about
+   what a restored docked player may do: it is an ordinary berth.
+
+A berth the rebuilt world does not have, or one standing now refuses, leaves
+the free-fly restore from step 3 standing rather than failing the load.
+
+Missing section → boot system and spawn. Missing `docked_station_id`, or an
+empty one, reads as free-flying. No envelope version bump.
 
 ### Optional section: `boards` (schema v1)
 
@@ -237,14 +264,19 @@ bump. Applied after `boards`.
 | Key | Type | Meaning |
 |---|---|---|
 | `steps_done` | `int` | Security / incident evaluation steps applied since career start (`floor(elapsed / INCIDENT_STEP_SECONDS)`). |
+| `kind_steps` | `Dictionary` | Optional (Job 3). `"system_id\|kind"` string → `int` step the kind last fired at. The same-kind cooldown (`COOLDOWN_STEPS_SAME_KIND`). Missing → no cooldowns. |
 
 **Policy:** offered incidents **expire on load**. Mid-flight prompts depend on
 live ships and player location; a reload clears the offered set and only
 restores the step counter for news continuity. Do not add offered rows to the
-section without a world-prop restore plan.
+section without a world-prop restore plan. `kind_steps` does **not** change
+that policy — it restores the cooldown, never the prompt, so reloading can no
+longer make the same incident kind eligible again immediately.
 
 Missing section → security steps re-derive from the clock; no offered prompts.
-`steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`.
+`steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`, and
+each `kind_steps` value clamps to `[0, steps_done]` — a kind cannot have fired
+at a step that has not happened.
 
 ### Optional section: `enforcement` (schema v1)
 
@@ -257,9 +289,14 @@ in the `standing` section and only moves through StandingService.
 |---|---|---|
 | `heat` | `Dictionary` | Entity id string → float heat (0..HEAT_MAX). Missing id = 0. |
 | `steps_done` | `int` | Security steps applied for heat decay (same cadence as incidents: `floor(elapsed / INCIDENT_STEP_SECONDS)`). |
+| `hunt_steps` | `Dictionary` | Optional (Job 3). System id string → `int` step a forced hunt patrol last fired at (`HUNT_COOLDOWN_STEPS`). Missing → no cooldowns. |
 
 Missing section → no heat; decay steps re-derive from the clock on next catch-up.
-`steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`.
+`steps_done` clamps to `floor(elapsed_seconds / INCIDENT_STEP_SECONDS)`, and
+each `hunt_steps` value clamps to `[0, steps_done]` — a hunt cannot have fired
+at a step that has not happened. Missing `hunt_steps` (a save written before
+Job 3) means no cooldown carried across the load, which is the old behaviour
+that let a forced hunt re-fire straight after loading.
 Unknown entity ids in `heat` are kept as raw floats (dropped only if non-finite
 or ≤ 0 after clamp).
 
@@ -273,6 +310,7 @@ runtime snapshot; emits `on_mission_accepted` so HUD refreshes).
 |---|---|---|
 | `template_id` | `String` | Active contract template content id, **or** board offer instance id for radiant/hand board rows. |
 | `objective_met` | `bool` | Optional (E1.3). True when a bounty kill gate is done. Missing = false. |
+| `bounty_kills` | `int` | Optional (Job 3). Kills banked so far on a bounty job, `0..BOUNTY_KILLS_REQUIRED`. Written for every active bounty, including zero. |
 | `runtime` | `bool` | Optional (S3a). True when the job is a board snapshot (not ContentLibrary). Missing = false. |
 | `kind` | `String` | Runtime only. Mission kind (`delivery` / `bounty` / `smuggle` / `escort`). |
 | `offering_entity_id` | `String` | Runtime only. Offering Entity id. |
@@ -291,6 +329,12 @@ Smuggle (E3.4) cargo still lives in the `cargo` section. Restore applies cargo
 first, then mission without re-loading crates (so save/load does not double the
 hold). Runtime radiant missions restore from the snapshot keys above — they do
 **not** require the offer to still be on the board.
+
+On restore `bounty_kills` wins when present and clamps to
+`[0, BOUNTY_KILLS_REQUIRED]`. A save written before Job 3 has no such key, so
+it still restores from `objective_met` alone — all-or-nothing, which is what it
+recorded. `objective_met` is still written for a finished bounty so an older
+build reading a newer file is not confused about a job the player completed.
 
 Missing section → no active mission. No envelope version bump.
 
@@ -366,11 +410,59 @@ N+1, and bump `SaveSchema.CURRENT_VERSION`.
 `SaveService` (not an autoload):
 
 - `envelope(sections, profile_name, origin, career_mode)`
-- `save_to(path, envelope)` / `load_from(path)` — load emits
-  `EventBus.on_save_loaded(path)` only on success
+- `save_to(path, envelope)` / `load_from(path)` — files only. **`load_from` emits
+  nothing.**
 - `encode_bytes` / `decode_bytes` for in-memory work
+
+`CareerSave`:
+
+- `gather_sections(tree)` / `apply_meta_sections(tree, sections, path = "")`
+- `apply_meta_sections` is where a load actually happens, and it ends by
+  re-showing the status moment and emitting `EventBus.on_save_loaded(path)`.
 
 Console: `save <name>` / `load <name>` via `SaveConsoleCommands` (child of Main).
 Menu/pause: same gather/apply path through `CareerSave` (default name `career`).
 
-Files live under `user://saves/*.sav`.
+### When the load is announced (Job 3, `#35`)
+
+`SaveService.load_from()` used to emit `on_save_loaded` the moment the file was
+decoded — before a single section had been applied — so every listener read the
+state the load was about to replace. It now emits nothing. The announcement is
+the **last** thing `CareerSave.apply_meta_sections()` does, after every section
+above is in place, and it carries the path the caller read.
+
+One residual, deliberate and documented rather than hidden: `world` (system,
+ship position, berth) is applied by `Main` immediately **after**
+`apply_meta_sections` returns, so the ship's placement is not settled at
+`on_save_loaded`. Placement announces itself — `on_system_entered`, `on_docked`,
+`on_undocked` — and that is what a listener that cares where the player is must
+use. Nothing currently listening to `on_save_loaded` reads placement.
+
+### Where the files live
+
+`user://saves/*.sav`.
+
+`user://` is **pinned** (Job 3), not derived from the product name:
+
+```
+application/config/use_custom_user_dir = true
+application/config/custom_user_dir_name = "Godot/app_userdata/Draywar"
+```
+
+The pinned name is deliberately the exact relative path Godot already derived
+from `config/name`, so turning the pin on **moved nothing**. Measured on
+Windows with Godot 4.6.1: `%APPDATA%/Godot/app_userdata/Draywar` before the pin
+and the same path after it. No save migration was needed and none exists.
+
+This closes `RA-8`. Commit `4a9eb9b` renamed `config/name` from "Draywar Alpha"
+to "Draywar" and every existing save became invisible, because `user://` was
+derived from that name. It cannot happen again: with the pin, changing
+`config/name` no longer changes the save folder — `tests/test_save_fidelity.gd`
+asserts exactly that, and asserts that without the pin the rename still would
+move it.
+
+Note for a future non-Windows export (there is only a Windows preset today):
+Godot's *derived* path uses a lower-case `godot` directory on Linux, so on a
+first Linux build the pinned capital-`G` folder is a fresh, empty directory.
+That is harmless — there are no pre-existing Linux saves to strand — but do not
+"fix" the case on Windows, where it would orphan every real save.

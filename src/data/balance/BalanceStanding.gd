@@ -350,6 +350,11 @@ const SAVE_KEY_PEOPLE: StringName = &"people"
 const SAVE_KEY_PERSON_SUCCESS: StringName = &"person_success"
 const SAVE_KEY_PERSON_CLOSED: StringName = &"person_closed"
 const SAVE_KEY_RECOVERY_PROGRESS: StringName = &"recovery_progress"
+## The recovery step that was still running when the save was written. Without
+## it a reload silently cancels a job the player had already accepted.
+const SAVE_KEY_RECOVERY_ACTIVE: StringName = &"recovery_active"
+const RECOVERY_ACTIVE_KEY_CHAIN_ID: StringName = &"chain_id"
+const RECOVERY_ACTIVE_KEY_STEP_ID: StringName = &"step_id"
 
 # --- Console ---------------------------------------------------------------
 

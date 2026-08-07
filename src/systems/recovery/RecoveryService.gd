@@ -279,6 +279,44 @@ func progress_to_section() -> Dictionary:
 	return out
 
 
+## The step still running when the save was written. Empty when idle.
+func active_to_section() -> Dictionary:
+	if not has_active():
+		return {}
+	return {
+		BalanceStanding.RECOVERY_ACTIVE_KEY_CHAIN_ID: String(_active_chain_id),
+		BalanceStanding.RECOVERY_ACTIVE_KEY_STEP_ID: String(_active_step_id),
+	}
+
+
+## Put back the step that was running when the save was written.
+##
+## Missing key (a save written before this existed), an unknown chain, or a step
+## the chain no longer has all mean the same thing: nothing active. Re-announces
+## `on_recovery_accepted` so the station menu shows the job again, the same way
+## `MissionService.apply_section()` re-announces a restored contract.
+func apply_active_section(raw: Variant) -> void:
+	clear_active()
+	if typeof(raw) != TYPE_DICTIONARY:
+		return
+	var data: Dictionary = raw
+	if not data.has(BalanceStanding.RECOVERY_ACTIVE_KEY_CHAIN_ID):
+		return
+	if not data.has(BalanceStanding.RECOVERY_ACTIVE_KEY_STEP_ID):
+		return
+	var chain_id: StringName = StringName(str(data[BalanceStanding.RECOVERY_ACTIVE_KEY_CHAIN_ID]))
+	var step_id: StringName = StringName(str(data[BalanceStanding.RECOVERY_ACTIVE_KEY_STEP_ID]))
+	if String(chain_id).is_empty() or String(step_id).is_empty():
+		return
+	var chain: RecoveryChain = _chain(chain_id)
+	if chain == null or _step(chain, step_id) == null:
+		return
+	_active_chain_id = chain_id
+	_active_step_id = step_id
+	_state = STATE_ACTIVE
+	EventBus.on_recovery_accepted.emit(chain_id, step_id, chain.person_id)
+
+
 ## Restore chain progress from save. Does not touch active step.
 func apply_progress_section(raw: Variant) -> void:
 	_completed_steps.clear()

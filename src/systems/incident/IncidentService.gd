@@ -229,22 +229,52 @@ func would_exceed_ship_budget(extra_ships: int) -> bool:
 	return estimate_live_ships() + extra_ships > BalanceEconomy.PERF_BUDGET_SHIPS
 
 
-## Optional save section — steps only; offered list intentionally empty on load.
+## Optional save section — steps + per-kind cooldowns. The offered list is
+## still intentionally empty on load (policy; see save_schema.md).
 func to_section() -> Dictionary:
 	catch_up()
+	var kind_out: Dictionary = {}
+	var kind_keys: Array = _last_kind_step.keys()
+	kind_keys.sort()
+	for key: Variant in kind_keys:
+		var map_key: String = str(key)
+		if map_key.is_empty():
+			continue
+		kind_out[map_key] = _variant_to_int(_last_kind_step[key])
 	return {
+		BalanceIncident.SAVE_KEY_KIND_STEPS: kind_out,
 		BalanceIncident.SAVE_KEY_STEPS: _steps_done,
 	}
 
 
-## Restore steps; offered incidents expire (policy).
+## Restore steps and per-kind cooldowns; offered incidents expire (policy).
 func apply_section(raw: Variant) -> void:
 	reset()
 	if typeof(raw) != TYPE_DICTIONARY:
 		return
 	var data: Dictionary = raw
 	_steps_done = _restored_steps(data)
+	_apply_kind_steps(data)
 	# Offered incidents do not survive load — mid-flight props are gone.
+
+
+## Restore the "this kind already fired here recently" map, keyed
+## "system_id|kind". A save written before this key existed has none, which is
+## the old behaviour: the same incident kind could re-fire straight after a
+## load. A step later than the restored step counter cannot have happened, so
+## it is clamped rather than trusted.
+func _apply_kind_steps(data: Dictionary) -> void:
+	if not data.has(BalanceIncident.SAVE_KEY_KIND_STEPS):
+		return
+	var raw_kinds: Variant = data[BalanceIncident.SAVE_KEY_KIND_STEPS]
+	if typeof(raw_kinds) != TYPE_DICTIONARY:
+		return
+	var kind_map: Dictionary = raw_kinds
+	for key: Variant in kind_map:
+		var map_key: String = str(key)
+		if map_key.is_empty():
+			continue
+		_last_kind_step[map_key] = clampi(_variant_to_int(kind_map[key]), 0, _steps_done)
 
 
 func _restored_steps(data: Dictionary) -> int:

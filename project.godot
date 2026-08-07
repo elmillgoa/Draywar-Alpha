@@ -11,6 +11,8 @@ config_version=5
 [application]
 
 config/name="Draywar"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Godot/app_userdata/Draywar"
 config/description="The empire fell. The contracts didn't."
 run/main_scene="res://src/Main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")

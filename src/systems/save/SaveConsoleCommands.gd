@@ -70,7 +70,7 @@ func _run_load(args: PackedStringArray) -> void:
 		var sections_raw: Variant = loaded.envelope[SaveService.KEY_SECTIONS]
 		if typeof(sections_raw) == TYPE_DICTIONARY:
 			sections = sections_raw
-	CareerSave.apply_meta_sections(get_tree(), sections)
+	CareerSave.apply_meta_sections(get_tree(), sections, path)
 	_say("Loaded '%s'." % path)
 
 

@@ -35,6 +35,9 @@ const WORLD_KEY_DOCKED_STATION_ID: StringName = &"docked_station_id"
 const MISSION_KEY_TEMPLATE_ID: StringName = &"template_id"
 ## Optional: bounty kill objective met (bool). Missing = false. No schema bump.
 const MISSION_KEY_OBJECTIVE_MET: StringName = &"objective_met"
+## Optional: kills banked so far on a bounty job. Without it a reload throws
+## away every kill short of the last one and the hunt starts over.
+const MISSION_KEY_BOUNTY_KILLS: StringName = &"bounty_kills"
 ## Optional S3a: true when the active job is a runtime/radiant offer snapshot.
 ## Missing = false (legacy ContentLibrary template_id only).
 const MISSION_KEY_RUNTIME: StringName = &"runtime"

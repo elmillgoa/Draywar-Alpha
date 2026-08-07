@@ -277,6 +277,9 @@ const SAVE_KEY_CONDITION: StringName = &"condition"
 const SAVE_KEY_DEBT_OWED: StringName = &"debt_owed"
 const SAVE_KEY_DEBT_LENDER_ID: StringName = &"debt_lender_id"
 const SAVE_KEY_DEBT_GRACE_DOCKS_LEFT: StringName = &"debt_grace_docks_left"
+## Fractional upkeep owed but not yet charged as a whole credit. Without it a
+## reload forgives whatever part-credit the player had already run up.
+const SAVE_KEY_UPKEEP_DEBT: StringName = &"upkeep_debt"
 
 ## Optional cargo section key (inventory map is the section body).
 const SAVE_SECTION_CARGO: StringName = &"cargo"

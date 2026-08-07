@@ -324,7 +324,7 @@ func _continue_career() -> void:
 	_reset_career_services()
 	await _tear_down_play_session()
 	_boot_play_session()
-	CareerSave.apply_meta_sections(get_tree(), sections)
+	CareerSave.apply_meta_sections(get_tree(), sections, path)
 	await _apply_world_section(sections)
 	# D11: Continue/load skips create + annexation entirely.
 	_opening_in_progress = false
@@ -333,7 +333,13 @@ func _continue_career() -> void:
 	if _opening_annexation != null:
 		_opening_annexation.hide_annexation()
 	_in_play = true
-	SteamService.set_presence(BalanceSettings.STEAM_PRESENCE_FLIGHT)
+	# A save taken in a berth now restores into that berth, so the presence line
+	# has to ask rather than assume the player came back flying.
+	var back_in_flight: bool = _docking == null or String(_docking.docked_station_id()).is_empty()
+	if back_in_flight:
+		SteamService.set_presence(BalanceSettings.STEAM_PRESENCE_FLIGHT)
+	else:
+		SteamService.set_presence(BalanceSettings.STEAM_PRESENCE_DOCKED)
 	_hide_main_menu()
 	_set_pause(false)
 	if _new_game_tip != null:
@@ -395,7 +401,7 @@ func _load_into_play() -> void:
 			_pause_menu.show_feedback(BalanceSession.LOAD_FAIL_FORMAT % loaded.summary())
 		return
 	var sections: Dictionary = _sections_of(loaded.envelope)
-	CareerSave.apply_meta_sections(get_tree(), sections)
+	CareerSave.apply_meta_sections(get_tree(), sections, path)
 	await _apply_world_section(sections)
 	# D11: load never re-shows create / annexation.
 	_opening_in_progress = false
@@ -585,6 +591,12 @@ func _apply_world_section(sections: Dictionary) -> void:
 		if _gate_travel != null:
 			_gate_travel.setup(_ship, _world.gate_positions(), _docking)
 
+	var saved_dock_id: StringName = CareerSave.docked_station_from_world(world_data)
+	# Leaving a berth the save does not have has to happen before the ship is
+	# placed, or the undock would fling it back to the station anchor.
+	if String(saved_dock_id).is_empty():
+		_undock_if_docked()
+
 	var has_pos: bool = (
 		world_data.has(BalanceSession.WORLD_KEY_POS_X)
 		and world_data.has(BalanceSession.WORLD_KEY_POS_Y)
@@ -600,8 +612,33 @@ func _apply_world_section(sections: Dictionary) -> void:
 		_ship.set_flight_enabled(true)
 		_ship.visible = true
 
-	# Free-fly restore preferred; docked restore is deferred (hard with state machine).
+	# Saved docked → wake up docked, exactly the way a new career wakes up
+	# docked. Same call, so a restored berth behaves like any other berth and no
+	# new rule about what a docked player may do is invented here. It parks the
+	# ship at the anchor, hides it, cuts flight, and announces `on_docked`,
+	# which is what opens the station menu and re-shows the station status.
+	if not String(saved_dock_id).is_empty():
+		_restore_docked(saved_dock_id)
 	_raise_debug_console()
+
+
+## Put the ship back in the berth the save was written in. A station the world
+## no longer has, or one standing now refuses, leaves the free-fly restore that
+## already ran in place rather than failing the load.
+func _restore_docked(station_id: StringName) -> void:
+	if _docking == null:
+		return
+	_docking.begin_session_docked(station_id)
+
+
+## Loading a free-flying save while docked has to leave the berth first.
+func _undock_if_docked() -> void:
+	if _docking == null:
+		return
+	var current: StringName = _docking.docked_station_id()
+	if String(current).is_empty():
+		return
+	EventBus.on_undock_requested.emit(current)
 
 
 func _on_jump_requested(destination_system_id: StringName) -> void:

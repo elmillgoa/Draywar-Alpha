@@ -334,11 +334,15 @@ func _dock_fee_standing_mult(system_id: StringName, station_id: StringName = &""
 
 ## Optional save section dictionary — credits + debt only (S5 Session B).
 func to_section() -> Dictionary:
+	var carried_upkeep: float = _upkeep_debt
+	if not is_finite(carried_upkeep) or carried_upkeep < 0.0:
+		carried_upkeep = 0.0
 	return {
 		BalanceEconomy.SAVE_KEY_CREDITS: _credits,
 		BalanceEconomy.SAVE_KEY_DEBT_OWED: _debt_owed,
 		BalanceEconomy.SAVE_KEY_DEBT_LENDER_ID: String(_debt_lender_id),
 		BalanceEconomy.SAVE_KEY_DEBT_GRACE_DOCKS_LEFT: _debt_grace_docks_left,
+		BalanceEconomy.SAVE_KEY_UPKEEP_DEBT: carried_upkeep,
 	}
 
 
@@ -352,7 +356,20 @@ func apply_section(raw: Variant) -> void:
 	var data: Dictionary = raw
 	if data.has(BalanceEconomy.SAVE_KEY_CREDITS):
 		_set_credits(maxi(0, _variant_to_int(data[BalanceEconomy.SAVE_KEY_CREDITS])))
+	_apply_upkeep_debt(data)
 	_apply_debt_section(data)
+
+
+## Restore the part-credit of upkeep already run up. Missing key (a save from
+## before this was kept) means none owed — the old, forgiving behaviour.
+func _apply_upkeep_debt(data: Dictionary) -> void:
+	if not data.has(BalanceEconomy.SAVE_KEY_UPKEEP_DEBT):
+		_upkeep_debt = 0.0
+		return
+	var carried: float = _variant_to_float(data[BalanceEconomy.SAVE_KEY_UPKEEP_DEBT])
+	if not is_finite(carried) or carried < 0.0:
+		carried = 0.0
+	_upkeep_debt = carried
 
 
 func _apply_debt_section(data: Dictionary) -> void:

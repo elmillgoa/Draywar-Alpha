@@ -4,7 +4,9 @@ extends RefCounted
 ## Saving and loading a career — Alpha A0.
 ##
 ## Not an autoload. Holds no state between calls; anything that needs it makes
-## one. Emits `EventBus.on_save_loaded` on a successful load only.
+## one. Reads and writes files; it does not announce anything on the bus —
+## `CareerSave.apply_meta_sections()` emits `EventBus.on_save_loaded` once the
+## restored state is actually in place.
 
 const SaveCodec = preload("res://src/systems/save/SaveCodec.gd")
 const SaveMigrations = preload("res://src/systems/save/SaveMigrations.gd")
@@ -97,10 +99,11 @@ func load_from(path: String) -> SaveResult:
 	var raw: PackedByteArray = file.get_buffer(file.get_length())
 	file.close()
 
-	var loaded: SaveResult = decode_bytes(raw)
-	if loaded.ok():
-		EventBus.on_save_loaded.emit(path)
-	return loaded
+	# No `on_save_loaded` here. Reading a file is not loading a career: at this
+	# point nothing has been applied, so a listener told "the load happened"
+	# would read exactly the state the load is about to replace. The
+	# announcement lives at the end of `CareerSave.apply_meta_sections()`.
+	return decode_bytes(raw)
 
 
 ## The bytes a save file would contain for this envelope, without writing one.

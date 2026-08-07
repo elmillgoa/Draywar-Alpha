@@ -52,6 +52,41 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (Job 3 — save/reload fidelity + where saves live)** — Elliot's
+  ruling, memo `DECISION_save-schema-roundtrip.md`: **everything comes back**,
+  and **pin the save folder now**. Five things a reload used to take away now
+  survive it. **The berth** — a save written at a station comes back at that
+  station, restored through the same `begin_session_docked()` a new career uses,
+  so no new rule about what a docked player may do was invented (`#9`, ex-Brief
+  5). **The recovery job you were on** — new optional `standing.recovery_active`
+  key; a restored step re-emits `on_recovery_accepted` so the station menu shows
+  it (`#10`). **The hunt cooldown** — new `enforcement.hunt_steps` (`#11`,
+  ex-Brief 12). **The incident cooldown** — new `incidents.kind_steps`; offered
+  prompts still expire on load, only the cooldown is restored (`#13`). **Partial
+  bounty progress** — new `mission.bounty_kills`; `objective_met` still written
+  for older readers (`#71`). **The part-credit of upkeep owed** — new
+  `wallet.upkeep_debt` (`#27`). No envelope version bump and no migration step:
+  every key is optional inside schema v1, and a save written before this loads
+  with the old forgiving defaults (tested). **`#35` closed** —
+  `SaveService.load_from()` no longer emits `on_save_loaded`; the announcement is
+  now the last thing `CareerSave.apply_meta_sections()` does, once the state is
+  really there. Residual documented, not hidden: `world` placement is applied by
+  `Main` after that, so placement listeners must use `on_system_entered` /
+  `on_docked`. **`W13` closed (Major)** — after a load in the system you were
+  already in, the HUD showed the pre-load standing tier; `apply_meta_sections`
+  now asks `StandingService` to re-fire its own status moment through the
+  existing public `emit_status_for_system()` / `emit_status_for_station()`. No
+  second standing writer, no new emit inside `apply_section()`, `StandingService.gd`
+  untouched. Both failures were reproduced on the pre-fix build before the fix
+  (2 failing) and pass after. **`RA-8` closed** — `user://` is pinned via
+  `use_custom_user_dir` + `custom_user_dir_name = "Godot/app_userdata/Draywar"`,
+  which is byte-for-byte the path Godot already derived, so **nothing moved and
+  no save migration was needed**; verified by running Godot headless and printing
+  `OS.get_user_data_dir()` before and after. A test proves a product rename can
+  no longer move the folder, and that without the pin it still would. New suite
+  `tests/test_save_fidelity.gd` (17 tests). **`docs/events.md` needs two lines
+  changed** (`on_save_loaded` emitter, `on_status_moment` triggers) — recorded
+  for the Job 12 continuation pass; that file was not touched here.
 - **2026-08-07 (Job 4 — kill attribution)** — Two standing rules Elliot decided
   and that had never existed anywhere, now written into
   `docs/reputation_and_standing.md` §7 **before** the code. **Sanctioned bounty

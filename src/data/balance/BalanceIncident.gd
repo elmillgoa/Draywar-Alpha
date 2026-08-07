@@ -24,6 +24,11 @@ const SAVE_SECTION_KEY: StringName = &"incidents"
 
 const SAVE_KEY_STEPS: StringName = &"steps_done"
 
+## Last step each incident kind fired, keyed "system_id|kind". The offered
+## prompt still expires on load; only the cooldown that stops the same kind
+## re-firing immediately is restored.
+const SAVE_KEY_KIND_STEPS: StringName = &"kind_steps"
+
 ## Policy note for save_schema.md: offered incidents do not survive load.
 ## Mid-flight prompts depend on live ships/world; reload expires them cleanly.
 

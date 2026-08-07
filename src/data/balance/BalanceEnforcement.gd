@@ -13,6 +13,9 @@ extends RefCounted
 const SAVE_SECTION_KEY: StringName = &"enforcement"
 const SAVE_KEY_HEAT: StringName = &"heat"
 const SAVE_KEY_STEPS: StringName = &"steps_done"
+## Last security step a forced hunt patrol fired, per system id. Without it a
+## reload clears the cooldown and the same hunt can be forced again at once.
+const SAVE_KEY_HUNT_STEPS: StringName = &"hunt_steps"
 
 # --- Heat scale ------------------------------------------------------------
 

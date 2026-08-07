@@ -165,7 +165,7 @@ func record_hunt_spawn(system_id: StringName, step: int) -> void:
 	_last_hunt_step[String(system_id)] = step
 
 
-## Optional save section — heat map + decay step counter.
+## Optional save section — heat map + decay step counter + hunt cooldowns.
 func to_section() -> Dictionary:
 	catch_up()
 	var heat_out: Dictionary = {}
@@ -174,19 +174,29 @@ func to_section() -> Dictionary:
 	for key: Variant in keys:
 		var k: String = str(key)
 		heat_out[k] = _clamp_heat(_variant_to_float(_heat[key]))
+	var hunt_out: Dictionary = {}
+	var hunt_keys: Array = _last_hunt_step.keys()
+	hunt_keys.sort()
+	for key: Variant in hunt_keys:
+		var system_key: String = str(key)
+		if system_key.is_empty():
+			continue
+		hunt_out[system_key] = _variant_to_int(_last_hunt_step[key])
 	return {
 		BalanceEnforcement.SAVE_KEY_HEAT: heat_out,
+		BalanceEnforcement.SAVE_KEY_HUNT_STEPS: hunt_out,
 		BalanceEnforcement.SAVE_KEY_STEPS: _steps_done,
 	}
 
 
-## Restore heat; missing keys mean zero. No envelope version bump.
+## Restore heat and hunt cooldowns; missing keys mean zero. No version bump.
 func apply_section(raw: Variant) -> void:
 	reset()
 	if typeof(raw) != TYPE_DICTIONARY:
 		return
 	var data: Dictionary = raw
 	_steps_done = _restored_steps(data)
+	_apply_hunt_steps(data)
 	if not data.has(BalanceEnforcement.SAVE_KEY_HEAT):
 		return
 	var raw_heat: Variant = data[BalanceEnforcement.SAVE_KEY_HEAT]
@@ -200,6 +210,24 @@ func apply_section(raw: Variant) -> void:
 		var value: float = _clamp_heat(_variant_to_float(heat_map[key]))
 		if value > BalanceEnforcement.HEAT_MIN:
 			_heat[entity_key] = value
+
+
+## Restore per-system hunt cooldowns. A save written before this key existed
+## has none, which is the old behaviour: no cooldown carried across the load.
+## A recorded step later than the restored step counter is impossible, so it is
+## clamped rather than trusted — otherwise a doctored file could bar hunts.
+func _apply_hunt_steps(data: Dictionary) -> void:
+	if not data.has(BalanceEnforcement.SAVE_KEY_HUNT_STEPS):
+		return
+	var raw_hunt: Variant = data[BalanceEnforcement.SAVE_KEY_HUNT_STEPS]
+	if typeof(raw_hunt) != TYPE_DICTIONARY:
+		return
+	var hunt_map: Dictionary = raw_hunt
+	for key: Variant in hunt_map:
+		var system_key: String = str(key)
+		if system_key.is_empty():
+			continue
+		_last_hunt_step[system_key] = clampi(_variant_to_int(hunt_map[key]), 0, _steps_done)
 
 
 func _restored_steps(data: Dictionary) -> int:

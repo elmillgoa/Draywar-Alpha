@@ -170,7 +170,7 @@ channel is for; the offering Entity arrives separately on `on_mission_accepted`.
 - **Added by:** `src/systems/recovery/RecoveryService.gd:55` (raw string)
 - **Producer layer:** systems
 - **Permitted consumers:** (none)
-- **Reached via dynamic sites:** `src/systems/save/CareerSave.gd:449`, `src/ui/station/StationMenu.gd:957`
+- **Reached via dynamic sites:** `src/systems/save/CareerSave.gd:526`, `src/ui/station/StationMenu.gd:957`
 
 The one group with **no static lookup site at all** - every reach is through
 a same-file wrapper (`CareerSave._node_in_group`, `StationMenu._node_in_group`
@@ -346,7 +346,7 @@ wrapper to recover what literal a caller supplied - it reports the wrapper's
 own call as what it structurally is (a parameter, not a literal) and
 requires it to be listed here.
 
-### `src/systems/save/CareerSave.gd:449`
+### `src/systems/save/CareerSave.gd:526`
 
 `_node_in_group(tree, group)`. Called throughout `CareerSave.gd`'s save/load
 section functions with literal or `BalanceX.GROUP_Y` group names - directly,

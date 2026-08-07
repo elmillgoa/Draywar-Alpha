@@ -61,7 +61,24 @@ static func gather_sections(tree: SceneTree) -> Dictionary:
 
 ## Apply standing (+ recovery), world clock, wallet, cargo, ship, mission, career.
 ## Not world placement (Main owns that).
-static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
+##
+## The last two things this does are the fix for the load-order bug: the status
+## moment is re-shown from the standing that was just restored, and only then is
+## `on_save_loaded` announced. Both used to happen before the state existed —
+## `SaveService.load_from()` announced the load while the file had only been
+## decoded, so every listener read the state it was replacing.
+##
+## `loaded_from_path` is the file the sections came from; it is empty only when
+## a caller applies sections it did not read off disk.
+##
+## Residual, and it is deliberate: `world` (system, ship position, docked
+## station) is applied by `Main` immediately after this returns, so the ship's
+## placement is NOT settled at `on_save_loaded`. Placement announces itself —
+## `on_system_entered`, `on_docked`, `on_undocked` — and that is what a listener
+## that cares where the player is must use.
+static func apply_meta_sections(
+	tree: SceneTree, sections: Dictionary, loaded_from_path: String = ""
+) -> void:
 	_apply_standing_from_sections(tree, sections)
 	_apply_world_clock_from_sections(sections)
 	# Market after the clock and before money/cargo: it resolves its own step
@@ -85,6 +102,36 @@ static func apply_meta_sections(tree: SceneTree, sections: Dictionary) -> void:
 	_apply_campaign_from_sections(tree, sections)
 	_apply_mission_from_sections(tree, sections)
 	_apply_career_from_sections(sections)
+	_reannounce_status_moment(tree)
+	EventBus.on_save_loaded.emit(loaded_from_path)
+
+
+## Re-show the protected status moment now that standing is restored.
+##
+## The HUD's status line is written when `on_system_entered` fires, which on a
+## load into the system the player is already in has long since happened — so
+## without this the tier on screen is the tier from before the load. Nothing
+## here writes standing: `StandingService` reads its own restored values and
+## re-fires its own signal through the same public re-fire it already uses after
+## the life-path step, so it stays the single writer and the status moment stays
+## a StandingService emit.
+static func _reannounce_status_moment(tree: SceneTree) -> void:
+	if tree == null:
+		return
+	var docked_id: StringName = _docked_station_id(tree)
+	if not String(docked_id).is_empty():
+		StandingService.emit_status_for_station(docked_id)
+		return
+	var world: Node = tree.get_first_node_in_group(BalanceSession.GROUP_SYSTEM_WORLD)
+	if world == null:
+		return
+	var raw_id: Variant = world.get("system_id")
+	if raw_id == null:
+		return
+	var system_id: StringName = StringName(str(raw_id))
+	if String(system_id).is_empty():
+		return
+	StandingService.emit_status_for_system(system_id)
 
 
 ## Write a named career save under user://saves/.
@@ -124,6 +171,18 @@ static func world_from_sections(sections: Dictionary) -> Dictionary:
 	if typeof(raw) != TYPE_DICTIONARY:
 		return {}
 	return raw
+
+
+## The berth a world section was written in, or empty when it was written
+## free-flying. Old saves that predate the key read as free-flying, which is
+## what every build before this one did with it anyway.
+static func docked_station_from_world(world_data: Dictionary) -> StringName:
+	if not world_data.has(BalanceSession.WORLD_KEY_DOCKED_STATION_ID):
+		return &""
+	var raw: String = str(world_data[BalanceSession.WORLD_KEY_DOCKED_STATION_ID])
+	if raw.is_empty():
+		return &""
+	return StringName(raw)
 
 
 ## Read mission template id from sections (empty if none).
@@ -324,11 +383,16 @@ static func _docked_station_id(tree: SceneTree) -> StringName:
 
 static func _merge_recovery_progress(tree: SceneTree, standing_section: Dictionary) -> void:
 	var service: Node = _node_in_group(tree, &"recovery_service")
-	if service == null or not service.has_method(&"progress_to_section"):
+	if service == null:
 		return
-	var progress: Variant = service.call(&"progress_to_section")
-	if typeof(progress) == TYPE_DICTIONARY:
-		standing_section[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS] = progress
+	if service.has_method(&"progress_to_section"):
+		var progress: Variant = service.call(&"progress_to_section")
+		if typeof(progress) == TYPE_DICTIONARY:
+			standing_section[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS] = progress
+	if service.has_method(&"active_to_section"):
+		var active: Variant = service.call(&"active_to_section")
+		if typeof(active) == TYPE_DICTIONARY:
+			standing_section[BalanceStanding.SAVE_KEY_RECOVERY_ACTIVE] = active
 
 
 static func _apply_standing_from_sections(tree: SceneTree, sections: Dictionary) -> void:
@@ -429,18 +493,31 @@ static func _apply_recovery_progress(tree: SceneTree, standing_raw: Variant) -> 
 		return
 	var data: Dictionary = standing_raw
 	var service: Node = _node_in_group(tree, &"recovery_service")
-	if service == null or not service.has_method(&"apply_progress_section"):
+	if service == null:
 		return
-	if data.has(BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS):
-		service.call(&"apply_progress_section", data[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS])
-	else:
-		service.call(&"apply_progress_section", {})
+	if service.has_method(&"apply_progress_section"):
+		if data.has(BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS):
+			service.call(
+				&"apply_progress_section", data[BalanceStanding.SAVE_KEY_RECOVERY_PROGRESS]
+			)
+		else:
+			service.call(&"apply_progress_section", {})
+	if service.has_method(&"apply_active_section"):
+		if data.has(BalanceStanding.SAVE_KEY_RECOVERY_ACTIVE):
+			service.call(&"apply_active_section", data[BalanceStanding.SAVE_KEY_RECOVERY_ACTIVE])
+		else:
+			# Old save, written before the running step was kept: nothing active.
+			service.call(&"apply_active_section", {})
 
 
 static func _reset_recovery_progress(tree: SceneTree) -> void:
 	var service: Node = _node_in_group(tree, &"recovery_service")
-	if service != null and service.has_method(&"apply_progress_section"):
+	if service == null:
+		return
+	if service.has_method(&"apply_progress_section"):
 		service.call(&"apply_progress_section", {})
+	if service.has_method(&"apply_active_section"):
+		service.call(&"apply_active_section", {})
 
 
 static func _node_in_group(tree: SceneTree, group: StringName) -> Node:

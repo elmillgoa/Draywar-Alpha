@@ -214,8 +214,12 @@ func to_section() -> Dictionary:
 	if not has_active():
 		return {}
 	var section: Dictionary = {BalanceSession.MISSION_KEY_TEMPLATE_ID: String(_active_template_id)}
-	if is_objective_ready() and active_kind() == BalanceStanding.MISSION_KIND_BOUNTY:
-		section[BalanceSession.MISSION_KEY_OBJECTIVE_MET] = true
+	if active_kind() == BalanceStanding.MISSION_KIND_BOUNTY:
+		# Part-finished hunts count. `objective_met` stays written so a build
+		# that predates the kill count still reads a finished job correctly.
+		section[BalanceSession.MISSION_KEY_BOUNTY_KILLS] = _bounty_kills
+		if is_objective_ready():
+			section[BalanceSession.MISSION_KEY_OBJECTIVE_MET] = true
 	if not _runtime_offer.is_empty():
 		section[BalanceSession.MISSION_KEY_RUNTIME] = true
 		_write_runtime_keys(section)
@@ -243,7 +247,15 @@ func apply_section(raw: Variant) -> void:
 			return
 	elif not _accept_internal(template_id, false):
 		return
-	if data.get(BalanceSession.MISSION_KEY_OBJECTIVE_MET, false) == true:
+	# Prefer the exact kill count. Saves written before it existed only say
+	# whether the gate was met, so those still restore the old way.
+	if data.has(BalanceSession.MISSION_KEY_BOUNTY_KILLS):
+		_bounty_kills = clampi(
+			_variant_to_int(data[BalanceSession.MISSION_KEY_BOUNTY_KILLS]),
+			0,
+			BalanceStanding.BOUNTY_KILLS_REQUIRED
+		)
+	elif data.get(BalanceSession.MISSION_KEY_OBJECTIVE_MET, false) == true:
 		_bounty_kills = BalanceStanding.BOUNTY_KILLS_REQUIRED
 	if active_kind() == BalanceStanding.MISSION_KIND_ESCORT:
 		_escort_alive = data.get(BalanceSession.MISSION_KEY_ESCORT_ALIVE, true) == true
