@@ -149,10 +149,17 @@ A career was loaded successfully from disk.
 |---|---|---|
 | `path` | `String` | Absolute path that was read. |
 
-**Emitted by** `src/systems/save/SaveService.gd` from `load_from()` only after
-success. Failed / refused loads emit nothing.
+**Emitted by** `src/systems/save/CareerSave.gd` from `apply_meta_sections()`,
+after every section is applied. `SaveService.load_from()` emits nothing —
+decoding a file is not loading a career. A failed load never reaches the apply
+step, so it announces nothing.
 **Listened to by** `TimeScale` (resets rate to 1x). `WorldClock` does **not**
 reset elapsed on load — `CareerSave.apply_meta_sections` restores or zeros it.
+
+**Placement is NOT settled when this fires.** The `world` section (system, ship
+position, berth) is applied by `Main` *after* `apply_meta_sections()` returns, so
+a listener that needs to know where the player is must use `on_system_entered` /
+`on_docked` / `on_undocked` instead — placement announces itself.
 
 ## Debug console
 
@@ -347,7 +354,9 @@ Protected status moment: what the player *is here* with the local controller onl
 | `standing` | `float` | Player standing with that controller. |
 | `tier` | `StringName` | Display tier id. |
 
-**Emitted by** `StandingService` on `on_system_entered` and successful `on_docked`.
+**Emitted by** `StandingService` on `on_system_entered` and successful
+`on_docked`, and re-fired on career load by `CareerSave.apply_meta_sections()`
+through `StandingService.emit_status_for_system()` / `emit_status_for_station()`.
 **Listened to by** `FlightHUD`.
 
 ### `on_dock_refused(station_id: StringName, entity_id: StringName, standing: float, tier: StringName)`
@@ -365,20 +374,6 @@ Dock blocked because standing is at or below the controller's refusal threshold.
 **Listened to by** `FlightHUD` (refusal prompt).
 
 ## Attribution & missions (A3)
-
-### `on_kill_reported(system_id: StringName, victim_entity_id: StringName, witness_count: int, evidence: bool)`
-
-A kill was reported for attribution (before the security decision).
-
-| Parameter | Type | Meaning |
-|---|---|---|
-| `system_id` | `StringName` | System where the kill occurred. |
-| `victim_entity_id` | `StringName` | Victim's primary Entity (may be empty). |
-| `witness_count` | `int` | Ships that would report the kill. |
-| `evidence` | `bool` | Player left an evidence trail. |
-
-**Emitted by** `src/systems/attribution/AttributionService.gd`.
-**Listened to by** tests; witness_count is live ambient `NpcTraffic` ship count from HostileNpc.
 
 ### `on_kill_attributed(system_id: StringName, entity_id: StringName, delta: float, reason: StringName)`
 

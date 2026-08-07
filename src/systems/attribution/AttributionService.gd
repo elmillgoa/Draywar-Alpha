@@ -66,8 +66,6 @@ func report_kill(
 	witness_count: int,
 	evidence: bool,
 ) -> Dictionary:
-	EventBus.on_kill_reported.emit(system_id, victim_entity_id, witness_count, evidence)
-
 	var empty_entity: StringName = &""
 	var unattributed: Dictionary = {
 		BalanceStanding.REPORT_KEY_ATTRIBUTED: false,

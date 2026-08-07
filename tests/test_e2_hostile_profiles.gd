@@ -252,17 +252,11 @@ func test_kill_still_reports_via_attribution_only() -> void:
 	await get_tree().process_frame
 
 	var attributed: Array[StringName] = []
-	var reported: Array[StringName] = []
 	var on_attr: Callable = func(
 		system_id: StringName, _entity_id: StringName, _delta: float, _reason: StringName
 	) -> void:
 		attributed.append(system_id)
-	var on_report: Callable = func(
-		system_id: StringName, _victim: StringName, _w: int, _e: bool
-	) -> void:
-		reported.append(system_id)
 	EventBus.on_kill_attributed.connect(on_attr)
-	EventBus.on_kill_reported.connect(on_report)
 
 	var hostile: HostileNpc = HostileNpc.spawn_under(
 		host, Vector3(20.0, 0.0, 20.0), BalanceCombat.PROFILE_GUNBOAT
@@ -270,14 +264,14 @@ func test_kill_still_reports_via_attribution_only() -> void:
 	hostile.take_damage(hostile.hull_max())
 	await get_tree().process_frame
 
-	assert_eq(reported.size(), 1, "kill must call AttributionService.report_kill")
-	assert_eq(reported[0], SYSTEM_ALPHA)
-	assert_eq(attributed.size(), 1, "patrolled kill still attributes (no new standing rules)")
+	assert_eq(
+		attributed.size(),
+		1,
+		"kill must call AttributionService.report_kill; patrolled still attributes"
+	)
 	assert_eq(attributed[0], SYSTEM_ALPHA)
 	if EventBus.on_kill_attributed.is_connected(on_attr):
 		EventBus.on_kill_attributed.disconnect(on_attr)
-	if EventBus.on_kill_reported.is_connected(on_report):
-		EventBus.on_kill_reported.disconnect(on_report)
 
 
 func test_hull_percent_uses_profile_max() -> void:

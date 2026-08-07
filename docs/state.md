@@ -52,6 +52,29 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (Job 12 continuation — `on_kill_reported` removed, catalog caught
+  up)** — Executed the verdict Opus Job 4 recorded but could not ship, because a
+  removal is atomic and one of its four parts is `docs/events.md`, which was Job
+  12's file this wave. **`on_kill_reported` is gone** — declaration
+  (`EventBus.gd`), emit (the first line of `AttributionService.report_kill()`),
+  catalog entry, and the asserting tests, all in one commit. Nothing was pushed
+  into a direct call: every one of the six return paths through `report_kill()`
+  already announces itself on `on_kill_attributed` or `on_kill_unattributed`,
+  which `FlightHUD` listens to. **One assertion was preserved, not deleted** —
+  `tests/test_e2_attribution_feedback.gd` now asserts
+  `HostileNpc._live_witness_count()` against `NpcTraffic.live_ship_count()`
+  directly, keeping the guard that the witness count is live ambient traffic and
+  not a hardcoded 1. The three other witness assertions went: the contested
+  threshold is 1, so "unattributed with no evidence" already proves the count was
+  0, and the remaining live-count check covers the same code path. Bus signal
+  count 121 → 120. **The two catalog lines Job 3 handed over are now written** —
+  `on_save_loaded` is emitted by `CareerSave.apply_meta_sections()`, not
+  `SaveService.load_from()`, and its entry now warns that `world` placement is
+  applied by `Main` *after* the emit, so placement listeners must use
+  `on_system_entered` / `on_docked` / `on_undocked` (the `#35` trap in its second
+  form); `on_status_moment` now records that it is re-fired on career load. No
+  brief was written: the verdict was removal and it was executed here, so there
+  is nothing left to route.
 - **2026-08-07 (Job 10 — losing a fight, autosave, and the fuel-out tow)** —
   Elliot's ruling, memo `DECISION_loss-and-autosave.md`, a **split** answer.
   **Losing a fight = death and respawn:** hull at zero now ends the run and says

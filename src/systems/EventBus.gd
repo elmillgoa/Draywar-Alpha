@@ -77,11 +77,6 @@ signal on_dock_refused(
 	station_id: StringName, entity_id: StringName, standing: float, tier: StringName
 )
 
-## AttributionService: a kill was reported (before attribution decision).
-signal on_kill_reported(
-	system_id: StringName, victim_entity_id: StringName, witness_count: int, evidence: bool
-)
-
 ## AttributionService: kill was attributed; standing delta already applied.
 signal on_kill_attributed(
 	system_id: StringName, entity_id: StringName, delta: float, reason: StringName

@@ -22,14 +22,12 @@ class FakeSystemWorld:
 		add_to_group(BalanceSession.GROUP_SYSTEM_WORLD)
 
 
-var _reported_witnesses: Array[int] = []
 var _attributed_entities: Array[StringName] = []
 var _unattributed_systems: Array[StringName] = []
 
 
 func before_each() -> void:
 	StandingService.reset_to_defaults()
-	_reported_witnesses = []
 	_attributed_entities = []
 	_unattributed_systems = []
 	TimeScale.set_combat_lock(false)
@@ -42,8 +40,6 @@ func after_each() -> void:
 
 
 func _disconnect_kill_bus() -> void:
-	if EventBus.on_kill_reported.is_connected(_on_kill_reported):
-		EventBus.on_kill_reported.disconnect(_on_kill_reported)
 	if EventBus.on_kill_attributed.is_connected(_on_kill_attributed):
 		EventBus.on_kill_attributed.disconnect(_on_kill_attributed)
 	if EventBus.on_kill_unattributed.is_connected(_on_kill_unattributed):
@@ -51,15 +47,8 @@ func _disconnect_kill_bus() -> void:
 
 
 func _connect_kill_bus() -> void:
-	EventBus.on_kill_reported.connect(_on_kill_reported)
 	EventBus.on_kill_attributed.connect(_on_kill_attributed)
 	EventBus.on_kill_unattributed.connect(_on_kill_unattributed)
-
-
-func _on_kill_reported(
-	_system_id: StringName, _victim: StringName, witness_count: int, _evidence: bool
-) -> void:
-	_reported_witnesses.append(witness_count)
 
 
 func _on_kill_attributed(
@@ -79,11 +68,15 @@ func _spawn_traffic_for(system_id: StringName) -> NpcTraffic:
 	return traffic
 
 
-func _kill_hostile_in(system_id: StringName) -> void:
+func _spawn_hostile_in(system_id: StringName) -> HostileNpc:
 	var host: FakeSystemWorld = FakeSystemWorld.new()
 	host.system_id = system_id
 	add_child_autofree(host)
-	var hostile: HostileNpc = HostileNpc.spawn_under(host, Vector3(20.0, 0.0, 20.0))
+	return HostileNpc.spawn_under(host, Vector3(20.0, 0.0, 20.0))
+
+
+func _kill_hostile_in(system_id: StringName) -> void:
+	var hostile: HostileNpc = _spawn_hostile_in(system_id)
 	hostile.take_damage(hostile.hull_max())
 
 
@@ -191,9 +184,9 @@ func test_patrolled_kill_attributes_even_with_zero_traffic() -> void:
 	_kill_hostile_in(SYSTEM_ALPHA)
 	await get_tree().process_frame
 
-	assert_eq(_reported_witnesses.size(), 1, "kill must report")
-	assert_eq(_reported_witnesses[0], 0, "no traffic → zero witnesses")
-	assert_eq(_attributed_entities.size(), 1, "patrolled still attributes")
+	assert_eq(
+		_attributed_entities.size(), 1, "kill must reach report_kill; patrolled still attributes"
+	)
 	assert_eq(_attributed_entities[0], ENTITY_REACH)
 	assert_eq(_unattributed_systems.size(), 0)
 	var after: float = StandingService.get_entity_standing(ENTITY_REACH)
@@ -212,15 +205,20 @@ func test_contested_with_traffic_witnesses_attributes() -> void:
 	assert_gte(expected_witnesses, BalanceStanding.ATTRIBUTION_WITNESS_THRESHOLD)
 
 	var before: float = StandingService.get_entity_standing(ENTITY_BETA)
-	_kill_hostile_in(SYSTEM_BETA)
-	await get_tree().process_frame
-
-	assert_eq(_reported_witnesses.size(), 1)
+	var hostile: HostileNpc = _spawn_hostile_in(SYSTEM_BETA)
+	# Regression guard, asserted on the computation rather than a bus argument:
+	# the count HostileNpc hands to report_kill is live ambient traffic. The
+	# outcome assertions below cannot cover this — the contested threshold is 1,
+	# so they only separate 0 from "one or more", never "equals the ship count".
+	var reported_witnesses: int = hostile.call(&"_live_witness_count")
 	assert_eq(
-		_reported_witnesses[0],
+		reported_witnesses,
 		expected_witnesses,
 		"witness_count must be live ambient traffic, not a fixed 1"
 	)
+	hostile.take_damage(hostile.hull_max())
+	await get_tree().process_frame
+
 	assert_eq(_attributed_entities.size(), 1, "contested + witnesses attributes")
 	assert_eq(_attributed_entities[0], ENTITY_BETA)
 	assert_almost_eq(
@@ -242,8 +240,8 @@ func test_contested_zero_traffic_no_evidence_unattributed() -> void:
 	_kill_hostile_in(SYSTEM_BETA)
 	await get_tree().process_frame
 
-	assert_eq(_reported_witnesses.size(), 1)
-	assert_eq(_reported_witnesses[0], 0)
+	# Unattributed in contested space with no evidence is itself the proof that
+	# the witness count was 0 — the threshold is 1.
 	assert_eq(_unattributed_systems.size(), 1, "contested without witnesses/evidence")
 	assert_eq(_attributed_entities.size(), 0)
 	assert_almost_eq(StandingService.get_entity_standing(ENTITY_BETA), before, TOLERANCE)
@@ -263,8 +261,6 @@ func test_lawless_with_traffic_no_evidence_unattributed() -> void:
 	_kill_hostile_in(SYSTEM_GAMMA)
 	await get_tree().process_frame
 
-	assert_eq(_reported_witnesses.size(), 1)
-	assert_eq(_reported_witnesses[0], traffic.live_ship_count())
 	assert_eq(_unattributed_systems.size(), 1)
 	assert_eq(_attributed_entities.size(), 0)
 	assert_almost_eq(StandingService.get_entity_standing(ENTITY_GAMMA), before, TOLERANCE)
