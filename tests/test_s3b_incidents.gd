@@ -36,13 +36,15 @@ func before_each() -> void:
 	_cargo = CargoService.new()
 	add_child_autofree(_cargo)
 	_cargo.reset()
-	EventBus.on_incident_offered.connect(_on_offered)
+	# Job 12: on_incident_offered was removed (duplicate of on_incident_prompt,
+	# which is the one FlightHUD.gd:81 listens to). Repointed, not deleted.
+	EventBus.on_incident_prompt.connect(_on_offered)
 	EventBus.on_incident_resolved.connect(_on_resolved)
 
 
 func after_each() -> void:
-	if EventBus.on_incident_offered.is_connected(_on_offered):
-		EventBus.on_incident_offered.disconnect(_on_offered)
+	if EventBus.on_incident_prompt.is_connected(_on_offered):
+		EventBus.on_incident_prompt.disconnect(_on_offered)
 	if EventBus.on_incident_resolved.is_connected(_on_resolved):
 		EventBus.on_incident_resolved.disconnect(_on_resolved)
 	IncidentService.reset()
@@ -54,9 +56,7 @@ func after_each() -> void:
 	TimeScale.reset()
 
 
-func _on_offered(
-	incident_id: StringName, _kind: StringName, _system_id: StringName, _prompt: String
-) -> void:
+func _on_offered(incident_id: StringName, _kind: StringName, _prompt: String) -> void:
 	_offered.append(incident_id)
 
 

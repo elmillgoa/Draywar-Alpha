@@ -52,6 +52,19 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (Job 12 — EventBus contract)** — Ruled on the five signals that
+  only tests connected to. `on_incident_offered` **removed** (declaration, emit,
+  test, catalog entry — one commit) as a duplicate of `on_incident_prompt`, which
+  FlightHUD already listens to. `on_time_scale_changed`, `on_combat_lock_changed`
+  and `on_world_time_advanced` **kept**, listeners routed to Grok Briefs 30 and 31
+  (FlightHUD time-rate line and transit toast). `on_recovery_offered` **kept**;
+  `StationMenu` is its listener via Brief 4. Two request signals **declared** for
+  Brief 4 to wire: `on_incident_respond_requested(incident_id, choice)` and
+  `on_combat_lock_requested(locked)` — a brief may not change the signal set, so
+  Opus declares and the brief wires. General rule written into `docs/events.md`:
+  every signal names a production listener or it does not exist; no
+  reserved-for-future tier; a listener gate in `check_boundaries.py` is a named,
+  unbuilt gap. `on_kill_reported` stays open — Opus Job 4 owns it.
 - **2026-08-06 (Job 2 — gates)** — `lint.ps1` green now means the gates ran. The
   strict-typing gate re-parses all 219 scripts (`check_types.gd`, previously dead
   code) instead of booting for two frames; a missing gdlint/gdformat **fails**

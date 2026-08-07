@@ -37,6 +37,44 @@ Everything else on this page is for humans and is not parsed.
 - Per-frame traffic.
 - Anything a single system uses internally.
 
+## Every signal names a production listener, or it does not exist
+
+**Verdict of Opus Job 12, decided 2026-08-07.** The 2026-08-06 audit found eight
+signals that production code emitted and only tests connected to. That is the
+worst of both worlds: the catalog presents the signal as a live contract surface,
+so the next system assumes something consumes it — while the only thing keeping
+it alive is a test asserting that an emit still emits. The test proves nothing
+about the game.
+
+The rule:
+
+1. **Every entry below names at least one non-test consumer** on its
+   `**Listened to by**` line. A signal that cannot name one is removed.
+2. **There is no "reserved for future use" tier.** A reserved signal and a dead
+   signal look identical from the outside, which is exactly how eight of them
+   accumulated before anyone noticed. Re-adding a signal later is a declaration,
+   a catalog entry and one commit — cheaper than the ambiguity.
+3. **A removal is atomic.** The declaration, every emit, every asserting test and
+   this catalog entry go in **one** commit. `scripts/check_boundaries.py` fails
+   the build on either half alone, so a half-done removal cannot be committed —
+   but a removal split across two sessions leaves the tree red in between.
+4. **Changing the signal set is an Opus/Elliot decision, never a Grok brief.**
+   The standing Grok stop-and-ask line names the EventBus signal set as a halt
+   trigger, so a brief that ordered a declaration added or removed would be
+   mis-scoped by the project's own rule. A brief may wire a listener to a signal
+   that already exists; it may not create or delete one.
+5. **The one sanctioned exception is a signal declared ahead of its wiring**, and
+   it is time-boxed: the entry must say `**Listened to by** _nobody yet —_` and
+   **name the brief that closes the gap**. An entry in that state with no named
+   owner is a defect, not a reservation.
+
+**This rule is not enforced by a gate yet, and that is a known hole.**
+`check_boundaries.py` compares signal *names and signatures* against this file;
+it does not read `**Listened to by**` and it does not grep `src/` for `.connect`.
+Extending it belongs to whoever owns that script (Opus Job 2's machinery) and was
+deliberately not built by Job 12. Until then this is a review rule, which is the
+weaker kind.
+
 ---
 
 # Catalog
@@ -52,7 +90,26 @@ The effective game time rate changed (after combat lock is applied).
 | `scale` | `float` | Rate clocks will get. One of `Balance.TIME_SCALES`, or 1.0 while locked. |
 
 **Emitted by** `src/systems/time/TimeScale.gd`.
-**Listened to by** displays (not clocks — clocks ask every tick).
+**Listened to by** _nobody yet — **Grok Brief 30 (REPAIR-30)** wires the FlightHUD
+time-rate line._ Clocks never listen; they ask `effective_scale()` every tick.
+
+### `on_combat_lock_requested(locked: bool)`
+
+Something in the world is asking for the combat lock to open or close. A request,
+not a fact: `TimeScale` owns the flag and decides. The "am I the last hostile
+alive" rule stays with the requester (`HostileNpc._release_combat_lock_if_last`);
+this signal only carries the answer it reached.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `locked` | `bool` | True to hold time at normal speed, false to release. |
+
+**Emitted by** _nobody yet — **Grok Brief 4 (REPAIR-4)** routes
+`src/world/HostileNpc.gd:60` and `:496`, which call `TimeScale.set_combat_lock()`
+directly today._
+**Listened to by** _nobody yet — **Grok Brief 4** has `src/systems/time/TimeScale.gd`
+listen._ Declared by Opus Job 12 because changing the signal set is not a brief's
+to make; see "Every signal names a production listener" above, point 5.
 
 ### `on_combat_lock_changed(locked: bool)`
 
@@ -63,6 +120,8 @@ The combat lock that forces time to 1x opened or closed.
 | `locked` | `bool` | True when combat is holding time at normal speed. |
 
 **Emitted by** `src/systems/time/TimeScale.gd`.
+**Listened to by** _nobody yet — **Grok Brief 30 (REPAIR-30)** wires the FlightHUD
+time-rate line, which is where the player is told why time snapped back to 1x._
 
 ### `on_world_time_advanced(total_elapsed_seconds: float, delta_seconds: float)`
 
@@ -76,7 +135,9 @@ category subscribers only.
 | `delta_seconds` | `float` | Game seconds just applied. |
 
 **Emitted by** `src/systems/time/WorldClock.gd` from public bulk advance only.
-**Listened to by** tests and later sim surfaces (not per-frame consumers).
+**Listened to by** _nobody yet — **Grok Brief 31 (REPAIR-31)** wires the FlightHUD
+transit toast._ Systems that need the time do **not** listen here: they register a
+category subscriber, which also fires on live frames.
 
 ## Save
 
@@ -424,7 +485,13 @@ A recovery step is available (announced on dock when gated conditions pass).
 | `step_id` | `StringName` | RecoveryStep id within the chain. |
 | `person_id` | `StringName` | Person offering the step. |
 
-**Emitted by** `src/systems/recovery/RecoveryService.gd` on dock.
+**Emitted by** `src/systems/recovery/RecoveryService.gd` on dock. Not emitted while
+a recovery step is already active.
+**Listened to by** _nobody yet — **Grok Brief 4 (REPAIR-4)** wires `StationMenu`,
+which surfaces the offer by direct query today (`StationDockQueries.gd:110`)._ The
+emit runs **before** `StationMenu._on_docked`, because `RecoveryService` is an
+earlier child of `Main` than the menu; Brief 4's wiring depends on that order and
+must pin it with a test.
 
 ### `on_recovery_accepted(chain_id: StringName, step_id: StringName, person_id: StringName)`
 
@@ -1013,19 +1080,32 @@ A new one-line sector headline is available for the ticker.
 when a real incident echo is pushed (S3b shared feed).
 **Listened to by** the station menu news ticker; FlightHUD toast while free-flying (S3b).
 
-### `on_incident_offered(incident_id: StringName, kind: StringName, system_id: StringName, prompt: String)`
+### `on_incident_respond_requested(incident_id: StringName, choice: StringName)`
 
-A new opportunistic space incident is available (not a mission).
+UI or console is asking `IncidentService` to resolve an offered incident with this
+choice. A request, not a fact — the service decides whether the choice is legal.
 
 | Parameter | Type | Meaning |
 |---|---|---|
-| `incident_id` | `StringName` | Instance id for respond/resolve. |
-| `kind` | `StringName` | `distress` / `intercept` / `customs`. |
-| `system_id` | `StringName` | System where the incident is offered. |
-| `prompt` | `String` | Plain-English prompt line. |
+| `incident_id` | `StringName` | Instance id from `on_incident_prompt`. |
+| `choice` | `StringName` | One of `BalanceIncident`'s `CHOICE_*` values. |
 
-**Emitted by** `IncidentService` when an offer is created under the ship budget.
-**Listened to by** FlightHUD / future UI.
+**Emitted by** _nobody yet — **Grok Brief 4 (REPAIR-4)** routes
+`src/ui/hud/FlightHUD.gd:794`, which calls `IncidentService.respond()` directly
+from a UI script today._
+**Listened to by** _nobody yet — **Grok Brief 4** has
+`src/systems/incident/IncidentService.gd` listen._ Named `_requested` per the
+naming rule above; the audit and Brief 4 called it `on_incident_respond`, which
+would have been the only intent signal on the bus without the suffix. Declared by
+Opus Job 12 because changing the signal set is not a brief's to make.
+
+**`on_incident_offered` used to sit here and was removed by Opus Job 12 on
+2026-08-07.** It was emitted on the line above `on_incident_prompt` with the same
+`incident_id`, `kind` and `prompt`, and nothing but a test connected to it. Its
+only extra field was `system_id`, and incidents only ever spawn for the player's
+current system (`IncidentService._player_system_id`), so it carried nothing
+`on_incident_prompt` does not. Removing it pushed nobody into a direct call —
+the surviving signal was already the one `FlightHUD.gd:81` listens to.
 
 ### `on_incident_prompt(incident_id: StringName, kind: StringName, prompt: String)`
 

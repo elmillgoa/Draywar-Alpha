@@ -361,7 +361,6 @@ func _spawn_kind(
 	_record_kind_step(system_id, kind, step)
 	_push_news_echo(kind, system_id)
 	var prompt: String = str(offer.get(BalanceIncident.KEY_PROMPT, ""))
-	EventBus.on_incident_offered.emit(StringName(id_raw), kind, system_id, prompt)
 	EventBus.on_incident_prompt.emit(StringName(id_raw), kind, prompt)
 	return StringName(id_raw)
 

@@ -5,6 +5,10 @@ extends Node
 ## TimeScale: the effective rate clocks will get after a change.
 signal on_time_scale_changed(scale: float)
 
+## World / combat: request the combat lock be opened or closed.
+## The requester keeps the "am I the last hostile" rule; TimeScale owns the flag.
+signal on_combat_lock_requested(locked: bool)
+
 ## TimeScale: combat lock opened or closed.
 signal on_combat_lock_changed(locked: bool)
 
@@ -263,10 +267,8 @@ signal on_market_ticked(steps_applied: int, elapsed_seconds: float)
 ## MarketService: a new one-line sector headline is available for the ticker.
 signal on_market_news(line: String)
 
-## IncidentService: a new opportunistic space incident is offered (not a mission).
-signal on_incident_offered(
-	incident_id: StringName, kind: StringName, system_id: StringName, prompt: String
-)
+## UI / console: request a response to the offered incident (accept / decline).
+signal on_incident_respond_requested(incident_id: StringName, choice: StringName)
 
 ## IncidentService: HUD / console prompt for the offered incident.
 signal on_incident_prompt(incident_id: StringName, kind: StringName, prompt: String)
