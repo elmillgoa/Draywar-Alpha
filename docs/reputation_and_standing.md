@@ -118,6 +118,23 @@ Getting their attention and trust is significantly harder, especially when their
 - Exception: the player later creates an obvious evidence trail (selling identifiable cargo in the wrong place, etc.).
 - Light witness factor: presence of ships that would report the kill increases chance of attribution.
 
+**Sanctioned kills (Locked):**  
+An Entity does not charge the player for a kill it paid for.  
+While the player holds an active bounty, kills inside that bounty's target system are exempt from the offering Entity's standing hit. No penalty is applied, and therefore no ripple is echoed — there is no source change to echo.
+
+The exemption is deliberately narrow:
+- **Only the offering Entity.** Any other Entity with reach in that system attributes the kill normally. Nobody else paid for it.
+- **Only the bounty's target system.** A kill anywhere else is not the job.
+- **Only while the contract is live.** The test is applied at the moment of the kill. Completing, failing, or abandoning the contract afterwards does not reach back and re-charge a kill that was sanctioned when it happened.
+
+A bounty is therefore net positive with the Entity that offered it. A paid job may not make the payer hate the player for doing it.
+
+**Escort deaths (Locked):**  
+A mission escort is a ship, and its death is a kill.  
+When an escort freighter is destroyed the death is attributed under the same security, witness, and evidence rules as any other kill, and it costs the same as any other kill. Destroying it yourself and losing it to hostiles carry the same standing cost; the system does not ask who fired.
+
+That cost is separate from, and additional to, the mission's own failure penalty with the offering Entity. The dead ship and the failed job are two different things and both are charged.
+
 ### Missions
 - Completion → solid positive movement.
 - Failure after a genuine attempt → milder negative.

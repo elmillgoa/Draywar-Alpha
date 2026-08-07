@@ -158,8 +158,12 @@ Looked up by `DockingService` (entities), by `OperationService`,
 - **Permitted consumers:** systems, ui, world
 
 Looked up by `SystemWorld` and `MissionEscortShip` (world), by
-`CampaignService` and `IncidentService` (systems), and by `StationMenu` /
-`FlightHUD` / `CaptainSheet` (ui). Also reached via both dynamic wrappers.
+`CampaignService`, `IncidentService` and `AttributionService` (systems), and by
+`StationMenu` / `FlightHUD` / `CaptainSheet` (ui). Also reached via both dynamic
+wrappers. `AttributionService` asks it whether the active job is a bounty and
+which system it targets — the sanctioned-kill rule in
+`docs/reputation_and_standing.md` §7. Both are questions, which is what this
+channel is for; the offering Entity arrives separately on `on_mission_accepted`.
 
 ### `recovery_service` -> `src/systems/recovery/RecoveryService.gd`
 

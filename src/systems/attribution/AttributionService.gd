@@ -14,11 +14,20 @@ const KILL: StringName = &"kill"
 const TRADE: StringName = &"trade"
 const TRADE_LEGAL: String = "legal"
 
+## Offering Entity of the active mission. The EventBus is the only channel that
+## carries it — MissionService exposes the job's kind and target system, but not
+## who is paying. Always re-checked against a live mission before it is trusted.
+var _mission_offering_entity_id: StringName = &""
+
 
 func _ready() -> void:
 	add_to_group(&"attribution_service")
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
+	EventBus.on_mission_accepted.connect(_on_mission_accepted)
+	EventBus.on_mission_completed.connect(_on_mission_ended)
+	EventBus.on_mission_failed.connect(_on_mission_ended)
+	EventBus.on_mission_abandoned.connect(_on_mission_ended)
 
 
 func _exit_tree() -> void:
@@ -26,11 +35,31 @@ func _exit_tree() -> void:
 		EventBus.on_console_commands_requested.disconnect(_on_commands_requested)
 	if EventBus.on_console_command_invoked.is_connected(_on_command_invoked):
 		EventBus.on_console_command_invoked.disconnect(_on_command_invoked)
+	if EventBus.on_mission_accepted.is_connected(_on_mission_accepted):
+		EventBus.on_mission_accepted.disconnect(_on_mission_accepted)
+	if EventBus.on_mission_completed.is_connected(_on_mission_ended):
+		EventBus.on_mission_completed.disconnect(_on_mission_ended)
+	if EventBus.on_mission_failed.is_connected(_on_mission_ended):
+		EventBus.on_mission_failed.disconnect(_on_mission_ended)
+	if EventBus.on_mission_abandoned.is_connected(_on_mission_ended):
+		EventBus.on_mission_abandoned.disconnect(_on_mission_ended)
+
+
+func _on_mission_accepted(_template_id: StringName, offering_entity_id: StringName) -> void:
+	_mission_offering_entity_id = offering_entity_id
+
+
+func _on_mission_ended(
+	_template_id: StringName, _entity_id: StringName, _standing_delta: float
+) -> void:
+	_mission_offering_entity_id = &""
 
 
 ## Report a kill. Returns attribution result dictionary (keys in BalanceStanding).
 ## Attributed hit goes to the local system controller when present; lawless
 ## evidence may fall back to victim_entity_id when nobody holds the system.
+## Law §7: a kill inside an active bounty's target system is exempt from the
+## offering Entity's hit — that Entity paid for it. Nobody else is exempt.
 func report_kill(
 	system_id: StringName,
 	victim_entity_id: StringName,
@@ -66,6 +95,10 @@ func report_kill(
 
 	var target_entity: StringName = _attribution_target(system, victim_entity_id)
 	if String(target_entity).strip_edges().is_empty() or target_entity == StarSystem.HELD_BY_NOBODY:
+		EventBus.on_kill_unattributed.emit(system_id, victim_entity_id)
+		return unattributed
+
+	if _is_sanctioned_bounty_kill(system_id, target_entity):
 		EventBus.on_kill_unattributed.emit(system_id, victim_entity_id)
 		return unattributed
 
@@ -111,6 +144,53 @@ func _attribution_target(system: StarSystem, victim_entity_id: StringName) -> St
 	if system.policing == StarSystem.POLICED_BY_NOBODY:
 		return victim_entity_id
 	return StarSystem.HELD_BY_NOBODY
+
+
+## Law §7 sanctioned kills: an Entity does not charge the player for a kill it
+## paid for. True only when `target_entity` is the Entity offering an active
+## bounty AND the kill happened in that bounty's target system. Judged at the
+## moment of the kill — a later complete / fail / abandon does not re-charge it.
+func _is_sanctioned_bounty_kill(system_id: StringName, target_entity: StringName) -> bool:
+	if String(target_entity).strip_edges().is_empty():
+		return false
+	if target_entity != _mission_offering_entity_id:
+		return false
+	var mission: Node = _mission_service()
+	if mission == null:
+		return false
+	if mission.call(&"has_active") != true:
+		return false
+	if _as_name(mission.call(&"active_kind")) != BalanceStanding.MISSION_KIND_BOUNTY:
+		return false
+	return _as_name(mission.call(&"active_target_system_id")) == system_id
+
+
+## Group lookup (docs/groups.md `mission_service`): a signal cannot answer a
+## question, and the active job's kind and target system are questions.
+func _mission_service() -> Node:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+	var node: Node = tree.get_first_node_in_group(&"mission_service")
+	if node == null:
+		return null
+	if not node.has_method(&"has_active"):
+		return null
+	if not node.has_method(&"active_kind"):
+		return null
+	if not node.has_method(&"active_target_system_id"):
+		return null
+	return node
+
+
+static func _as_name(value: Variant) -> StringName:
+	if typeof(value) == TYPE_STRING_NAME:
+		var as_name: StringName = value
+		return as_name
+	if typeof(value) == TYPE_STRING:
+		var as_text: String = value
+		return StringName(as_text)
+	return &""
 
 
 # --- Console -----------------------------------------------------------------

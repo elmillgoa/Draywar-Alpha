@@ -5,6 +5,9 @@ extends TrafficShip
 ##
 ## Spawns near the player while an escort job is active. Not elite AI: can be
 ## shot; if hostiles (or the player) destroy it, MissionService fails the job.
+## Law: docs/reputation_and_standing.md §7 — the death is also a kill, reported
+## through AttributionService like any other. The standing cost is separate from
+## the mission's failure penalty; both are charged.
 ## System rebuild frees it without counting as death (queue_free, not _die).
 
 
@@ -25,6 +28,9 @@ func _die() -> void:
 	if _dead:
 		return
 	_dead = true
+	# Report the kill before failing the job: the kill is a fact about the world
+	# as it stood when the hull died, and notifying resets the active mission.
+	_report_kill(_current_system_id())
 	_notify_mission_destroyed()
 	queue_free()
 

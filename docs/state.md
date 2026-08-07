@@ -52,6 +52,21 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (Job 4 — kill attribution)** — Two standing rules Elliot decided
+  and that had never existed anywhere, now written into
+  `docs/reputation_and_standing.md` §7 **before** the code. **Sanctioned bounty
+  kills:** an Entity does not charge the player for a kill it paid for. While an
+  active bounty is held, kills in that bounty's target system are exempt from the
+  **offering** Entity's hit — nobody else's, no other system, judged at the moment
+  of the kill. The Beta Spit bounty was net −4 (−12 kill against +8 turn-in) and
+  is now +8. **Escort deaths:** a destroyed escort freighter is reported as a kill
+  like any other, under the same security / witness / evidence rules, at the same
+  cost — on top of the mission's own failure penalty. Destroying your own escort
+  was previously free. `AttributionService` still writes no standing itself;
+  `StandingService` remains the only writer and no new tunable was added. New
+  suite `tests/test_kill_attribution_rules.gd` (8 tests). `on_kill_reported`
+  verdict recorded for the Job 12 continuation pass — **remove it**; the signal
+  is not touched here.
 - **2026-08-07 (Job 12 — EventBus contract)** — Ruled on the five signals that
   only tests connected to. `on_incident_offered` **removed** (declaration, emit,
   test, catalog entry — one commit) as a duplicate of `on_incident_prompt`, which
