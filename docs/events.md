@@ -224,7 +224,8 @@ The player is now in this system. Session-only for A1 (no save section).
 | `system_id` | `StringName` | Content id of the system that was built. |
 
 **Emitted by** `src/world/SystemWorld.gd` after gray-box build.
-**Listened to by** `FlightHUD` (system name), `StandingService` (status moment).
+**Listened to by** `FlightHUD` (system name), `StandingService` (status moment),
+`AutosaveService` (writes the career, origin `autosave_entry`, Job 10).
 
 ### `on_dock_requested(station_id: StringName)`
 
@@ -246,7 +247,8 @@ The ship is now docked at this station.
 | `station_id` | `StringName` | Station content id. |
 
 **Emitted by** `src/entities/DockingService.gd` after a successful dock.
-**Listened to by** `FlightHUD`, `StationMenu`.
+**Listened to by** `FlightHUD`, `StationMenu`,
+`AutosaveService` (writes the career, origin `autosave_dock`, Job 10).
 
 ### `on_undock_requested(station_id: StringName)`
 
@@ -700,12 +702,15 @@ Player hull took combat damage (condition after the hit).
 
 ### `on_player_crippled()`
 
-Hull condition reached zero — ship dead in the water until dock + repair.
+Hull condition reached zero. As of Job 10 this ends the run: the loss screen
+comes up and the career restarts from the most recent save.
 
 No parameters.
 
 **Emitted by** `src/systems/wallet/HullConditionService.gd`.
-**Listened to by** `PlayerShip` (disables flight), `FlightHUD`.
+**Listened to by** `PlayerShip` (disables flight), `FlightHUD`,
+`LossScreen` (shows the end of the run when armed),
+`Main` (blocks pause / map and stops autosaving a destroyed ship).
 
 ### `on_player_repaired_from_cripple()`
 
@@ -773,6 +778,20 @@ UI asked to betray this Person (or empty for active contact).
 
 **Emitted by** `StationMenu`.
 **Listened to by** `RecoveryService`.
+
+### `on_tow_prompt_changed(available: bool, fee_credits: int)`
+
+An emergency tow is (or is no longer) on offer — the tank is dry, the ship is
+free-flying, the hull is still whole, and some station in this system will take
+it. Job 10 / PT-11. Only emitted when the answer changes.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `available` | `bool` | True while a tug can be called. |
+| `fee_credits` | `int` | What the tug would take right now, already capped by what the pilot holds (so `0` when broke). |
+
+**Emitted by** `src/entities/RescueService.gd`.
+**Listened to by** `FlightHUD` (the prompt line that names the key and the fee).
 
 ### `on_refuel_requested()`
 
@@ -956,6 +975,18 @@ Pause menu asked to load the most recent career save.
 No parameters.
 
 **Emitted by** `PauseMenu`.
+**Listened to by** `Main`.
+
+### `on_run_restart_requested()`
+
+The run ended at zero hull and the player chose to start again from the most
+recent save. Job 10. `Main` rebuilds the whole session from the file rather than
+patching the live one — the run is over, so the ship, the world and every
+service are built fresh.
+
+No parameters.
+
+**Emitted by** `LossScreen` (Restart from last save).
 **Listened to by** `Main`.
 
 ### `on_options_open_requested()`

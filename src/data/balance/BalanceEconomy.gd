@@ -158,6 +158,19 @@ const CONDITION_WEAR_PER_SECOND_AFTERBURN: float = 0.4
 ## Speed multiplier when condition is at minimum (still flyable).
 const CONDITION_MIN_SPEED_FACTOR: float = 0.55
 
+# --- Emergency tow (Job 10 / PT-11) ----------------------------------------
+
+## What a tug asks to drag a dry ship to the nearest berth it will be let into.
+## Sits between a full refuel (100 units x REFUEL_CREDITS_PER_UNIT) and the
+## starting purse, so calling one hurts without being a second dead end.
+## The tug never leaves anyone floating: it takes what the pilot has when that
+## is less than the fee and writes the rest off. The playtested strand had zero
+## credits, and a rescue that only works for the solvent is not a rescue.
+const TOW_FEE_CREDITS: int = 150
+
+## Args: fee actually charged (credits). Shown while stranded with a dry tank.
+const TOW_PROMPT_FORMAT: String = "OUT OF FUEL — PRESS T TO CALL A TOW (%d cr)"
+
 # --- Jump / gate -----------------------------------------------------------
 
 ## Fuel cost to jump through a gate.

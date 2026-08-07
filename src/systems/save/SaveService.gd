@@ -20,6 +20,8 @@ const FILE_EXTENSION: String = "sav"
 
 const CURRENT_SCHEMA_VERSION: int = SaveSchema.CURRENT_VERSION
 const KEY_SECTIONS: StringName = SaveSchema.KEY_SECTIONS
+## Envelope field naming who asked for the write (Job 10 — autosave reads it).
+const KEY_ORIGIN: StringName = SaveSchema.KEY_ORIGIN
 const ORIGIN_MANUAL: StringName = SaveSchema.ORIGIN_MANUAL
 const ORIGIN_AUTOSAVE_ENTRY: StringName = SaveSchema.ORIGIN_AUTOSAVE_ENTRY
 const ORIGIN_AUTOSAVE_DOCK: StringName = SaveSchema.ORIGIN_AUTOSAVE_DOCK

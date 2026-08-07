@@ -26,6 +26,8 @@ const ACTION_SECTOR_MAP: StringName = &"sector_map"
 const ACTION_INCIDENT_A: StringName = BalanceEnforcement.ACTION_INCIDENT_A
 ## Incident secondary choice (2) — S4.
 const ACTION_INCIDENT_B: StringName = BalanceEnforcement.ACTION_INCIDENT_B
+## Emergency tow when the tank is dry (T) — Job 10 / PT-11.
+const ACTION_TOW: StringName = &"call_tow"
 
 
 ## Ensures every flight action exists with its default key. Idempotent.
@@ -43,6 +45,7 @@ static func ensure_actions() -> void:
 	_bind(ACTION_SECTOR_MAP, KEY_M)
 	_bind(ACTION_INCIDENT_A, KEY_1)
 	_bind(ACTION_INCIDENT_B, KEY_2)
+	_bind(ACTION_TOW, KEY_T)
 
 
 static func _bind(action: StringName, physical_key: Key) -> void:

@@ -52,6 +52,32 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (Job 10 — losing a fight, autosave, and the fuel-out tow)** —
+  Elliot's ruling, memo `DECISION_loss-and-autosave.md`, a **split** answer.
+  **Losing a fight = death and respawn:** hull at zero now ends the run and says
+  so. A `LossScreen` names what happened and offers **Restart from last save**
+  (a full session rebuild from the file — ship, world and services built fresh,
+  which is why it works without Grok Brief 18) or **Quit to menu**. Pause and the
+  sector map are blocked while it is up. **Autosave = yes, on docking and on
+  system entry:** the two origin constants `SaveSchema` has carried since A0 and
+  nothing ever called are now wired by a new `AutosaveService`, writing its own
+  `autosave` slot so it never eats the player's manual `career` file. It is armed
+  by `Main` (boot, load and teardown all disarm it) and the write is deferred one
+  message-queue flush, because a jump announces the new system *before* it moves
+  the ship. **No schema change, no envelope bump** — the autosave goes through the
+  same `gather_sections()` and holds exactly what a manual save holds. **The
+  restart point is the last autosave**, and a brand-new career gets one at the
+  storyboard dock, before it has ever undocked. **Play-area edge: no boundary** —
+  Elliot ruled it out ("it is space"). Running dry is *not* losing a fight and
+  does not respawn: a new `RescueService` offers an **emergency tow** (default
+  `T`, in the rebind list) whenever the tank is dry away from a berth. It drags
+  the ship to the nearest station standing will let it into, for
+  `BalanceEconomy.TOW_FEE_CREDITS` — **capped by what the pilot holds**, so the
+  measured zero-credit strand is still a tow. No standing moves; the tow spends
+  credits only. `HullConditionService.can_fly()` stays the single source of truth
+  and is what tells the two failures apart. Closes `PT-7` (the cycle's last open
+  Blocker) and `PT-11`. New signals: `on_tow_prompt_changed(available, fee_credits)`
+  and `on_run_restart_requested()`.
 - **2026-08-07 (Job 3 — save/reload fidelity + where saves live)** — Elliot's
   ruling, memo `DECISION_save-schema-roundtrip.md`: **everything comes back**,
   and **pin the save folder now**. Five things a reload used to take away now

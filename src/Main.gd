@@ -18,6 +18,8 @@ var _ship: PlayerShip = null
 var _camera: ChaseCamera = null
 var _docking: DockingService = null
 var _gate_travel: GateTravelService = null
+var _rescue: RescueService = null
+var _autosave: AutosaveService = null
 var _wallet: WalletService = null
 var _fuel: FuelService = null
 var _hull: HullConditionService = null
@@ -38,6 +40,7 @@ var _sector_map: SectorMapPanel = null
 var _new_game_tip: NewGameTip = null
 var _life_path_create: LifePathCreate = null
 var _opening_annexation: OpeningAnnexation = null
+var _loss_screen: LossScreen = null
 
 var _in_play: bool = false
 ## True while create / annexation are open — no tip, dock, or undock yet.
@@ -45,6 +48,12 @@ var _opening_in_progress: bool = false
 var _pause_open: bool = false
 var _console_open: bool = false
 var _jump_busy: bool = false
+## True only while a career is genuinely playable. Boot, load and teardown all
+## clear it, which is what stops an autosave writing a half-built session and
+## stops a save taken at zero hull opening the loss screen on top of its own load.
+var _session_live: bool = false
+## True from the moment the hull reaches zero until the run restarts (Job 10).
+var _dead: bool = false
 
 @onready var _debug_console: CanvasLayer = $DebugConsole
 
@@ -63,7 +72,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(FlightInput.ACTION_SECTOR_MAP):
-		if not _in_play or _console_open or _jump_busy or _opening_in_progress:
+		if not _in_play or _console_open or _jump_busy or _opening_in_progress or _dead:
 			return
 		if _sector_map != null and _sector_map.visible:
 			EventBus.on_sector_map_close_requested.emit()
@@ -73,7 +82,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not event.is_action_pressed(FlightInput.ACTION_PAUSE):
 		return
-	if not _in_play or _console_open or _jump_busy or _opening_in_progress:
+	# The loss screen is the only thing on offer once the run has ended: its two
+	# buttons are the way out, so pause may not be opened over the top of it.
+	if not _in_play or _console_open or _jump_busy or _opening_in_progress or _dead:
 		return
 	if _try_close_play_overlay():
 		get_viewport().set_input_as_handled()
@@ -114,6 +125,8 @@ func _wire_session_bus() -> void:
 	EventBus.on_annexation_continue_requested.connect(_on_annexation_continue_requested)
 	EventBus.on_manual_save_requested.connect(_on_manual_save_requested)
 	EventBus.on_manual_load_requested.connect(_on_manual_load_requested)
+	EventBus.on_player_crippled.connect(_on_player_crippled_session)
+	EventBus.on_run_restart_requested.connect(_on_run_restart_requested)
 	EventBus.on_console_visibility_changed.connect(_on_console_visibility_changed)
 	EventBus.on_pause_changed.connect(_on_pause_changed_bus)
 
@@ -154,6 +167,10 @@ func _create_session_ui() -> void:
 	_opening_annexation = OpeningAnnexation.new()
 	_opening_annexation.name = "OpeningAnnexation"
 	add_child(_opening_annexation)
+
+	_loss_screen = LossScreen.new()
+	_loss_screen.name = "LossScreen"
+	add_child(_loss_screen)
 
 	_raise_debug_console()
 
@@ -198,6 +215,54 @@ func _set_pause(open: bool) -> void:
 		pass
 
 
+## Arm or disarm everything that must only run against a real, finished session.
+##
+## Two things hang off this and both were bugs waiting to happen. `on_system_entered`
+## fires part-way through `_boot_play_session()` (no ship yet) and again while a
+## load is applied, so an armed autosave would file a session that does not exist
+## or overwrite the file being read. And a save written at zero hull re-emits
+## `on_player_crippled` when its wallet section is applied, which would open the
+## loss screen on top of its own load.
+func _set_session_live(live: bool) -> void:
+	_session_live = live
+	if _autosave != null:
+		_autosave.set_armed(live)
+	if _loss_screen != null:
+		_loss_screen.set_armed(live)
+	# Either direction ends the dead state: a session is being built or torn
+	# down, so whatever the last run ended as is no longer on screen.
+	_dead = false
+
+
+## Hull reached zero. The run is over; the loss screen has already put itself on
+## screen off the same signal. Nothing here decides the ship is finished —
+## `HullConditionService` did, and `can_fly()` remains the only word on it.
+func _on_player_crippled_session() -> void:
+	if not _session_live or _dead:
+		return
+	_dead = true
+	# Never autosave a destroyed ship: the restart point must stay the last
+	# place the player was actually alive.
+	if _autosave != null:
+		_autosave.set_armed(false)
+
+
+## Loss screen: start again from the most recent save. That is a full session
+## rebuild, not an in-place patch — the run ended, so the ship, the world and
+## every service are built fresh from the file.
+func _on_run_restart_requested() -> void:
+	if not _dead:
+		return
+	if _loss_screen != null:
+		_loss_screen.hide_loss()
+	if SaveService.most_recent_path().is_empty():
+		# Nothing to restart from (a career whose autosave could not be written).
+		# The menu is still a way out; a frozen wreck is not.
+		await _return_to_menu()
+		return
+	await _continue_career()
+
+
 func _on_new_game_requested() -> void:
 	await _start_new_game()
 
@@ -209,6 +274,7 @@ func _start_new_game() -> void:
 	_reset_career_services()
 	await _tear_down_play_session()
 	_boot_play_session()
+	_set_session_live(false)
 	_freeze_ship_for_opening()
 	_opening_in_progress = true
 	_in_play = false
@@ -267,6 +333,11 @@ func _on_annexation_continue_requested() -> void:
 	if _opening_annexation != null:
 		_opening_annexation.hide_annexation()
 	CareerStart.mark_opening_complete()
+	# Arm before the storyboard dock, not after: that dock is the first
+	# `on_docked` of the career, so it is what gives a brand-new captain who has
+	# never touched Save something to come back to. The session is fully built by
+	# now — world, ship, services, life path — so the save is complete.
+	_set_session_live(true)
 	# Storyboard entry: always wake up docked at the starter station.
 	_enter_career_docked()
 	_in_play = true
@@ -324,8 +395,10 @@ func _continue_career() -> void:
 	_reset_career_services()
 	await _tear_down_play_session()
 	_boot_play_session()
+	_set_session_live(false)
 	CareerSave.apply_meta_sections(get_tree(), sections, path)
 	await _apply_world_section(sections)
+	_set_session_live(true)
 	# D11: Continue/load skips create + annexation entirely.
 	_opening_in_progress = false
 	if _life_path_create != null:
@@ -357,6 +430,7 @@ func _on_quit_to_menu_requested() -> void:
 func _return_to_menu() -> void:
 	_set_pause(false)
 	_opening_in_progress = false
+	_set_session_live(false)
 	if _captain_sheet != null:
 		_captain_sheet.visible = false
 	if _new_game_tip != null:
@@ -401,8 +475,10 @@ func _load_into_play() -> void:
 			_pause_menu.show_feedback(BalanceSession.LOAD_FAIL_FORMAT % loaded.summary())
 		return
 	var sections: Dictionary = _sections_of(loaded.envelope)
+	_set_session_live(false)
 	CareerSave.apply_meta_sections(get_tree(), sections, path)
 	await _apply_world_section(sections)
+	_set_session_live(true)
 	# D11: load never re-shows create / annexation.
 	_opening_in_progress = false
 	if _life_path_create != null:
@@ -511,6 +587,18 @@ func _boot_play_session() -> void:
 	add_child(_gate_travel)
 	_gate_travel.setup(_ship, _world.gate_positions(), _docking)
 
+	# Job 10: the way out of a dry tank, and the thing that gives every other
+	# way out something to fall back on. Both start disarmed — see
+	# `_set_session_live` for why arming is explicit.
+	_rescue = RescueService.new()
+	_rescue.name = "RescueService"
+	add_child(_rescue)
+	_rescue.setup(_ship, _docking, _world.station_positions())
+
+	_autosave = AutosaveService.new()
+	_autosave.name = "AutosaveService"
+	add_child(_autosave)
+
 	if not EventBus.on_jump_requested.is_connected(_on_jump_requested):
 		EventBus.on_jump_requested.connect(_on_jump_requested)
 
@@ -518,9 +606,16 @@ func _boot_play_session() -> void:
 
 
 func _tear_down_play_session() -> void:
+	_set_session_live(false)
 	if EventBus.on_jump_requested.is_connected(_on_jump_requested):
 		EventBus.on_jump_requested.disconnect(_on_jump_requested)
 
+	if _autosave != null:
+		_autosave.queue_free()
+		_autosave = null
+	if _rescue != null:
+		_rescue.queue_free()
+		_rescue = null
 	if _gate_travel != null:
 		_gate_travel.queue_free()
 		_gate_travel = null
@@ -590,6 +685,8 @@ func _apply_world_section(sections: Dictionary) -> void:
 			_docking.setup(_ship, _world.station_positions())
 		if _gate_travel != null:
 			_gate_travel.setup(_ship, _world.gate_positions(), _docking)
+		if _rescue != null:
+			_rescue.setup(_ship, _docking, _world.station_positions())
 
 	var saved_dock_id: StringName = CareerSave.docked_station_from_world(world_data)
 	# Leaving a berth the save does not have has to happen before the ship is
@@ -671,6 +768,8 @@ func _on_jump_requested(destination_system_id: StringName) -> void:
 
 	_docking.setup(_ship, _world.station_positions())
 	_gate_travel.setup(_ship, _world.gate_positions(), _docking)
+	if _rescue != null:
+		_rescue.setup(_ship, _docking, _world.station_positions())
 
 	_raise_debug_console()
 	_jump_busy = false

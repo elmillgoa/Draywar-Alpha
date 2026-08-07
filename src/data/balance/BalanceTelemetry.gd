@@ -74,6 +74,8 @@ const REASON_OPS_FIRE: StringName = &"ops_fire"
 const REASON_OPS_UPKEEP: StringName = &"ops_upkeep"
 ## Ops abstract haul net / leg pay (S6).
 const REASON_OPS_HAUL_PAY: StringName = &"ops_haul_pay"
+## Emergency tow out of a dry tank (Job 10). Charge is capped by what is held.
+const REASON_TOW: StringName = &"tow"
 
 # --- Detail dictionary keys (StringName) --------------------------------------
 

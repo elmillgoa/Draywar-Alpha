@@ -35,6 +35,8 @@ var _gate_dest_id: StringName = &""
 var _gate_can_jump: bool = false
 var _dock_prompt_id: StringName = &""
 var _dock_can_dock: bool = false
+var _tow_available: bool = false
+var _tow_fee: int = 0
 var _crippled: bool = false
 var _hostile_present: bool = false
 var _target_locked: bool = false
@@ -60,6 +62,7 @@ func _ready() -> void:
 	EventBus.on_player_throttle_changed.connect(_on_throttle_changed)
 	EventBus.on_dock_prompt_changed.connect(_on_dock_prompt_changed)
 	EventBus.on_gate_prompt_changed.connect(_on_gate_prompt_changed)
+	EventBus.on_tow_prompt_changed.connect(_on_tow_prompt_changed)
 	EventBus.on_docked.connect(_on_docked)
 	EventBus.on_undocked.connect(_on_undocked)
 	EventBus.on_status_moment.connect(_on_status_moment)
@@ -92,6 +95,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_player_throttle_changed, _on_throttle_changed)
 	_disconnect(EventBus.on_dock_prompt_changed, _on_dock_prompt_changed)
 	_disconnect(EventBus.on_gate_prompt_changed, _on_gate_prompt_changed)
+	_disconnect(EventBus.on_tow_prompt_changed, _on_tow_prompt_changed)
 	_disconnect(EventBus.on_docked, _on_docked)
 	_disconnect(EventBus.on_undocked, _on_undocked)
 	_disconnect(EventBus.on_status_moment, _on_status_moment)
@@ -380,41 +384,53 @@ func _status_tier(status: Dictionary) -> StringName:
 
 
 func _refresh_prompt() -> void:
+	_prompt_label.text = _prompt_text()
+
+
+## The one prompt line, in priority order. Split out of `_refresh_prompt` when
+## the tow line pushed it past the linter's return-count ceiling; the order and
+## the conditions are unchanged apart from the tow.
+func _prompt_text() -> String:
 	# Cripple fail-state beats everything free-flying; dock still wins when near.
 	if _dock_prompt_id != &"":
-		var station_label: String = _content_name(_dock_prompt_id)
-		if _dock_can_dock:
-			_prompt_label.text = "PRESS F TO DOCK — %s" % station_label
-			return
-		if not StandingService.can_dock_at_station(_dock_prompt_id):
-			var status: Dictionary = StandingService.status_for_station(_dock_prompt_id)
-			_prompt_label.text = (
-				BalanceStanding.DOCK_REFUSED_PROMPT_FORMAT
-				% [
-					status[StandingService.STATUS_KEY_TIER_DISPLAY],
-					status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
-				]
-			)
-			return
-		_prompt_label.text = "APPROACHING %s" % station_label.to_upper()
-		return
+		return _dock_prompt_text()
+	# A dry tank away from a berth is the one thing the player cannot fly out of.
+	# Say so, and say the way out, or the rescue may as well not exist (PT-11).
+	if _tow_available and _docked_station_id == &"":
+		return BalanceEconomy.TOW_PROMPT_FORMAT % _tow_fee
 	if _crippled and _docked_station_id == &"":
-		_prompt_label.text = BalanceCombat.HUD_CRIPPLED_MESSAGE
-		return
+		return BalanceCombat.HUD_CRIPPLED_MESSAGE
 	if _gate_dest_id != &"":
-		var dest_label: String = _content_name(_gate_dest_id)
-		if _gate_can_jump:
-			_prompt_label.text = BalanceEconomy.JUMP_PROMPT_FORMAT % dest_label
-		else:
-			_prompt_label.text = (
-				BalanceEconomy.JUMP_PROMPT_NO_FUEL_FORMAT
-				% [str(int(BalanceEconomy.JUMP_FUEL_COST)), dest_label]
-			)
-		return
+		return _gate_prompt_text()
 	if _hostile_present and _docked_station_id == &"":
-		_prompt_label.text = BalanceCombat.HUD_COMBAT_PROMPT
-		return
-	_prompt_label.text = ""
+		return BalanceCombat.HUD_COMBAT_PROMPT
+	return ""
+
+
+func _dock_prompt_text() -> String:
+	var station_label: String = _content_name(_dock_prompt_id)
+	if _dock_can_dock:
+		return "PRESS F TO DOCK — %s" % station_label
+	if not StandingService.can_dock_at_station(_dock_prompt_id):
+		var status: Dictionary = StandingService.status_for_station(_dock_prompt_id)
+		return (
+			BalanceStanding.DOCK_REFUSED_PROMPT_FORMAT
+			% [
+				status[StandingService.STATUS_KEY_TIER_DISPLAY],
+				status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
+			]
+		)
+	return "APPROACHING %s" % station_label.to_upper()
+
+
+func _gate_prompt_text() -> String:
+	var dest_label: String = _content_name(_gate_dest_id)
+	if _gate_can_jump:
+		return BalanceEconomy.JUMP_PROMPT_FORMAT % dest_label
+	return (
+		BalanceEconomy.JUMP_PROMPT_NO_FUEL_FORMAT
+		% [str(int(BalanceEconomy.JUMP_FUEL_COST)), dest_label]
+	)
 
 
 func _on_speed_changed(speed: float) -> void:
@@ -622,6 +638,12 @@ func _on_dock_prompt_changed(station_id: StringName, can_dock: bool) -> void:
 func _on_gate_prompt_changed(destination_system_id: StringName, can_jump: bool) -> void:
 	_gate_dest_id = destination_system_id
 	_gate_can_jump = can_jump
+	_refresh_prompt()
+
+
+func _on_tow_prompt_changed(available: bool, fee_credits: int) -> void:
+	_tow_available = available
+	_tow_fee = fee_credits
 	_refresh_prompt()
 
 

@@ -135,13 +135,20 @@ static func _reannounce_status_moment(tree: SceneTree) -> void:
 
 
 ## Write a named career save under user://saves/.
+## `origin` records who asked for it and rides in the envelope (Job 10): the
+## pause menu and console leave it `manual`; `AutosaveService` passes
+## `autosave_dock` / `autosave_entry`. Same gather path either way, so an
+## autosave holds exactly what a manual save holds.
 static func save_to_name(
-	tree: SceneTree, file_name: String, profile_name: String = ""
+	tree: SceneTree,
+	file_name: String,
+	profile_name: String = "",
+	origin: StringName = SaveService.ORIGIN_MANUAL
 ) -> SaveResult:
 	var service: SaveService = SaveServiceScript.new()
 	var path: String = SaveService.path_for(file_name)
 	var sections: Dictionary = gather_sections(tree)
-	return service.save_to(path, SaveService.envelope(sections, profile_name))
+	return service.save_to(path, SaveService.envelope(sections, profile_name, origin))
 
 
 ## Load an envelope from a full path (does not apply sections).

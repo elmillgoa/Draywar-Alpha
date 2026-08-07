@@ -369,7 +369,7 @@ seventh nobody recognises, is refused rather than repaired.
 | `format` | `StringName` | Always `&"draywar_save"`. |
 | `schema_version` | `int` | `1`. Read before anything else is trusted. |
 | `profile_name` | `String` | Player name for this career. Free text; may be empty. |
-| `origin` | `StringName` | `&"manual"`, `&"autosave_entry"`, or `&"autosave_dock"`. |
+| `origin` | `StringName` | `&"manual"`, `&"autosave_entry"`, or `&"autosave_dock"`. All three are written by real code as of Job 10 — see *When a save is written*. |
 | `career_mode` | `StringName` | `&"standard"` only (ironman reserved later). |
 | `sections` | `Dictionary` | Per-system state, keyed by name. May be empty. |
 
@@ -437,6 +437,48 @@ ship position, berth) is applied by `Main` immediately **after**
 `on_save_loaded`. Placement announces itself — `on_system_entered`, `on_docked`,
 `on_undocked` — and that is what a listener that cares where the player is must
 use. Nothing currently listening to `on_save_loaded` reads placement.
+
+### When a save is written (Job 10)
+
+Until Job 10 the answer was "only when the player presses Save". `SaveSchema`
+had declared `ORIGIN_AUTOSAVE_DOCK` and `ORIGIN_AUTOSAVE_ENTRY` since A0 and
+nothing called either, so a new career that lost a fight had nothing to reload
+at all. There are now four writers:
+
+| Writer | Slot | `origin` |
+|---|---|---|
+| Pause menu **Save** (`Main._on_manual_save_requested`) | `career` | `manual` |
+| Debug console `save <name>` (`SaveConsoleCommands`) | as typed | `manual` |
+| `AutosaveService` on `on_docked` | `autosave` | `autosave_dock` |
+| `AutosaveService` on `on_system_entered` | `autosave` | `autosave_entry` |
+
+**The autosave has its own slot** (`user://saves/autosave.sav`,
+`BalanceSession.AUTOSAVE_SAVE_NAME`). It never overwrites the manual `career`
+file — a save the player chose to write is theirs. `SaveService.most_recent_path()`
+already picks the newest file by modification time, so **Continue** and the
+pause menu's **Load** both mean "carry on from wherever I actually was".
+
+**No schema change.** The autosave goes through `CareerSave.gather_sections()`
+unchanged, so it holds exactly what a manual save holds — no new key, no
+required field, no envelope version bump. The only code change on the write
+side is an `origin` parameter on `CareerSave.save_to_name()`, defaulting to
+`manual`, so every existing caller behaves as before.
+
+**`AutosaveService` is armed and disarmed by `Main`, and that is load-bearing.**
+`on_system_entered` fires part-way through `_boot_play_session()` — before the
+player ship exists, so `_world_section()` would return empty and the save would
+have no `world` section — and again while `_apply_world_section()` rebuilds a
+system during a load, where re-saving would overwrite the file being read. A new
+`AutosaveService` starts disarmed. `Main` arms it at exactly three points: just
+before the storyboard dock of a new career (which is what gives a captain who
+has never touched Save something to come back to), and at the end of the
+Continue and Load paths. It is disarmed again the moment the hull reaches zero,
+so no autosave ever captures a destroyed ship.
+
+**The write is deferred by one message-queue flush**, not run inside the signal
+handler. A gate jump builds the destination system — which emits
+`on_system_entered` — and only then moves the ship to the arrival point; saving
+inline would file the new system with the old coordinates.
 
 ### Where the files live
 

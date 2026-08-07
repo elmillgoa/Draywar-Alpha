@@ -115,8 +115,8 @@ written down.
 - **Producer layer:** systems
 - **Permitted consumers:** entities, systems, ui
 
-Credits ledger. Looked up by `DockingService` (entities), by most of
-`src/systems` (cargo, mission, ship, fuel, hull, campaign, incident,
+Credits ledger. Looked up by `DockingService` and `RescueService` (entities),
+by most of `src/systems` (cargo, mission, ship, fuel, hull, campaign, incident,
 recovery, ops, the world clock), and by `CaptainSheet` / `StationHoldingUi`
 (ui). Also reached via both dynamic wrappers - see below.
 
@@ -126,9 +126,9 @@ recovery, ops, the world clock), and by `CaptainSheet` / `StationHoldingUi`
 - **Producer layer:** systems
 - **Permitted consumers:** entities, systems, ui
 
-Looked up by `GateTravelService` and `PlayerShip` (entities), `WalletService`
-(systems, for spend-after-refuel), and `CaptainSheet` (ui). Also reached via
-the `CareerSave.gd` wrapper.
+Looked up by `GateTravelService`, `PlayerShip` and `RescueService` (entities),
+`WalletService` (systems, for spend-after-refuel), and `CaptainSheet` (ui).
+Also reached via the `CareerSave.gd` wrapper.
 
 ### `hull_condition_service` -> `src/systems/wallet/HullConditionService.gd`
 
@@ -136,10 +136,12 @@ the `CareerSave.gd` wrapper.
 - **Producer layer:** systems
 - **Permitted consumers:** entities, systems, ui, world
 
-Looked up by `HostileProjectile` (world), `DockingService` / `PlayerShip`
-(entities), `WalletService` (systems), and `CaptainSheet` (ui). The only
-service whose static lookups already span all four layers. Also reached via
-the `CareerSave.gd` wrapper.
+Looked up by `HostileProjectile` (world), `DockingService` / `PlayerShip` /
+`RescueService` (entities), `WalletService` (systems), and `CaptainSheet` (ui).
+The only service whose static lookups already span all four layers. Also
+reached via the `CareerSave.gd` wrapper. It is also the single answer to "can
+this ship fly": the tow refuses a destroyed hull by asking `can_fly()` here
+rather than keeping a flag of its own (Job 10).
 
 ### `cargo_service` -> `src/systems/cargo/CargoService.gd`
 
@@ -170,7 +172,7 @@ channel is for; the offering Entity arrives separately on `on_mission_accepted`.
 - **Added by:** `src/systems/recovery/RecoveryService.gd:55` (raw string)
 - **Producer layer:** systems
 - **Permitted consumers:** (none)
-- **Reached via dynamic sites:** `src/systems/save/CareerSave.gd:526`, `src/ui/station/StationMenu.gd:957`
+- **Reached via dynamic sites:** `src/systems/save/CareerSave.gd:533`, `src/ui/station/StationMenu.gd:957`
 
 The one group with **no static lookup site at all** - every reach is through
 a same-file wrapper (`CareerSave._node_in_group`, `StationMenu._node_in_group`
@@ -346,7 +348,7 @@ wrapper to recover what literal a caller supplied - it reports the wrapper's
 own call as what it structurally is (a parameter, not a literal) and
 requires it to be listed here.
 
-### `src/systems/save/CareerSave.gd:526`
+### `src/systems/save/CareerSave.gd:533`
 
 `_node_in_group(tree, group)`. Called throughout `CareerSave.gd`'s save/load
 section functions with literal or `BalanceX.GROUP_Y` group names - directly,

@@ -12,6 +12,13 @@ extends RefCounted
 ## Default career save base name (user://saves/career.sav).
 const DEFAULT_SAVE_NAME: String = "career"
 
+## Autosave base name (user://saves/autosave.sav) — Job 10.
+## Deliberately NOT the manual slot: an autosave on dock or system entry must
+## never overwrite the file the player chose to write from the pause menu.
+## `SaveService.most_recent_path()` picks whichever of the two is newer, so
+## Continue still means "carry on from where I actually was".
+const AUTOSAVE_SAVE_NAME: String = "autosave"
+
 ## Optional section keys.
 const SAVE_SECTION_WORLD: StringName = &"world"
 const SAVE_SECTION_MISSION: StringName = &"mission"
@@ -63,6 +70,10 @@ const PAUSE_MENU_CANVAS_LAYER: int = 35
 const CAPTAIN_SHEET_CANVAS_LAYER: int = 36
 ## Sector chart above pause so map can open from pause or flight (E5.5).
 const SECTOR_MAP_CANVAS_LAYER: int = 37
+## Loss screen above the main menu (40) — the run is over, nothing else may sit
+## on top of it. Below life-path create / annexation (42), which only ever run
+## when no career is in play (Job 10).
+const LOSS_SCREEN_CANVAS_LAYER: int = 41
 
 # --- Menu layout -----------------------------------------------------------
 
@@ -211,6 +222,28 @@ const NEW_GAME_TIP_BODY: String = (
 	+ "Story work shows under Story at the station. Journal is in the pause menu."
 )
 const NEW_GAME_TIP_DISMISS: String = "Got it"
+
+# --- Loss screen (Job 10) --------------------------------------------------
+
+const LOSS_WIDTH: float = 460.0
+const LOSS_HEIGHT: float = 300.0
+const LOSS_HALF_WIDTH: float = 230.0
+const LOSS_HALF_HEIGHT: float = 150.0
+const LOSS_BUTTON_WIDTH: float = 260.0
+const LOSS_BUTTON_HEIGHT: float = 44.0
+const LOSS_SPACER: float = 10.0
+const LOSS_DIM_ALPHA: float = 0.78
+## Center panel offsets from half-size when clamping to a small viewport.
+const LOSS_CENTER_HALF: float = 0.5
+
+const LOSS_TITLE: String = "SHIP DESTROYED"
+const LOSS_BODY: String = (
+	"Your hull is gone and so is the run.\n"
+	+ "Pick up from the last place the game saved you —\n"
+	+ "the last station you docked at, or the last system you flew into."
+)
+const LOSS_RESTART: String = "Restart from last save"
+const LOSS_QUIT: String = "Quit to menu"
 
 # --- Life path create (E4.2) -----------------------------------------------
 

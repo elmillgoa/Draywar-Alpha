@@ -143,6 +143,10 @@ signal on_person_closed(person_id: StringName, reason: StringName)
 ## GateTravelService: jump prompt for the HUD (empty dest clears).
 signal on_gate_prompt_changed(destination_system_id: StringName, can_jump: bool)
 
+## RescueService: emergency tow offer for the HUD (Job 10). Fee is what the
+## pilot would actually be charged right now, already capped by what is held.
+signal on_tow_prompt_changed(available: bool, fee_credits: int)
+
 ## Ship / GateTravelService: request to jump to this system.
 signal on_jump_requested(destination_system_id: StringName)
 
@@ -232,6 +236,9 @@ signal on_manual_save_requested
 
 ## Pause menu: load the most recent career save.
 signal on_manual_load_requested
+
+## Loss screen: the run ended at zero hull — restart from the most recent save.
+signal on_run_restart_requested
 
 ## Main / pause: open the options panel (S10).
 signal on_options_open_requested

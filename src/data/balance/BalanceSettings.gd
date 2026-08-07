@@ -77,6 +77,7 @@ const REBIND_ROWS: Array[Dictionary] = [
 	{"action": &"sector_map", "label": "Sector map"},
 	{"action": &"incident_a", "label": "Incident choice 1"},
 	{"action": &"incident_b", "label": "Incident choice 2"},
+	{"action": &"call_tow", "label": "Call a tow"},
 ]
 
 # --- Options UI copy -------------------------------------------------------
