@@ -52,6 +52,9 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-06 (REPAIR-1)** — New-game "How to fly" tip: panel capped to design
+  height with scrollable body; Escape dismisses. Got it stays on-screen at
+  shipping 1152×648 (was fully below the window).
 - **2026-08-06 (REPAIR-10)** — `export_presets.cfg` tracked (was gitignored).
   Fresh clones get Windows Desktop preset; no secrets/absolute paths.
 - **2026-08-04 (S10 gate)** — Elliot signed RC (“Pass”). S10 phase closed.

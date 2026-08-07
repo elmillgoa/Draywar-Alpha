@@ -192,6 +192,60 @@ func test_new_game_tip_copy_and_dismiss() -> void:
 	assert_false(tip.is_open())
 
 
+## REPAIR-1: dismiss must stay on-screen at the shipping window size (1152×648).
+func test_new_game_tip_dismiss_fits_shipping_window() -> void:
+	const SHIP_W: int = 1152
+	const SHIP_H: int = 648
+	var tip: NewGameTip = NewGameTip.new()
+	add_child_autofree(tip)
+	await get_tree().process_frame
+
+	# Force the shipping default window so layout is measured at the bug size.
+	var win: Window = tip.get_window()
+	assert_ne(win, null, "tip must be under a Window")
+	var prev_size: Vector2i = win.size
+	win.size = Vector2i(SHIP_W, SHIP_H)
+	await get_tree().process_frame
+
+	tip.show_tip()
+	# Two frames: fit + container layout settle.
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var dismiss: Button = _find_button_with_text(tip, BalanceSession.NEW_GAME_TIP_DISMISS)
+	assert_ne(dismiss, null, "Got it button exists")
+	var rect: Rect2 = dismiss.get_global_rect()
+	var vp_h: float = float(tip.get_viewport().get_visible_rect().size.y)
+	assert_lte(
+		rect.end.y,
+		vp_h,
+		(
+			"dismiss bottom must be on-screen at %dx%d (was y=%.1f vp=%.1f)"
+			% [SHIP_W, SHIP_H, rect.end.y, vp_h]
+		)
+	)
+	assert_gte(rect.position.y, 0.0, "dismiss top must be on-screen")
+	assert_true(tip.is_open(), "tip still open until dismissed")
+	win.size = prev_size
+
+
+## REPAIR-1: Escape closes the tip via hide_tip().
+func test_new_game_tip_escape_dismisses() -> void:
+	var tip: NewGameTip = NewGameTip.new()
+	add_child_autofree(tip)
+	await get_tree().process_frame
+	tip.show_tip()
+	assert_true(tip.is_open())
+
+	var escape: InputEventKey = InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.physical_keycode = KEY_ESCAPE
+	escape.pressed = true
+	tip._unhandled_input(escape)
+	await get_tree().process_frame
+	assert_false(tip.is_open(), "Escape must call hide_tip")
+
+
 func test_station_flavor_present() -> void:
 	for id: StringName in ContentLibrary.ids_in(&"stations"):
 		var station: Station = ContentLibrary.item(id) as Station

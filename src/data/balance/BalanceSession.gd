@@ -190,6 +190,8 @@ const NEW_GAME_TIP_WIDTH: float = 420.0
 const NEW_GAME_TIP_HEIGHT: float = 260.0
 const NEW_GAME_TIP_HALF_WIDTH: float = 210.0
 const NEW_GAME_TIP_HALF_HEIGHT: float = 130.0
+## Center panel offsets from half-size (width * factor) when clamping to viewport.
+const NEW_GAME_TIP_CENTER_HALF: float = 0.5
 const NEW_GAME_TIP_BUTTON_WIDTH: float = 160.0
 const NEW_GAME_TIP_BUTTON_HEIGHT: float = 40.0
 const NEW_GAME_TIP_SPACER: float = 10.0
