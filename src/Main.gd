@@ -688,11 +688,24 @@ func _apply_world_section(sections: Dictionary) -> void:
 		if _rescue != null:
 			_rescue.setup(_ship, _docking, _world.station_positions())
 
+	# The berth the save was written in, asked before anything is moved. It
+	# either takes the ship — parking it at the anchor, hiding it, cutting
+	# flight and announcing `on_docked`, exactly the way a new career wakes up
+	# docked — or it refuses, and the ship goes back into free flight at the
+	# coordinates the save recorded.
+	#
+	# Asking first is the point of this order. Placing the ship and asking
+	# afterwards left a refusal (a station this build no longer has, or one
+	# standing now turns away) with the player still docked at whatever berth
+	# the live session happened to be sitting in — a berth the save never named.
 	var saved_dock_id: StringName = CareerSave.docked_station_from_world(world_data)
-	# Leaving a berth the save does not have has to happen before the ship is
+	if not String(saved_dock_id).is_empty() and _restore_docked(saved_dock_id):
+		_raise_debug_console()
+		return
+
+	# Free flight from here. Leaving the berth has to happen before the ship is
 	# placed, or the undock would fling it back to the station anchor.
-	if String(saved_dock_id).is_empty():
-		_undock_if_docked()
+	_undock_if_docked()
 
 	var has_pos: bool = (
 		world_data.has(BalanceSession.WORLD_KEY_POS_X)
@@ -708,24 +721,23 @@ func _apply_world_section(sections: Dictionary) -> void:
 		_ship.velocity = Vector3.ZERO
 		_ship.set_flight_enabled(true)
 		_ship.visible = true
-
-	# Saved docked → wake up docked, exactly the way a new career wakes up
-	# docked. Same call, so a restored berth behaves like any other berth and no
-	# new rule about what a docked player may do is invented here. It parks the
-	# ship at the anchor, hides it, cuts flight, and announces `on_docked`,
-	# which is what opens the station menu and re-shows the station status.
-	if not String(saved_dock_id).is_empty():
-		_restore_docked(saved_dock_id)
 	_raise_debug_console()
 
 
-## Put the ship back in the berth the save was written in. A station the world
-## no longer has, or one standing now refuses, leaves the free-fly restore that
-## already ran in place rather than failing the load.
-func _restore_docked(station_id: StringName) -> void:
+## Put the ship back in the berth the save was written in, and say whether the
+## berth took it. Same call a new career uses, so a restored berth behaves like
+## any other berth and no new rule about what a docked player may do is invented
+## here: it parks the ship at the anchor, hides it, cuts flight and announces
+## `on_docked`, which is what opens the station menu and re-shows the status.
+##
+## False means the berth refused — a station the world no longer has, or one
+## standing now turns away. The caller then restores free flight instead, which
+## is what keeps a refusal from leaving the player docked somewhere the save
+## never named.
+func _restore_docked(station_id: StringName) -> bool:
 	if _docking == null:
-		return
-	_docking.begin_session_docked(station_id)
+		return false
+	return _docking.begin_session_docked(station_id)
 
 
 ## Loading a free-flying save while docked has to leave the berth first.

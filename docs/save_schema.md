@@ -208,9 +208,9 @@ Missing section → Act I, `flag_act1_started` only, no completed spines, empty 
 ### Optional section: `world` (schema v1)
 
 Written by `CareerSave` when a `system_world` and player ship are present (B2).
-Applied by `Main` after boot: system rebuild, then position, then the berth.
-**Docked restore is real as of Job 3** — a save written at a station comes back
-at that station.
+Applied by `Main` after boot: system rebuild, then the berth, then — only if
+there is no berth to go back to — the free-flight position. **Docked restore is
+real as of Job 3** — a save written at a station comes back at that station.
 
 | Key | Type | Meaning |
 |---|---|---|
@@ -223,18 +223,30 @@ at that station.
 **Restore order, and it matters.** `Main._apply_world_section()`:
 
 1. Rebuilds the system if the saved one differs from the live one.
-2. If the save was written free-flying and the live session is docked, leaves
-   the berth first (`on_undock_requested`) — otherwise the undock would fling
-   the ship back to the station anchor after it had been placed.
-3. Applies `pos_x/y/z`, zeroes velocity, enables flight.
-4. If the save names a berth, calls `DockingService.begin_session_docked()` —
-   the **same** call a new career uses to wake up docked. That parks the ship
-   at the anchor, hides it, cuts flight, and emits `on_docked`, which opens the
+2. If the save names a berth, asks for it — `DockingService.begin_session_docked()`,
+   the **same** call a new career uses to wake up docked. That parks the ship at
+   the anchor, hides it, cuts flight, and emits `on_docked`, which opens the
    station menu and re-shows the station status moment. No separate rule about
-   what a restored docked player may do: it is an ordinary berth.
+   what a restored docked player may do: it is an ordinary berth. If the berth
+   takes the ship the restore is finished here — `pos_x/y/z` are not applied,
+   because the anchor is where a docked ship belongs.
+3. Otherwise (no berth in the save, or the berth refused): if the live session
+   is docked, leaves the berth first (`on_undock_requested`) — the undock would
+   otherwise fling the ship back to the station anchor after it had been placed
+   — then applies `pos_x/y/z`, zeroes velocity, enables flight, shows the ship.
 
-A berth the rebuilt world does not have, or one standing now refuses, leaves
-the free-fly restore from step 3 standing rather than failing the load.
+**The berth is asked about before anything moves, and that ordering is the
+fix, not an accident.** A berth can refuse: the station may not exist in this
+build any more, or standing may now turn the ship away. Steps 2 and 3 used to
+run the other way round — place, then ask — which meant a refusal left the
+player docked at whatever berth the live session happened to be sitting in.
+That is a berth the save never named, presented as the one it did, and it can
+only happen on a mid-session load (pause → Load) because a Continue rebuilds
+the session free-flying first. Asking first makes a refusal fall through to
+free flight at the saved coordinates, which is the documented degradation.
+
+Covered by `tests/test_docked_restore.gd`, which boots the real session shell
+rather than re-implementing the restore.
 
 Missing section → boot system and spawn. Missing `docked_station_id`, or an
 empty one, reads as free-flying. No envelope version bump.
@@ -431,12 +443,40 @@ state the load was about to replace. It now emits nothing. The announcement is
 the **last** thing `CareerSave.apply_meta_sections()` does, after every section
 above is in place, and it carries the path the caller read.
 
-One residual, deliberate and documented rather than hidden: `world` (system,
-ship position, berth) is applied by `Main` immediately **after**
-`apply_meta_sections` returns, so the ship's placement is not settled at
-`on_save_loaded`. Placement announces itself — `on_system_entered`, `on_docked`,
-`on_undocked` — and that is what a listener that cares where the player is must
-use. Nothing currently listening to `on_save_loaded` reads placement.
+Two residuals, both deliberate and documented rather than hidden. Both come from
+the same boundary: `world` (system, ship position, berth) is applied by
+`Main._apply_world_section()` immediately **after** `apply_meta_sections`
+returns.
+
+**1. Placement is not settled at `on_save_loaded`.** A listener that cares where
+the player is must use the signals placement itself fires —
+`on_system_entered`, `on_docked`, `on_undocked` — not `on_save_loaded`. Nothing
+currently listening to `on_save_loaded` reads placement.
+
+**2. The re-shown status moment is fired against pre-load placement.**
+`_reannounce_status_moment()` is the second-to-last thing `apply_meta_sections`
+does, which is still before the ship has been moved. So a load that lands in a
+*different* system re-fires the status moment for the system the player was in
+before, and one that lands in a *different* berth fires it for the old berth.
+
+This is cosmetic and transient, and the reason is worth stating because it is
+what makes it safe to leave: `FlightHUD` is the only listener to
+`on_status_moment`, and `FlightHUD._on_status_moment()` ignores the payload
+entirely — it just calls `_refresh_status_line()`, which reads the HUD's own
+`_current_system_id` / `_docked_station_id`. Those are updated by
+`on_system_entered` and `on_docked`, both of which `_apply_world_section` fires
+moments later, and both of which call `_refresh_status_line()` again. The wrong
+line survives at most the single frame `_apply_world_section` waits between
+`clear_world()` and `build()`, during which the system is torn down anyway.
+
+Not fixed on purpose. Moving the re-fire after placement would mean either
+emitting the status moment twice per load or moving it out of
+`apply_meta_sections` into `Main` — and "a load re-shows the status moment
+exactly once, from `StandingService`" is the contract Job 3 `#35`/`W13` closed
+and `tests/test_save_fidelity.gd` asserts. Trading a verified contract for one
+frame of a stale label is a bad trade. If it ever stops being one — a second
+listener that *does* read the status-moment payload would do it — this is the
+note that says why the ordering is the way it is.
 
 ### When a save is written (Job 10)
 

@@ -82,8 +82,13 @@ func after_each() -> void:
 # --- The berth you saved in ---------------------------------------------------
 
 
-func test_a_save_written_docked_names_the_berth_and_puts_you_back_in_it() -> void:
-	# Before: a save taken at a station reloaded you free-flying next to it.
+func test_a_save_written_docked_names_the_berth_in_the_file() -> void:
+	# What this covers and what it does NOT. It covers the codec: a save taken
+	# at a station writes the berth id and reads it back off a real file. It
+	# does not cover the restore — `Main._apply_world_section()` is what puts
+	# the player back in the berth, and this rig never calls it. The name used
+	# to claim otherwise, which is how a reverted fix stayed green here.
+	# `tests/test_docked_restore.gd` boots the real session and covers that.
 	var ship: PlayerShip = PlayerShip.new()
 	add_child_autofree(ship)
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
@@ -107,7 +112,9 @@ func test_a_save_written_docked_names_the_berth_and_puts_you_back_in_it() -> voi
 		"the save file must name the berth the player was sitting in"
 	)
 
-	# Undock, then restore the way Main does it: same call a new career uses.
+	# And that the berth id the file carries is one `DockingService` will take:
+	# the same call `Main` makes on restore, made here against the service
+	# alone. That the restore reaches this call at all is proved elsewhere.
 	EventBus.on_undock_requested.emit(STATION_ALPHA_PORT)
 	assert_false(docking.controller().is_docked(), "fixture must be free-flying before restore")
 
