@@ -367,6 +367,23 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
   suite `tests/test_kill_attribution_rules.gd` (8 tests). `on_kill_reported`
   verdict recorded for the Job 12 continuation pass — **remove it**; the signal
   is not touched here.
+- **2026-08-07 (Job 6 phase 2 — the campaign dead end is legible)** — Elliot's
+  answer (`DECISION_campaign-dead-end.md`, Option D): the dead end may stand, so
+  the game says so instead of guaranteeing a way through. **No standing rule
+  moved.** Two halves in one commit. **Content:** Free Haulers now control
+  `station_delta_yard` — they offer every ignition beat and lend the starting
+  debt but owned no dock anywhere (finding IF-24), so their board, their two
+  recovery chains and their contacts were unreachable. Reach Authority keeps its
+  other four docks, including every one the spine offers work at. **Legibility
+  (finding #5):** new `CampaignEndingStatus` grades the ending `open` /
+  `stalled` / `closed` and names what is short; new signal
+  `on_campaign_ending_blocked` fires at the moment a standing change shuts the
+  last route (FlightHUD toast + dock Story refresh); the journal says "Closed for
+  good" in its own colour only for a genuinely dead ending; the dock hint replaces
+  "Need better standing with the offerer" with the faction names and tiers. The
+  recoverability test is deliberately generous — it errs toward calling a career
+  climbable, never finished. New suite `tests/test_campaign_dead_end.gd` (18
+  tests), both halves break-proved.
 - **2026-08-07 (Job 12 — EventBus contract)** — Ruled on the five signals that
   only tests connected to. `on_incident_offered` **removed** (declaration, emit,
   test, catalog entry — one commit) as a duplicate of `on_incident_prompt`, which

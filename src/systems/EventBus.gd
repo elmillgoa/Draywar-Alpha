@@ -409,3 +409,9 @@ signal on_holding_claimed(station_id: StringName, price_paid: int)
 
 ## CampaignService: ignition crisis complete; campaign complete / sandbox open.
 signal on_holding_ignited(station_id: StringName)
+
+## CampaignService: the last route to an Act III ending just shut, at the moment
+## the standing change landed. `grade` is `stalled` (the standing can still be
+## earned back) or `closed` (nothing left in the game can raise it). `line` is
+## the ready-to-show sentence naming every faction that is short.
+signal on_campaign_ending_blocked(grade: StringName, line: String)

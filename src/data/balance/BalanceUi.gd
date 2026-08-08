@@ -19,6 +19,9 @@ const FONT_COLOR: Color = Color(0.94, 0.96, 0.98, 1.0)
 const FONT_COLOR_MUTED: Color = Color(0.70, 0.78, 0.88, 1.0)
 ## Credits / funds warning (E3.1 low-funds HUD).
 const FONT_COLOR_WARNING: Color = Color(0.96, 0.74, 0.30, 1.0)
+## Journal row for a campaign ending that can never be reached again (Job 6
+## phase 2). Its own colour, because grey "Locked" reads as "not yet".
+const FONT_COLOR_CLOSED: Color = Color(0.94, 0.44, 0.40, 1.0)
 const TITLE_COLOR: Color = Color(0.98, 0.90, 0.52, 1.0)
 const ACCENT: Color = Color(0.38, 0.82, 0.98, 1.0)
 const CORNER_RADIUS: int = 8

@@ -16,6 +16,10 @@ static func connect_refresh(refresh: Callable) -> void:
 	EventBus.on_mission_completed.connect(refresh.unbind(BalanceCampaign.BUS_ARGS_MISSION_CLOSED))
 	EventBus.on_mission_failed.connect(refresh.unbind(BalanceCampaign.BUS_ARGS_MISSION_CLOSED))
 	EventBus.on_mission_abandoned.connect(refresh.unbind(BalanceCampaign.BUS_ARGS_MISSION_CLOSED))
+	# Job 6: an ending can shut while the player is standing at the dock.
+	EventBus.on_campaign_ending_blocked.connect(
+		refresh.unbind(BalanceCampaign.BUS_ARGS_ENDING_BLOCKED)
+	)
 
 
 ## Disconnect refresh callables from connect_refresh.
@@ -40,6 +44,9 @@ static func disconnect_refresh(refresh: Callable) -> void:
 	)
 	_safe_disconnect(
 		EventBus.on_mission_abandoned, refresh.unbind(BalanceCampaign.BUS_ARGS_MISSION_CLOSED)
+	)
+	_safe_disconnect(
+		EventBus.on_campaign_ending_blocked, refresh.unbind(BalanceCampaign.BUS_ARGS_ENDING_BLOCKED)
 	)
 
 

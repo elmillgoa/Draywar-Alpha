@@ -169,6 +169,10 @@ func _refresh() -> void:
 		elif status == BalanceCampaign.JOURNAL_STATUS_OPEN:
 			status_label = BalanceCampaign.JOURNAL_SECTION_OPEN
 			color = BalanceUi.TITLE_COLOR
+		elif status == BalanceCampaign.JOURNAL_STATUS_CLOSED:
+			# Job 6: its own word and colour. Grey "Locked" means "not yet".
+			status_label = BalanceCampaign.JOURNAL_SECTION_CLOSED
+			color = BalanceUi.FONT_COLOR_CLOSED
 		var head: Label = Label.new()
 		head.add_theme_color_override("font_color", color)
 		head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

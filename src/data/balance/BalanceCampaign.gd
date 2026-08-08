@@ -50,6 +50,25 @@ const JOURNAL_KEY_SORT: StringName = &"sort_index"
 const JOURNAL_STATUS_OPEN: StringName = &"open"
 const JOURNAL_STATUS_DONE: StringName = &"done"
 const JOURNAL_STATUS_LOCKED: StringName = &"locked"
+## Job 6 phase 2: an ending that can never be reached again. "Locked" means
+## "not yet" everywhere else in that list, so a dead ending needs its own word.
+const JOURNAL_STATUS_CLOSED: StringName = &"closed"
+
+# --- Ending reachability (Job 6 phase 2) ------------------------------------
+
+## Decision: Draywar Review/DECISION_campaign-dead-end.md — Elliot, 2026-08-07.
+## The campaign may dead-end; the game says so at the moment it happens and
+## tells a recoverable grind apart from a genuinely finished career.
+## At least one ignition route is offerable right now.
+const ENDING_GRADE_OPEN: StringName = &"open"
+## Both routes shut, but the standing they need can still be earned back.
+const ENDING_GRADE_STALLED: StringName = &"stalled"
+## Both routes shut and no live mechanism can raise the standing that shut them.
+const ENDING_GRADE_CLOSED: StringName = &"closed"
+
+const ENDING_SEVERITY_OPEN: int = 0
+const ENDING_SEVERITY_STALLED: int = 1
+const ENDING_SEVERITY_CLOSED: int = 2
 
 # --- Campaign flags (content sets_flags / requires_flags) -------------------
 
@@ -91,6 +110,7 @@ const BUS_ARGS_SPINE_COMPLETED: int = 1
 const BUS_ARGS_ACT_CHANGED: int = 1
 const BUS_ARGS_MISSION_ACCEPTED: int = 2
 const BUS_ARGS_MISSION_CLOSED: int = 3
+const BUS_ARGS_ENDING_BLOCKED: int = 2
 
 # --- UI canvas / layout -----------------------------------------------------
 
@@ -113,6 +133,7 @@ const JOURNAL_ACT_NONE: String = "—"
 const JOURNAL_SECTION_OPEN: String = "Open"
 const JOURNAL_SECTION_DONE: String = "Done"
 const JOURNAL_SECTION_LOCKED: String = "Locked"
+const JOURNAL_SECTION_CLOSED: String = "Closed for good"
 const JOURNAL_LINE_FORMAT: String = "%s — %s"
 const JOURNAL_EMPTY: String = "No story work yet."
 
@@ -130,6 +151,25 @@ const STATION_STORY_NEED_STANDOFF: String = (
 )
 const STATION_STORY_BUSY: String = "Finish or abandon the active job first"
 const STATION_STORY_NONE: String = "No story work at this dock"
+
+# --- Ending block copy (Job 6 phase 2) --------------------------------------
+
+## Both ignition routes shut, standing still climbable. `%s` is the needs list.
+const ENDING_STALLED_FORMAT: String = (
+	"Both endings are shut: %s. "
+	+ "That standing can still be earned back — this is a grind, not the end."
+)
+## Both routes shut and nothing left can raise the standing. `%s` is the list.
+const ENDING_CLOSED_FORMAT: String = (
+	"Both endings are closed for good: %s. "
+	+ "No dock, ally or rival left in the sector can move that standing."
+)
+## One requirement: entity display name, tier needed, tier held now.
+const ENDING_NEED_TIER_FORMAT: String = "%s must be %s or better (now %s)"
+## The either-backer requirement: joined backer names, tier needed.
+const ENDING_NEED_BACKING_FORMAT: String = "or %s must be %s"
+const ENDING_NEED_JOIN: String = ", "
+const ENDING_BACKING_JOIN: String = " / "
 
 const PAUSE_JOURNAL: String = "Journal"
 
@@ -154,6 +194,16 @@ static func act_display_name(act: int) -> String:
 	if act == ACT_III:
 		return ACT_DISPLAY_III
 	return JOURNAL_ACT_NONE
+
+
+## How bad an ending grade is. Higher is worse; used to announce only on the
+## edge where the verdict gets worse, never on every standing change.
+static func ending_grade_severity(grade: StringName) -> int:
+	if grade == ENDING_GRADE_CLOSED:
+		return ENDING_SEVERITY_CLOSED
+	if grade == ENDING_GRADE_STALLED:
+		return ENDING_SEVERITY_STALLED
+	return ENDING_SEVERITY_OPEN
 
 
 ## True when flag name is a lane-choice flag.

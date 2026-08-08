@@ -9,6 +9,8 @@ extends Node
 ## is_spine; they use MissionService (one active mission). Standing writes only
 ## via StandingService (Holding claim override + owner standing).
 
+const EndingStatus = preload("res://src/systems/campaign/CampaignEndingStatus.gd")
+
 var _act: int = BalanceCampaign.ACT_I
 ## flag name string → true
 var _flags: Dictionary = {}
@@ -16,6 +18,9 @@ var _flags: Dictionary = {}
 var _completed: Dictionary = {}
 ## Holding progress (S8): station_id, claimed, ignited, price_paid, prior_controller.
 var _holding: Dictionary = {}
+## Last announced ending verdict (Job 6 phase 2). Edge memory only — the live
+## answer is always recomputed by ending_grade(); nothing here is saved.
+var _ending_grade: StringName = BalanceCampaign.ENDING_GRADE_OPEN
 
 
 func _ready() -> void:
@@ -24,6 +29,8 @@ func _ready() -> void:
 	EventBus.on_mission_completed.connect(_on_mission_completed)
 	EventBus.on_spine_accept_requested.connect(_on_spine_accept_requested)
 	EventBus.on_holding_purchase_requested.connect(_on_holding_purchase_requested)
+	EventBus.on_entity_standing_changed.connect(_on_entity_standing_changed)
+	EventBus.on_person_closed.connect(_on_person_closed)
 
 
 func _exit_tree() -> void:
@@ -31,6 +38,8 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_mission_completed, _on_mission_completed)
 	_disconnect(EventBus.on_spine_accept_requested, _on_spine_accept_requested)
 	_disconnect(EventBus.on_holding_purchase_requested, _on_holding_purchase_requested)
+	_disconnect(EventBus.on_entity_standing_changed, _on_entity_standing_changed)
+	_disconnect(EventBus.on_person_closed, _on_person_closed)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -50,6 +59,19 @@ func _on_mission_completed(template_id: StringName, _entity_id: StringName, _del
 	_handle_spine_complete(template_id)
 
 
+## Job 6 phase 2: the moment a standing change lands is the moment an ending
+## can shut, so the verdict is recomputed here rather than at the dock menu.
+func _on_entity_standing_changed(
+	_entity_id: StringName, _old_value: float, _new_value: float, _tier: StringName
+) -> void:
+	_refresh_ending_grade(true)
+
+
+## Closing a recovery contact can turn a climbable dead end into a dead one.
+func _on_person_closed(_person_id: StringName, _reason: StringName) -> void:
+	_refresh_ending_grade(true)
+
+
 # --- Public API -------------------------------------------------------------
 
 
@@ -60,6 +82,7 @@ func reset() -> void:
 	_flags.clear()
 	_completed.clear()
 	_holding.clear()
+	_ending_grade = BalanceCampaign.ENDING_GRADE_OPEN
 	_set_flag_internal(BalanceCampaign.FLAG_ACT1_STARTED, false)
 
 
@@ -111,6 +134,8 @@ func apply_section(raw: Variant) -> void:
 			StandingService.set_station_controller_override(
 				station_id, BalanceHolding.ENTITY_PLAYER_HOLDING
 			)
+	# Seed the edge detector silently: a loaded career is not a fresh closure.
+	_refresh_ending_grade(false)
 
 
 func current_act() -> int:
@@ -210,6 +235,7 @@ func try_purchase_holding(station_id: StringName) -> bool:
 		BalanceHolding.ENTITY_PLAYER_HOLDING, BalanceHolding.OWNER_STANDING
 	)
 	EventBus.on_holding_claimed.emit(station_id, price)
+	_refresh_ending_grade(true)
 	return true
 
 
@@ -245,6 +271,21 @@ func celebration_line() -> String:
 	if prior_standing >= BalanceHolding.EPITAPH_PEACEFUL_STANDING_MIN:
 		return BalanceHolding.EPITAPH_PEACEFUL_FORMAT % [station_name, prior_name]
 	return BalanceHolding.EPITAPH_CONTESTED_FORMAT % [station_name, prior_name]
+
+
+## Job 6 phase 2: is an Act III ending still reachable?
+## `open` — at least one ignition route is offerable on standing right now.
+## `stalled` — both shut, but the standing they need can still be earned back.
+## `closed` — both shut and nothing left in the game can raise that standing.
+func ending_grade() -> StringName:
+	return _as_name(
+		_ending_status().get(EndingStatus.RESULT_KEY_GRADE, BalanceCampaign.ENDING_GRADE_OPEN)
+	)
+
+
+## Player-facing sentence naming what is shutting the ending. Empty when open.
+func ending_block_line() -> String:
+	return str(_ending_status().get(EndingStatus.RESULT_KEY_LINE, ""))
 
 
 ## Content controller at claim time (Station.controller_entity_id).
@@ -295,9 +336,11 @@ func try_accept_spine(template_id: StringName) -> bool:
 	return mission.call(&"accept", template_id) == true
 
 
-## Journal rows for UI: title, blurb, status open/done/locked.
+## Journal rows for UI: title, blurb, status open/done/locked/closed.
+## `closed` is only ever an ignition beat that can never be reached again.
 func journal_lines() -> Array[Dictionary]:
 	var lines: Array[Dictionary] = []
+	var closed_ids: Array[StringName] = _closed_ending_ids()
 	for id: StringName in _all_spine_ids_sorted():
 		var template: ContractType = _spine_template(id)
 		if template == null:
@@ -307,6 +350,8 @@ func journal_lines() -> Array[Dictionary]:
 			status = BalanceCampaign.JOURNAL_STATUS_DONE
 		elif _is_available_anywhere(id):
 			status = BalanceCampaign.JOURNAL_STATUS_OPEN
+		elif closed_ids.has(id):
+			status = BalanceCampaign.JOURNAL_STATUS_CLOSED
 		(
 			lines
 			. append(
@@ -364,6 +409,7 @@ func _handle_spine_complete(template_id: StringName) -> void:
 	EventBus.on_spine_completed.emit(template_id)
 	_maybe_advance_act()
 	_maybe_ignite_holding()
+	_refresh_ending_grade(true)
 
 
 func _maybe_ignite_holding() -> void:
@@ -449,12 +495,17 @@ func _first_locked_candidate(station_id: StringName) -> ContractType:
 
 func _locked_reason_for(best: ContractType) -> String:
 	var reason: String = BalanceCampaign.STATION_STORY_LOCKED_FORMAT % best.display_name
+	# Job 6 phase 2: at the Holding dock the vague "need better standing with the
+	# offerer" is replaced by the line that names every faction actually short.
+	var ending_line: String = _ending_hint_for(best)
 	if not _flags_ok(best):
 		reason = BalanceCampaign.STATION_STORY_NEED_FLAGS
 	elif not _lane_prerequisite_ok(best):
 		reason = BalanceCampaign.STATION_STORY_NEED_LANE
 	elif not _standing_ok(best):
 		reason = BalanceCampaign.STATION_STORY_NEED_STANDING
+		if not ending_line.is_empty():
+			reason = ending_line
 	elif not _debt_ok(best):
 		if best.requires_debt_clear:
 			reason = BalanceCampaign.STATION_STORY_NEED_DEBT_CLEAR
@@ -464,9 +515,21 @@ func _locked_reason_for(best: ContractType) -> String:
 		reason = BalanceCampaign.STATION_STORY_NEED_HOLDING_MATCH
 	elif not _ignition_standoff_ok(best):
 		reason = BalanceCampaign.STATION_STORY_NEED_STANDOFF
+		if not ending_line.is_empty():
+			reason = ending_line
 	elif _mission_busy():
 		reason = BalanceCampaign.STATION_STORY_BUSY
 	return reason
+
+
+## Detailed ending line for an ignition beat at the player's own Holding dock,
+## or empty when this template is not the one carrying that problem.
+func _ending_hint_for(template: ContractType) -> String:
+	if not BalanceHolding.is_ignition_spine(template.id):
+		return ""
+	if not is_holding_claimed() or claimed_station_id() != template.offer_station_id:
+		return ""
+	return ending_block_line()
 
 
 func _is_available_anywhere(template_id: StringName) -> bool:
@@ -511,10 +574,7 @@ func _has_any_lane() -> bool:
 
 
 func _standing_ok(template: ContractType) -> bool:
-	if template.min_entity_standing <= BalanceCampaign.STANDING_NO_FLOOR:
-		return true
-	var standing: float = StandingService.get_entity_standing(template.offering_entity_id)
-	return standing >= template.min_entity_standing
+	return EndingStatus.offerer_ok(template)
 
 
 ## requires_debt: need owed > 0. requires_debt_clear: need owed == 0.
@@ -537,30 +597,73 @@ func _holding_station_ok(template: ContractType) -> bool:
 
 
 ## Standings resolve the standoff: papers if prior Neutral+, force if contested + backing.
+## The rule itself lives in CampaignEndingStatus so the gate and the message
+## that explains the gate can never drift apart (docs/traps.md #29).
 func _ignition_standoff_ok(template: ContractType) -> bool:
 	var template_id: StringName = template.id
 	if not BalanceHolding.is_ignition_spine(template_id):
 		return true
 	if not is_holding_claimed():
 		return false
-	var prior_id: StringName = _as_name(_holding.get(BalanceHolding.KEY_PRIOR_CONTROLLER, &""))
-	var prior_standing: float = StandingService.get_entity_standing(prior_id)
-	var papers_ok: bool = prior_standing >= BalanceHolding.STANDOFF_PAPERS_STANDING_MIN
-	if BalanceHolding.is_papers_ignition(template_id):
-		return papers_ok
-	if BalanceHolding.is_force_ignition(template_id):
-		if papers_ok:
-			return false
-		return _has_standoff_backing()
-	return true
+	return EndingStatus.standoff_ok(_prior_controller_id(), template_id)
 
 
-func _has_standoff_backing() -> bool:
-	for entity_id: StringName in BalanceHolding.STANDOFF_BACKING_ENTITY_IDS:
-		var standing: float = StandingService.get_entity_standing(entity_id)
-		if standing >= BalanceHolding.STANDOFF_BACKING_STANDING_MIN:
-			return true
-	return false
+func _prior_controller_id() -> StringName:
+	return _as_name(_holding.get(BalanceHolding.KEY_PRIOR_CONTROLLER, &""))
+
+
+## Live ending verdict (grade + line). Open whenever there is nothing to judge.
+func _ending_status() -> Dictionary:
+	if not is_holding_claimed() or is_holding_ignited():
+		return {
+			EndingStatus.RESULT_KEY_GRADE: BalanceCampaign.ENDING_GRADE_OPEN,
+			EndingStatus.RESULT_KEY_LINE: "",
+		}
+	return EndingStatus.evaluate(
+		_prior_controller_id(), _ignition_templates_at(claimed_station_id())
+	)
+
+
+## Unfinished ignition beats offered at this dock (papers and force).
+func _ignition_templates_at(station_id: StringName) -> Array[ContractType]:
+	var out: Array[ContractType] = []
+	if String(station_id).is_empty():
+		return out
+	for id: StringName in _all_spine_ids_sorted():
+		if not BalanceHolding.is_ignition_spine(id) or is_spine_completed(id):
+			continue
+		var template: ContractType = _spine_template(id)
+		if template == null or template.offer_station_id != station_id:
+			continue
+		out.append(template)
+	return out
+
+
+## Ignition beats the journal must mark permanently closed (never "Locked").
+func _closed_ending_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	if ending_grade() != BalanceCampaign.ENDING_GRADE_CLOSED:
+		return out
+	for template: ContractType in _ignition_templates_at(claimed_station_id()):
+		out.append(template.id)
+	return out
+
+
+## Recompute the ending verdict, announcing only when it gets worse. A message
+## per standing change would be noise; the edge is the moment worth telling.
+func _refresh_ending_grade(announce: bool) -> void:
+	var status: Dictionary = _ending_status()
+	var grade: StringName = _as_name(
+		status.get(EndingStatus.RESULT_KEY_GRADE, BalanceCampaign.ENDING_GRADE_OPEN)
+	)
+	var line: String = str(status.get(EndingStatus.RESULT_KEY_LINE, ""))
+	var worse: bool = (
+		BalanceCampaign.ending_grade_severity(grade)
+		> BalanceCampaign.ending_grade_severity(_ending_grade)
+	)
+	_ending_grade = grade
+	if announce and worse and not line.is_empty():
+		EventBus.on_campaign_ending_blocked.emit(grade, line)
 
 
 func _debt_is_clear() -> bool:

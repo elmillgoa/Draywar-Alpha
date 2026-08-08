@@ -81,6 +81,7 @@ func _ready() -> void:
 	EventBus.on_kill_attributed.connect(_on_kill_attributed)
 	EventBus.on_kill_unattributed.connect(_on_kill_unattributed)
 	EventBus.on_market_news.connect(_on_market_news_toast)
+	EventBus.on_campaign_ending_blocked.connect(_on_campaign_ending_blocked)
 	EventBus.on_incident_prompt.connect(_on_incident_prompt)
 	EventBus.on_incident_resolved.connect(_on_incident_resolved)
 	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
@@ -114,6 +115,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_kill_attributed, _on_kill_attributed)
 	_disconnect(EventBus.on_kill_unattributed, _on_kill_unattributed)
 	_disconnect(EventBus.on_market_news, _on_market_news_toast)
+	_disconnect(EventBus.on_campaign_ending_blocked, _on_campaign_ending_blocked)
 	_disconnect(EventBus.on_incident_prompt, _on_incident_prompt)
 	_disconnect(EventBus.on_incident_resolved, _on_incident_resolved)
 	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
@@ -756,6 +758,14 @@ func _show_kill_toast(line: String) -> void:
 		return
 	_kill_toast_label.text = line
 	_kill_toast_left = BalanceStanding.HUD_KILL_TOAST_SECONDS
+
+
+## Job 6: the last route to an ending just shut. Unlike news, this is NOT
+## suppressed while docked — it is the one message the player must not miss.
+func _on_campaign_ending_blocked(_grade: StringName, line: String) -> void:
+	if line.is_empty():
+		return
+	_show_kill_toast(line)
 
 
 ## S3b: sector news toast while free-flying (same slot as kill toast).

@@ -19,6 +19,6 @@ id = &"entity_reach_authority"
 display_name = "Reach Authority"
 relationship_links = Array[ExtResource("2")]([SubResource("Link_0"), SubResource("Link_1")])
 reach_system_ids = Array[StringName]([&"system_alpha", &"system_delta"])
-reach_station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard", &"station_alpha_customs", &"station_delta_port", &"station_delta_yard"])
+reach_station_ids = Array[StringName]([&"station_alpha_port", &"station_alpha_yard", &"station_alpha_customs", &"station_delta_port"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0

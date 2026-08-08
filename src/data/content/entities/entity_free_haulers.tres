@@ -23,6 +23,6 @@ id = &"entity_free_haulers"
 display_name = "Free Haulers"
 relationship_links = Array[ExtResource("2")]([SubResource("Link_0"), SubResource("Link_1"), SubResource("Link_2")])
 reach_system_ids = Array[StringName]([])
-reach_station_ids = Array[StringName]([])
+reach_station_ids = Array[StringName]([&"station_delta_yard"])
 default_player_standing = 0.0
 dock_refusal_threshold = -50.0

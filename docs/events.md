@@ -1517,3 +1517,21 @@ Ignition crisis spine complete; campaign complete; sandbox continues.
 
 **Emitted by** `CampaignService` after `flag_campaign_complete`.
 **Listened to by** `StationHoldingUi` (via StationMenu refresh).
+
+### `on_campaign_ending_blocked(grade: StringName, line: String)`
+
+The last route to an Act III ending just shut, announced at the instant the
+standing change landed rather than the next time the player opens a dock menu.
+Fires only on the edge where the verdict gets **worse** (open → stalled →
+closed), never on every standing point lost, and never on a reload of an
+already-blocked career.
+
+| Parameter | Type | Meaning |
+|---|---|---|
+| `grade` | `StringName` | `stalled` (the standing can still be earned back) or `closed` (nothing left in the game can raise it). |
+| `line` | `String` | Ready-to-show sentence naming every faction that is short and by how much. |
+
+**Emitted by** `CampaignService` (Job 6 phase 2 — Elliot's decision of
+2026-08-07 that the dead end may stand, but must be legible).
+**Listened to by** `FlightHUD` (toast, not suppressed while docked) and
+`StationCampaignUi` (Story-section refresh at the dock).
