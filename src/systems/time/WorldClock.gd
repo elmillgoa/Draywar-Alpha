@@ -23,7 +23,9 @@ var _bulk_depth: int = 0
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	# REPAIR-5: must stop when the SceneTree is paused (fuel/upkeep/market).
+	# Was ALWAYS, so world time kept advancing under the pause menu.
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	set_process(true)
 	ServiceRegistry.register_resettable(reset)
 	register_category_subscriber(BalanceWorldClock.CATEGORY_WALLET_UPKEEP, _tick_wallet_upkeep)

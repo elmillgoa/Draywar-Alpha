@@ -51,6 +51,14 @@ var _in_play: bool = false
 ## True while create / annexation are open — no tip, dock, or undock yet.
 var _opening_in_progress: bool = false
 var _pause_open: bool = false
+## True only when pause was opened by focus-loss auto-pause. Intentional Escape
+## pause must survive alt-tab; focus-in resumes only what focus-out opened, and
+## never while Options / sector map / sheet / journal is still up.
+var _pause_from_focus_loss: bool = false
+## True while the window does not have focus. Freezing the sim (#47) and opening
+## the pause menu (#58 forbids it at a berth) are two different things, so they
+## get two different flags — `_apply_tree_paused` freezes for either one.
+var _focus_freeze: bool = false
 var _console_open: bool = false
 var _jump_busy: bool = false
 ## True only while a career is genuinely playable. Boot, load and teardown all
@@ -64,6 +72,10 @@ var _dead: bool = false
 
 
 func _ready() -> void:
+	# REPAIR-5: Main stays live while the tree is paused so input, focus
+	# notifications, and session menus still run. Sim children are demoted to
+	# PAUSABLE so they do not inherit ALWAYS.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	print(BOOT_BANNER)
 	FlightInput.ensure_actions()
 	# REPAIR-24: release exports never create or start the debug console.
@@ -73,20 +85,25 @@ func _ready() -> void:
 		# Children declared in Main.tscn are ready before this runs, so save and
 		# time (autoload) commands are listening when the console asks who is out.
 		_console.start()
+	_mark_scene_sim_pausable()
 	_wire_session_bus()
 	_create_session_ui()
 	_show_main_menu()
 
 
+func _notification(what: int) -> void:
+	# REPAIR-5: engine focus constants — tests must drive these via
+	# notification(...), not by calling the handlers directly.
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+			_on_application_focus_out()
+		NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_WM_WINDOW_FOCUS_IN:
+			_on_application_focus_in()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(FlightInput.ACTION_SECTOR_MAP):
-		if not _in_play or _console_open or _jump_busy or _opening_in_progress or _dead:
-			return
-		if _sector_map != null and _sector_map.visible:
-			EventBus.on_sector_map_close_requested.emit()
-		else:
-			EventBus.on_sector_map_open_requested.emit()
-		get_viewport().set_input_as_handled()
+		_try_toggle_sector_map()
 		return
 	if not event.is_action_pressed(FlightInput.ACTION_PAUSE):
 		return
@@ -97,7 +114,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _try_close_play_overlay():
 		get_viewport().set_input_as_handled()
 		return
-	_set_pause(not _pause_open)
+	# #58's refusal lives inside _set_pause, not here. This path does not repeat
+	# it: a second copy is exactly what regressed the finding once already.
+	if _set_pause(not _pause_open):
+		get_viewport().set_input_as_handled()
+
+
+## Sector map hotkey. No-op behind pause/Options (#57) or when not in flight.
+func _try_toggle_sector_map() -> void:
+	if not _in_play or _console_open or _jump_busy or _opening_in_progress or _dead:
+		return
+	if _flight_overlay_blocks_actions():
+		return
+	if _sector_map != null and _sector_map.visible:
+		EventBus.on_sector_map_close_requested.emit()
+	else:
+		EventBus.on_sector_map_open_requested.emit()
 	get_viewport().set_input_as_handled()
 
 
@@ -145,42 +177,52 @@ func _create_session_ui() -> void:
 	_main_menu = MainMenu.new()
 	_main_menu.name = "MainMenu"
 	add_child(_main_menu)
+	_mark_session_overlay_always(_main_menu)
 
 	_pause_menu = PauseMenu.new()
 	_pause_menu.name = "PauseMenu"
 	add_child(_pause_menu)
+	_mark_session_overlay_always(_pause_menu)
 
 	_options_menu = OptionsMenu.new()
 	_options_menu.name = "OptionsMenu"
 	add_child(_options_menu)
+	_mark_session_overlay_always(_options_menu)
 
 	_captain_sheet = CaptainSheet.new()
 	_captain_sheet.name = "CaptainSheet"
 	add_child(_captain_sheet)
+	_mark_session_overlay_always(_captain_sheet)
 
 	_campaign_journal = CampaignJournal.new()
 	_campaign_journal.name = "CampaignJournal"
 	add_child(_campaign_journal)
+	_mark_session_overlay_always(_campaign_journal)
 
 	_sector_map = SectorMapPanel.new()
 	_sector_map.name = "SectorMapPanel"
 	add_child(_sector_map)
+	_mark_session_overlay_always(_sector_map)
 
 	_new_game_tip = NewGameTip.new()
 	_new_game_tip.name = "NewGameTip"
 	add_child(_new_game_tip)
+	_mark_session_overlay_always(_new_game_tip)
 
 	_life_path_create = LifePathCreate.new()
 	_life_path_create.name = "LifePathCreate"
 	add_child(_life_path_create)
+	_mark_session_overlay_always(_life_path_create)
 
 	_opening_annexation = OpeningAnnexation.new()
 	_opening_annexation.name = "OpeningAnnexation"
 	add_child(_opening_annexation)
+	_mark_session_overlay_always(_opening_annexation)
 
 	_loss_screen = LossScreen.new()
 	_loss_screen.name = "LossScreen"
 	add_child(_loss_screen)
+	_mark_session_overlay_always(_loss_screen)
 
 	_raise_debug_console()
 
@@ -207,22 +249,148 @@ func _on_console_visibility_changed(open: bool) -> void:
 
 
 func _on_pause_changed_bus(open: bool) -> void:
-	# PauseMenu Resume emits this; keep Main flag in sync.
+	# PauseMenu Resume emits this; keep Main flag + SceneTree pause in sync.
+	# The bus is the third way into `_pause_open`, so it asks the same question
+	# `_set_pause` does — no route to a paused docked session skips #58.
+	#
+	# What this does not cover, and cannot from here: PauseMenu sets its own
+	# `visible` off this same signal and connects after Main, so an outside
+	# emitter of true would raise the panel before this line could refuse it.
+	# Nothing emits true from outside Main today, so there is no live path;
+	# it is filed as a proposed finding rather than fixed inside this brief.
+	if open and not _may_open_pause_menu():
+		return
 	_pause_open = open
+	if not open:
+		_pause_from_focus_loss = false
+	_apply_tree_paused()
 	if not open and _captain_sheet != null:
 		_captain_sheet.visible = false
 
 
-func _set_pause(open: bool) -> void:
+## The one door the pause menu opens and closes by. Returns true when the state
+## actually changed, so a caller can tell a refusal from a no-op.
+##
+## #58 is enforced HERE and nowhere else, and that placement is the fix rather
+## than an implementation detail. The rule was previously written into each
+## caller: the Escape path had it, and when the focus-loss handler was rewritten
+## its copy was not carried over, so alt-tabbing at a berth re-opened the menu
+## the Escape key had just been taught to refuse. A rule that has to be repeated
+## at every call site is a rule that is one new caller away from being broken.
+func _set_pause(open: bool) -> bool:
 	if _pause_open == open:
-		return
+		return false
+	if open and not _may_open_pause_menu():
+		return false
 	_pause_open = open
+	if not open:
+		_pause_from_focus_loss = false
+	_apply_tree_paused()
 	EventBus.on_pause_changed.emit(open)
 	if not open and _captain_sheet != null:
 		_captain_sheet.visible = false
 	if not open and _sector_map != null and _sector_map.visible:
 		# Keep map open when resuming from pause if it was opened there — OK.
 		pass
+	return true
+
+
+## #58: the pause menu carries Load, and loading out of a berth is the broken
+## path, so the menu may not open while docked — by any route, present or future.
+func _may_open_pause_menu() -> bool:
+	return not _is_session_docked()
+
+
+## REPAIR-5: SceneTree pause is the real freeze. UI flag alone is not enough.
+## Either the player's pause or a lost window freezes it; both must be clear
+## before the sim runs again.
+func _apply_tree_paused() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	tree.paused = _pause_open or _focus_freeze
+
+
+## Focus lost while playing. Two separate things happen, and keeping them
+## separate is what lets #47 and #58 both hold at once:
+##
+## - the sim freezes, always, berth or open space (#47)
+## - the pause menu opens only if `_set_pause` allows it, which it does not
+##   while docked (#58) — so alt-tabbing at a berth freezes behind the station
+##   menu and puts nothing on top of it
+func _on_application_focus_out() -> void:
+	if not _in_play or _console_open or _jump_busy or _opening_in_progress or _dead:
+		return
+	_focus_freeze = true
+	_apply_tree_paused()
+	if _pause_open:
+		# Already paused (Escape, menu) — do not claim ownership for focus-in.
+		return
+	if _set_pause(true):
+		_pause_from_focus_loss = true
+
+
+## Focus regained. The freeze belongs to the window, so it always lifts; the
+## pause menu only closes if focus-loss is what opened it, and never while a
+## session overlay other than the pause menu is still on screen.
+func _on_application_focus_in() -> void:
+	_focus_freeze = false
+	if _pause_from_focus_loss and not _session_overlay_blocks_focus_resume():
+		_pause_from_focus_loss = false
+		_set_pause(false)
+	_apply_tree_paused()
+
+
+## Options / map / sheet / journal still up → leave the sim paused.
+func _session_overlay_blocks_focus_resume() -> bool:
+	if _options_menu != null and _options_menu.visible:
+		return true
+	if _sector_map != null and _sector_map.visible:
+		return true
+	if _captain_sheet != null and _captain_sheet.visible:
+		return true
+	if _campaign_journal != null and _campaign_journal.visible:
+		return true
+	return false
+
+
+## Pause or Options blocks flight hotkeys (sector map).
+func _flight_overlay_blocks_actions() -> bool:
+	if _pause_open:
+		return true
+	if _options_menu != null and _options_menu.visible:
+		return true
+	return false
+
+
+## True while the player is in a berth (controller docked state).
+func _is_session_docked() -> bool:
+	if _docking == null:
+		return false
+	return _docking.controller().is_docked()
+
+
+## Session menus must keep processing while the tree is paused.
+func _mark_session_overlay_always(node: Node) -> void:
+	if node == null:
+		return
+	node.process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+## Sim services / world under Main: demote from ALWAYS inherit to PAUSABLE so
+## get_tree().paused actually freezes hostiles, fuel, hull, and upkeep.
+func _mark_sim_pausable(node: Node) -> void:
+	if node == null:
+		return
+	node.process_mode = Node.PROCESS_MODE_PAUSABLE
+
+
+## Scene-declared services in Main.tscn (not DebugConsole — that stays ALWAYS).
+func _mark_scene_sim_pausable() -> void:
+	_mark_sim_pausable(get_node_or_null("SaveConsoleCommands"))
+	_mark_sim_pausable(get_node_or_null("AttributionService"))
+	_mark_sim_pausable(get_node_or_null("MissionService"))
+	_mark_sim_pausable(get_node_or_null("RecoveryService"))
 
 
 ## Arm or disarm everything that must only run against a real, finished session.
@@ -522,56 +690,69 @@ func _reset_career_services() -> void:
 func _boot_play_session() -> void:
 	# UI must exist before SystemWorld.build() emits on_system_entered.
 	# Wallet/fuel/hull after HUD so seed emissions for credits/fuel/condition hit the HUD.
+	# REPAIR-5: every sim node under ALWAYS Main must be PAUSABLE or hostiles /
+	# fuel / hull keep running while the tree is paused.
 	_hud = FlightHUD.new()
 	_hud.name = "FlightHUD"
 	add_child(_hud)
+	_mark_sim_pausable(_hud)
 
 	_wallet = WalletService.new()
 	_wallet.name = "WalletService"
 	add_child(_wallet)
+	_mark_sim_pausable(_wallet)
 
 	_fuel = FuelService.new()
 	_fuel.name = "FuelService"
 	add_child(_fuel)
+	_mark_sim_pausable(_fuel)
 
 	_hull = HullConditionService.new()
 	_hull.name = "HullConditionService"
 	add_child(_hull)
+	_mark_sim_pausable(_hull)
 
 	_money_log = MoneyLog.new()
 	_money_log.name = "MoneyLog"
 	add_child(_money_log)
+	_mark_sim_pausable(_money_log)
 
 	_cargo = CargoService.new()
 	_cargo.name = "CargoService"
 	add_child(_cargo)
+	_mark_sim_pausable(_cargo)
 
 	_ship_service = ShipService.new()
 	_ship_service.name = "ShipService"
 	add_child(_ship_service)
+	_mark_sim_pausable(_ship_service)
 	_ship_service.reset()
 
 	# S6: ops after wallet/cargo/ship (hire spends, warehouse uses hold).
 	_operation = OperationService.new()
 	_operation.name = "OperationService"
 	add_child(_operation)
+	_mark_sim_pausable(_operation)
 	_operation.reset()
 
 	# S7: campaign after ops; spine uses MissionService (created in scene / later).
 	_campaign = CampaignService.new()
 	_campaign.name = "CampaignService"
 	add_child(_campaign)
+	_mark_sim_pausable(_campaign)
 	_campaign.reset()
 
 	_station_menu = StationMenu.new()
 	_station_menu.name = "StationMenu"
 	add_child(_station_menu)
+	_mark_sim_pausable(_station_menu)
 
 	_world = SystemWorld.new()
 	_world.name = "SystemWorld"
 	_world.add_to_group(BalanceSession.GROUP_SYSTEM_WORLD)
 	_world.system_id = BalanceFlight.PLAYABLE_SYSTEM_ID
 	add_child(_world)
+	_mark_sim_pausable(_world)
 	_world.build()
 
 	_ship = PlayerShip.new()
@@ -579,22 +760,26 @@ func _boot_play_session() -> void:
 	_ship.hull_id = _ship_service.active_hull_id()
 	_ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
 	_world.add_child(_ship)
+	_mark_sim_pausable(_ship)
 	_ship.global_position = _world.player_spawn_position()
 
 	_camera = ChaseCamera.new()
 	_camera.name = "ChaseCamera"
 	_world.add_child(_camera)
+	_mark_sim_pausable(_camera)
 	_camera.set_target(_ship)
 	_ship.set_aim_camera(_camera)
 
 	_docking = DockingService.new()
 	_docking.name = "DockingService"
 	add_child(_docking)
+	_mark_sim_pausable(_docking)
 	_docking.setup(_ship, _world.station_positions())
 
 	_gate_travel = GateTravelService.new()
 	_gate_travel.name = "GateTravelService"
 	add_child(_gate_travel)
+	_mark_sim_pausable(_gate_travel)
 	_gate_travel.setup(_ship, _world.gate_positions(), _docking)
 
 	# Job 10: the way out of a dry tank, and the thing that gives every other
@@ -603,11 +788,13 @@ func _boot_play_session() -> void:
 	_rescue = RescueService.new()
 	_rescue.name = "RescueService"
 	add_child(_rescue)
+	_mark_sim_pausable(_rescue)
 	_rescue.setup(_ship, _docking, _world.station_positions())
 
 	_autosave = AutosaveService.new()
 	_autosave.name = "AutosaveService"
 	add_child(_autosave)
+	_mark_sim_pausable(_autosave)
 
 	if not EventBus.on_jump_requested.is_connected(_on_jump_requested):
 		EventBus.on_jump_requested.connect(_on_jump_requested)

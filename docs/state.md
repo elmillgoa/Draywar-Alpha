@@ -52,6 +52,63 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (REPAIR-5 attempt 3 — pause freezes the sim, and alt-tab pauses
+  without re-opening a docked pause menu)** — Audit findings **#46** (pause does
+  not pause), **#47** (no auto-pause on focus loss), **#57** (flight actions fire
+  behind Options), **#58** (pause reachable while docked). Pause only flipped a
+  UI flag — no `SceneTree.paused` — so hostiles, fuel, hull and upkeep ran on
+  behind the menu; nothing handled focus loss; M opened the sector map behind
+  Options; Escape opened pause at a berth.
+  **Two earlier attempts were rejected, and the second failure is why this entry
+  is worth reading.** Attempt 1 resumed on focus-in for *any* pause, so
+  Escape → alt-tab → back dropped the player into a live fight under an open
+  Options panel; its tests also called the handlers directly, so deleting
+  `_mark_sim_pausable` or `_notification` left the suite green. Attempt 2 fixed
+  both of those and **re-broke #58**: it rewrote the focus-loss handler and did
+  not carry over the docked check, so alt-tabbing at a berth put the pause menu
+  — which has Load on it — over the frozen station menu. Both attempts branched
+  from the same commit, so attempt 2 never saw attempt 1's code; the requirement
+  existed only in prose, and prose is not a test.
+  **Root cause, and what changed because of it:** the "no pause while docked"
+  rule was written into each *caller* of `_set_pause` rather than into
+  `_set_pause` itself. Two callers open a pause; attempt 1 guarded both, attempt
+  2 guarded one. The rule now lives in `_set_pause` via `_may_open_pause_menu`
+  and nowhere else, so no caller — present or added later — can open a docked
+  pause menu. `_set_pause` returns `bool` so a caller can tell a refusal from a
+  no-op, and the bus path `_on_pause_changed_bus` asks the same question.
+  **Freezing and menu-opening are now two different things**, which is what lets
+  #47 and #58 both hold: `_focus_freeze` is set on focus loss and
+  `_apply_tree_paused` freezes for `_pause_open or _focus_freeze`. Alt-tab at a
+  berth therefore **does** freeze the sim and does **not** show a menu.
+  **The rest of the mechanism:** `Main` is `PROCESS_MODE_ALWAYS` so input, focus
+  notifications and session menus keep running while the tree is frozen; sim
+  nodes are demoted to `PROCESS_MODE_PAUSABLE` by `_mark_sim_pausable` at boot;
+  session overlays are `_mark_session_overlay_always`; `WorldClock` went
+  ALWAYS→PAUSABLE; `_notification` routes all four focus constants;
+  `_pause_from_focus_loss` keeps an intentional pause alive across alt-tab and
+  refuses to resume under Options / map / sheet / journal; the sector-map hotkey
+  is gated on `_flight_overlay_blocks_actions` (#57).
+  **No Job 3 dependency** — this refuses a docked pause and changes no load
+  behaviour; `_apply_world_section` untouched.
+  **Tests** (`tests/test_repair5_pause_focus.gd`, 16 tests): drive
+  `main.notification(...)` rather than calling handlers; assert
+  `can_process() == false` on Fuel / Hull / World / Ship / WorldClock **and on a
+  hostile spawned for the purpose** — the start system spawns none of its own, so
+  the previous version's hostile assertions were wrapped in `if hostile != null`
+  and never ran, leaving the headline word of #46 unasserted. #58 is asserted at
+  the door (`_set_pause` direct) and on every route to it (Escape, focus loss,
+  bus), so a fourth route added later cannot pass by being untested. One test
+  walks Main's real child list under a paused tree and fails on any child that
+  keeps processing, because `Main` being ALWAYS makes the demotion **opt-out** —
+  a node added by a later brief inherits ALWAYS and would simulate behind the
+  pause menu with nothing to catch it.
+  **Known and not fixed here, filed as a proposed finding:** `PauseMenu` sets its
+  own `visible` straight off `on_pause_changed` and connects *after* Main, so an
+  outside emitter of `true` would raise the panel while docked even though the
+  session stays unpaused. Nothing in the game emits `true` from outside Main
+  today, so there is no live path — but the panel's visibility is not covered by
+  the guard above, and this entry should not be read as saying it is.
+  Full suite 888/888 (99 scripts), import clean, smoke boot clean.
 - **2026-08-07 (REPAIR-24 — debug console gated to debug builds)** — Audit
   finding **#44**: `ConsoleService` was created and `start()`ed on every boot,
   and `DebugConsole` registered backtick (`debug_console_toggle` /
