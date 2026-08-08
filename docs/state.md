@@ -52,6 +52,19 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-22 — intercept submit reports what was actually taken)** —
+  Audit **#12** at baseline ee17eab5: submitting or ignoring a patrol intercept
+  always wrote `pay_credits = -INTERCEPT_SUBMIT_PAY_LOSS` after
+  `_charge_wallet`, which used `try_spend` (all-or-nothing). A broke player was
+  told they lost the full fee while the wallet often lost nothing. **Fix:**
+  `_charge_wallet` now spends via `add_credits` (partial take, never negative)
+  and returns the credits actually removed; `_resolve_intercept` reports
+  `-charged`. Design choice for this brief: take what they have and report that
+  figure — residual unpaid debt is a separate economy design, not here. Balance
+  constants, standing, save schema, EventBus untouched. **Tests**
+  (`tests/test_repair22_intercept_submit_charge.gd`, 3): broke submit/ignore
+  red-proved (12 cr / 30 fee → reported −30, removed 0), then green (reported
+  −12, wallet 0); funded path still charges full fee. Suite 107/107, 936/936.
 - **2026-08-08 (Job 8 phase 2 — making a captain no longer costs money)** —
   Audit **PT-2** and the pre-career half of **PT-10**: the world clock ran behind
   the character-creation screen and life support billed 1 credit/s of it

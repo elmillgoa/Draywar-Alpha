@@ -505,11 +505,14 @@ func _resolve_distress(offer: Dictionary, choice: StringName, result: Dictionary
 
 func _resolve_intercept(offer: Dictionary, choice: StringName, result: Dictionary) -> Dictionary:
 	if choice == BalanceIncident.CHOICE_IGNORE or choice == BalanceIncident.CHOICE_SUBMIT:
+		# REPAIR-22: charge only what the wallet can cover; report that figure.
+		# try_spend is all-or-nothing and would leave a broke player uncharged
+		# while pay_credits still claimed the full nominal loss.
 		var loss: int = BalanceIncident.INTERCEPT_SUBMIT_PAY_LOSS
-		_charge_wallet(loss)
+		var charged: int = _charge_wallet(loss)
 		result[&"outcome"] = BalanceIncident.STATE_RESOLVED
 		result[&"promoted"] = false
-		result[&"pay_credits"] = -loss
+		result[&"pay_credits"] = -charged
 		return result
 	if choice == BalanceIncident.CHOICE_RESIST or choice == BalanceIncident.CHOICE_HELP:
 		var pay: int = _dict_int(
@@ -795,16 +798,25 @@ func _pay_wallet(amount: int) -> void:
 		wallet.call(&"add_credits", amount)
 
 
-func _charge_wallet(amount: int) -> void:
+## Take up to `amount` from the wallet. Returns credits actually removed
+## (0 when broke / no wallet / non-positive amount). Uses add_credits so a
+## partial balance is taken rather than try_spend's all-or-nothing refuse.
+func _charge_wallet(amount: int) -> int:
+	var charged: int = 0
 	if amount <= 0:
-		return
+		return charged
 	var wallet: Node = _wallet()
 	if wallet == null:
-		return
-	if wallet.has_method(&"try_spend"):
-		wallet.call(&"try_spend", amount)
-	elif wallet.has_method(&"add_credits"):
-		wallet.call(&"add_credits", -amount)
+		return charged
+	if wallet.has_method(&"add_credits"):
+		var applied: Variant = wallet.call(&"add_credits", -amount)
+		var delta: int = _variant_to_int(applied)
+		# add_credits returns the applied delta (negative when spending).
+		if delta < 0:
+			charged = -delta
+	elif wallet.has_method(&"try_spend") and wallet.call(&"try_spend", amount) == true:
+		charged = amount
+	return charged
 
 
 func _variant_to_int(value: Variant) -> int:
