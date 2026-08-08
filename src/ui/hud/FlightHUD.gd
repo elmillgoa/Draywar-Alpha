@@ -865,7 +865,7 @@ func _respond_active_incident(primary: bool) -> void:
 	if String(choice).is_empty():
 		return
 	var incident_id: StringName = _active_incident_id
-	IncidentService.respond(incident_id, choice)
+	EventBus.on_incident_respond_requested.emit(incident_id, choice)
 
 
 func _process(delta: float) -> void:

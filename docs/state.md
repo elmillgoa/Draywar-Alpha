@@ -57,6 +57,41 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-4 — UI/world direct service calls → EventBus)** —
+  Audit baseline ee17eab5: three production paths skipped the bus. Job 12 had
+  already declared `on_incident_respond_requested` and `on_combat_lock_requested`,
+  and kept `on_recovery_offered` for StationMenu. **This brief only wires** — no
+  signal added/removed/renamed in `EventBus.gd` (zero diff lines in that file).
+  **(1)** FlightHUD incident keys emit `on_incident_respond_requested`;
+  IncidentService listens and still runs `respond()` (choice rules unchanged).
+  **(2)** HostileNpc spawn/last-death emit `on_combat_lock_requested`;
+  TimeScale listens and owns the flag. Console still calls `set_combat_lock`
+  (systems layer, not UI/world).
+  **(3)** StationMenu listens to `on_recovery_offered` and no longer queries
+  `has_offer_for_person`. `StationDockQueries.offered_recovery_person` stays as a
+  **sanctioned exception** in `DRAYWAR_CONVENTIONS.md` 2.0 — test helper only, and
+  `test_e4_recovery_jax` still exercises it, which is what makes that reason true.
+  **Two rejected attempts, one root cause, and it is worth writing down.** Replacing
+  a per-refresh **pull** (the query re-derived the answer every time the menu
+  refreshed) with a **push** is only sound if the push fires on every transition
+  that changes the answer. `on_recovery_offered` fired on dock and nowhere else, so
+  the menu could blank its cache and had no way to refill it: finishing a step made
+  the next one unreachable without undocking, and closing any Person hid an
+  unrelated Person's Talk button. Both attempts tried to solve this inside
+  `StationMenu`; the information simply was not on the bus. **The fix is on the
+  emitter.** `RecoveryService` now re-announces on the four things that can change
+  what `has_offer_for_person()` answers — dock, its own transitions, `on_person_closed`,
+  `on_person_standing_changed` — and does it **deferred**, so it always lands after
+  the listeners that blank on the same signal, and after the writes a transition
+  makes following its own emit. The full contract is in `docs/events.md`.
+  Earlier work claimed the emit is safe because `RecoveryService` is an earlier
+  child of `Main` than the menu; `Main.tscn` does not say that and nothing now
+  depends on it.
+  **Tests** (`tests/test_repair4_eventbus_wiring.gd`, 7): the three routes, the
+  first-offer guard, and one per lifecycle failure — next step in the same dock,
+  an unrelated Person closing, and a standing drop that must *not* be refilled.
+  **Note for whoever edits `StationMenu.gd` next:** it is at exactly 1000 lines,
+  which is gdlint's `max-file-lines` ceiling. One added line fails the lint gate.
 - **2026-08-08 (REPAIR-3 attempt 2 — three dead signals, #65 red-proved)** — Audit
   at baseline ee17eab5: three production emits with zero `.connect` anywhere.
   **Job 12's five** and `on_kill_reported` left untouched. **EventBus.gd not

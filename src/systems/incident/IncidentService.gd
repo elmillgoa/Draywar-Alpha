@@ -42,6 +42,7 @@ func _ready() -> void:
 	EventBus.on_system_entered.connect(_on_system_entered)
 	EventBus.on_undocked.connect(_on_undocked)
 	EventBus.on_docked.connect(_on_docked)
+	EventBus.on_incident_respond_requested.connect(_on_respond_requested)
 
 
 func _exit_tree() -> void:
@@ -52,6 +53,12 @@ func _exit_tree() -> void:
 		EventBus.on_undocked.disconnect(_on_undocked)
 	if EventBus.on_docked.is_connected(_on_docked):
 		EventBus.on_docked.disconnect(_on_docked)
+	if EventBus.on_incident_respond_requested.is_connected(_on_respond_requested):
+		EventBus.on_incident_respond_requested.disconnect(_on_respond_requested)
+
+
+func _on_respond_requested(incident_id: StringName, choice: StringName) -> void:
+	respond(incident_id, choice)
 
 
 ## Clear all incident state for a new career.

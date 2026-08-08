@@ -107,6 +107,9 @@ static func favor_person(station_id: StringName) -> StringName:
 	return &""
 
 
+## First offerable recovery person at this dock for the controller.
+## Test helper / legacy query path. Production Talk button uses the bus cache
+## (on_recovery_offered) only — see DRAYWAR_CONVENTIONS.md EventBus exceptions.
 static func offered_recovery_person(station_id: StringName, service: Node) -> StringName:
 	var found: StringName = &""
 	var controller_id: StringName = controller(station_id)

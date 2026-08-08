@@ -57,7 +57,7 @@ func _ready() -> void:
 	if max_hp <= 0.0 or hp <= 0.0:
 		apply_profile(profile_id)
 	_build_mesh()
-	TimeScale.set_combat_lock(true)
+	EventBus.on_combat_lock_requested.emit(true)
 	EventBus.on_docked.connect(_on_player_docked)
 	EventBus.on_undocked.connect(_on_player_undocked)
 	# If we spawn while already docked, do not open fire on the berth.
@@ -493,7 +493,7 @@ func _player_ship() -> Node3D:
 func _release_combat_lock_if_last() -> void:
 	var tree: SceneTree = get_tree()
 	if tree == null:
-		TimeScale.set_combat_lock(false)
+		EventBus.on_combat_lock_requested.emit(false)
 		return
 	var others: Array[Node] = tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE)
 	for node: Node in others:
@@ -506,7 +506,7 @@ func _release_combat_lock_if_last() -> void:
 		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
 			continue
 		return
-	TimeScale.set_combat_lock(false)
+	EventBus.on_combat_lock_requested.emit(false)
 
 
 func _start_hit_flash() -> void:

@@ -43,6 +43,16 @@ func apply_damage(amount, source_id):
 | **Signal bus pattern** | All cross-domain communication routes through the `EventBus.gd` autoload. |
 | **State mutation ownership** | Only the node that *owns* a piece of data may modify it. Other nodes emit a signal requesting the change; the owner decides whether to honor it. |
 
+### 2.0 Sanctioned EventBus exceptions (REPAIR-4)
+
+These are the only UI/world → service call sites allowed to remain after the
+EventBus wiring pass. Everything else of this shape is a violation.
+
+| Site | Call | Why it stays |
+|------|------|--------------|
+| `src/ui/station/StationDockQueries.offered_recovery_person` | `RecoveryService.has_offer_for_person` via group service | **Test helper only**, and `tests/test_e4_recovery_jax.gd::test_station_queries_scope_favor_and_offer_by_controller` is what keeps that true — if it ever stops calling this, the exception has no reason left and the function should go. Production Talk reads the person from the `on_recovery_offered` cache on `StationMenu` (REPAIR-4) and no production path calls this. |
+| `src/systems/time/TimeConsoleCommands` | `TimeScale.set_combat_lock` | **Systems-layer debug console**, not UI/world. Combat lock from world code rides `on_combat_lock_requested`. |
+
 ### 2.1 Pattern — requesting a change
 
 ```gdscript
