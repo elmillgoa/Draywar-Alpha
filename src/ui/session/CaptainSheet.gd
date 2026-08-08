@@ -4,6 +4,8 @@ extends CanvasLayer
 ## Read-only captain sheet — Path C B2.
 ##
 ## Implements: Alpha/ALPHA_DECISION_PHASE_PLAN.md B2
+## REPAIR-19: panel clamped to viewport; body scrolls; Close + standing stay
+## reachable at shipping 1152×648 (same shape as REPAIR-1 NewGameTip).
 ##
 ## Ship, credits, fuel, hull, active job + destination, local status, top
 ## entity standings. Standing is display-only (StandingService is the writer).
@@ -28,6 +30,9 @@ func _ready() -> void:
 	layer = BalanceSession.CAPTAIN_SHEET_CANVAS_LAYER
 	visible = false
 	_build_ui()
+	if not get_viewport().size_changed.is_connected(_fit_panel_to_viewport):
+		get_viewport().size_changed.connect(_fit_panel_to_viewport)
+	_fit_panel_to_viewport()
 	EventBus.on_captain_sheet_open_requested.connect(_on_open_requested)
 	EventBus.on_captain_sheet_close_requested.connect(_on_close_requested)
 	EventBus.on_cargo_changed.connect(_on_cargo_changed)
@@ -55,6 +60,7 @@ func _exit_tree() -> void:
 
 
 func _on_open_requested() -> void:
+	_fit_panel_to_viewport()
 	_refresh()
 	visible = true
 
@@ -110,61 +116,109 @@ func _build_ui() -> void:
 	_panel.offset_bottom = BalanceSession.SHEET_HALF_HEIGHT
 	root.add_child(_panel)
 
-	var layout: VBoxContainer = VBoxContainer.new()
-	layout.alignment = BoxContainer.ALIGNMENT_BEGIN
-	_panel.add_child(layout)
+	# Title + scroll body + standing + pinned Close (footer always on screen).
+	# Standing lives outside the scroll so every row stays visible at shipping size.
+	var outer: VBoxContainer = VBoxContainer.new()
+	outer.alignment = BoxContainer.ALIGNMENT_BEGIN
+	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel.add_child(outer)
 
 	var title: Label = Label.new()
 	title.add_theme_font_size_override("font_size", BalanceFlight.HUD_TITLE_FONT_SIZE)
 	title.add_theme_color_override("font_color", BalanceUi.TITLE_COLOR)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	title.text = BalanceSession.SHEET_TITLE
-	layout.add_child(title)
+	outer.add_child(title)
 
-	_origin_label = _add_line(layout)
-	_trade_label = _add_line(layout)
-	_mark_label = _add_line(layout)
-	_ship_label = _add_line(layout)
-	_credits_label = _add_line(layout)
-	_debt_label = _add_line(layout)
-	_cargo_label = _add_line(layout)
-	_fuel_label = _add_line(layout)
-	_hull_label = _add_line(layout)
-	_job_label = _add_line(layout)
-	_job_status_label = _add_line(layout)
-	_status_label = _add_line(layout)
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	outer.add_child(scroll)
+
+	var body: VBoxContainer = VBoxContainer.new()
+	body.alignment = BoxContainer.ALIGNMENT_BEGIN
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	scroll.add_child(body)
+
+	_origin_label = _add_line(body)
+	_trade_label = _add_line(body)
+	_mark_label = _add_line(body)
+	_ship_label = _add_line(body)
+	_credits_label = _add_line(body)
+	_debt_label = _add_line(body)
+	_cargo_label = _add_line(body)
+	_fuel_label = _add_line(body)
+	_hull_label = _add_line(body)
+	_job_label = _add_line(body)
+	_job_status_label = _add_line(body)
+	_status_label = _add_line(body)
 
 	var spacer: Control = Control.new()
 	spacer.custom_minimum_size = Vector2(0.0, BalanceSession.SHEET_SPACER_HEIGHT)
-	layout.add_child(spacer)
+	spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	outer.add_child(spacer)
 
 	var standing_header: Label = Label.new()
 	standing_header.add_theme_color_override("font_color", BalanceUi.ACCENT)
+	standing_header.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	standing_header.text = BalanceSession.SHEET_STANDING_HEADER
-	layout.add_child(standing_header)
+	outer.add_child(standing_header)
 
 	_standing_box = VBoxContainer.new()
-	layout.add_child(_standing_box)
+	_standing_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	outer.add_child(_standing_box)
 
 	var close_spacer: Control = Control.new()
 	close_spacer.custom_minimum_size = Vector2(0.0, BalanceSession.SHEET_SPACER_HEIGHT)
-	layout.add_child(close_spacer)
+	close_spacer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	outer.add_child(close_spacer)
 
 	var close_btn: Button = Button.new()
 	close_btn.text = BalanceSession.SHEET_CLOSE
 	close_btn.custom_minimum_size = Vector2(
 		BalanceSession.SHEET_BUTTON_WIDTH, BalanceSession.SHEET_BUTTON_HEIGHT
 	)
+	close_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	close_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close_btn.pressed.connect(_on_close_pressed)
-	layout.add_child(close_btn)
+	outer.add_child(close_btn)
 
 
 func _add_line(parent: Control) -> Label:
 	var label: Label = Label.new()
 	label.add_theme_color_override("font_color", BalanceUi.FONT_COLOR)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	parent.add_child(label)
 	return label
+
+
+## Cap the panel to the design size (and viewport) so Close and standing rows stay on-screen.
+func _fit_panel_to_viewport() -> void:
+	if _panel == null:
+		return
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	if vp.x <= 1.0 or vp.y <= 1.0:
+		return
+	# Design budget is the max; shrink further only if the window is smaller.
+	var w: float = BalanceSession.SHEET_WIDTH
+	var h: float = BalanceSession.SHEET_HEIGHT
+	if vp.x > 1.0:
+		w = minf(w, vp.x)
+	if vp.y > 1.0:
+		h = minf(h, vp.y)
+	var half: float = BalanceSession.SHEET_CENTER_HALF
+	_panel.custom_minimum_size = Vector2(w, h)
+	_panel.offset_left = -w * half
+	_panel.offset_top = -h * half
+	_panel.offset_right = w * half
+	_panel.offset_bottom = h * half
 
 
 func _on_close_pressed() -> void:

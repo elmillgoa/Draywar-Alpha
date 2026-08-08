@@ -52,6 +52,23 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-19 — captain sheet fits shipping viewport)** — External
+  audit PT-9 (baseline ee17eab5): at 1152×648 the Standing header, all six
+  faction rows, and Close sat below the window. Accessibility content was
+  already correct (every row has color + glyph + tier word); layout only.
+  **Fix (same shape as REPAIR-1 tip):** `CaptainSheet` clamps the panel to
+  design size and viewport (`_fit_panel_to_viewport`, open + size_changed);
+  ship/wallet/job lines live in a `ScrollContainer`; Standing header, the six
+  rows, and Close stay outside the scroll so they remain visible. Tier text,
+  glyphs, and colours untouched. No StandingService / save / EventBus /
+  S10 playtest doc edits.
+  **Tests** (`tests/test_repair19_captain_sheet.gd`):
+  `test_captain_sheet_fits_shipping_viewport` (red→green — Close + every
+  standing row bottom ≤ 648),
+  `test_captain_sheet_rows_have_tier_color_glyph_and_word` (green-on-arrival —
+  S10 a11y guard on each standing row).
+  Full suite 102/102 scripts, 895/895, lint clean.
+  **Boundary** `git diff HEAD -- src/systems/standing/StandingService.gd`: empty.
 - **2026-08-08 (REPAIR-9 — station/HUD standing display consistency)** — External
   audit baseline ee17eab5: three display defects only (fourth HUD-stale-on-load
   item lives in Opus Job 3 — do not touch StandingService / load path here).

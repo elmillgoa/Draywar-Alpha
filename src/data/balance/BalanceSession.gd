@@ -92,6 +92,8 @@ const SHEET_WIDTH: float = 420.0
 const SHEET_HEIGHT: float = 530.0
 const SHEET_HALF_WIDTH: float = 210.0
 const SHEET_HALF_HEIGHT: float = 265.0
+## Centre-anchor half factor (REPAIR-19 fit; same idea as NEW_GAME_TIP_CENTER_HALF).
+const SHEET_CENTER_HALF: float = 0.5
 const SHEET_BUTTON_WIDTH: float = 200.0
 const SHEET_BUTTON_HEIGHT: float = 40.0
 const SHEET_SPACER_HEIGHT: float = 8.0
