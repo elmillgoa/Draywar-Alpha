@@ -209,3 +209,18 @@ encode it in `scripts/checkin.py` when possible.
     each route to it. **Two tells that this shape is present:** the same
     condition appears in more than one place, and the test for it names a route
     ("the Escape key does X") rather than the rule ("X cannot happen").
+30. **A space query reads the physics server, not the node — a body you just
+    positioned is still where it was.** `Area3D.get_overlapping_bodies()` is a
+    list the server built during the last step, so code that only ever polled
+    overlaps never noticed. A `ShapeCast3D` / `intersect_shape` asks the server
+    *now*, and the server has not been told about a `global_position` assigned
+    this frame. REPAIR-11 (swept bolts) turned two green tests red the moment
+    bolts started querying: `test_hostile_projectiles.gd` positioned a
+    `PlayerShip` at z 260 and a `HostileNpc` at z 230, and a bolt at the origin
+    reported hitting **both**, with collision points at the origin, because that
+    is where their colliders still were. Two other tests in the same file had
+    already learned this and call `force_update_transform()` after moving a
+    body; the two that had not were the two that broke. **The rule: after moving
+    a `PhysicsBody3D` by assignment — in a test, or on a teleport — call
+    `force_update_transform()` before anything queries the space.** The tell is
+    a hit whose collision point is nowhere near the node's reported position.

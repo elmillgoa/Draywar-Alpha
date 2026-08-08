@@ -149,6 +149,26 @@ const PROJECTILE_RADIUS: float = 0.45
 const PROJECTILE_LENGTH: float = 2.8
 const COLOR_PROJECTILE: Color = Color(1.0, 0.85, 0.25)
 
+# --- Swept bolt collision (REPAIR-11 / audit #48) ---------------------------
+# A bolt teleports a whole physics step and then looks at what it overlaps. One
+# step is 4.7 m at 1x, 18.7 m at 4x and 74.7 m at 16x, against a 0.9 m hit
+# sphere, so above 1x the bolt jumped clean over everything and the player's
+# guns did nothing at two of the three shipped time scales. Bolts now test the
+# whole segment they crossed.
+
+## Metres of flight from the spawn point in which a bolt cannot hit anything.
+## Keeps REPAIR-8's point-blank rule — a bolt is placed PROJECTILE_LENGTH ahead
+## of the muzzle and must not hit an off-target hull it was born inside — but
+## states it as a distance rather than as "one physics tick". One 1x tick at
+## PROJECTILE_SPEED is 4.67 m, so this is the window REPAIR-8 already shipped;
+## the tick version blanked the first 74.7 m at 16x, which is the whole
+## engagement.
+const PROJECTILE_SPAWN_GRACE_DISTANCE: float = 4.7
+
+## Colliders one swept bolt may report in a single step. The nearest one along
+## the flight path wins, so this only has to cover ships stacked in one lane.
+const PROJECTILE_SWEEP_MAX_HITS: int = 8
+
 ## Lead intercept solver iterations (classic space-combat lead pip).
 const LEAD_SOLVE_ITERATIONS: int = 4
 

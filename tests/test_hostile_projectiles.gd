@@ -32,10 +32,16 @@ func test_hostile_projectile_damages_player_once_on_contact() -> void:
 	ship.add_to_group(BalanceSession.GROUP_PLAYER_SHIP)
 	space.add_child(ship)
 	ship.global_position = Vector3.ZERO
+	ship.force_update_transform()
 	await get_tree().process_frame
 
 	var bolt: Node = HostileProjectileScript.new()
 	space.add_child(bolt)
+	# Park it clear of the hull: this test is about the try_hit() call, and a
+	# bolt born on top of the ship is a real contact once bolts sweep the path
+	# they travel (REPAIR-11) rather than only sampling where they land.
+	if bolt is Node3D:
+		(bolt as Node3D).global_position = Vector3(0.0, 0.0, -500.0)
 	await get_tree().process_frame
 	assert_true(bolt.has_method(&"try_hit"))
 	bolt.call(&"try_hit", ship)
@@ -93,12 +99,16 @@ func test_hostile_fire_spawns_projectile_without_instant_damage() -> void:
 	space.add_child(ship)
 	# Far enough that bolt will not hit in the same frame as spawn.
 	ship.global_position = Vector3(0.0, 0.0, BalanceCombat.STATION_SAFE_RADIUS + 80.0)
+	# Push the move to the physics server, or the collider stays at the origin
+	# and any space query in this frame finds the ship where it never was.
+	ship.force_update_transform()
 
 	var hostile: HostileNpc = HostileNpc.spawn_under(
 		space, ship.global_position + Vector3(0.0, 0.0, -30.0)
 	)
 	# Face the player and clear grace so fire is allowed.
 	hostile.look_at(ship.global_position, Vector3.UP)
+	hostile.force_update_transform()
 	hostile._undock_grace = 0.0
 	hostile._player_docked = false
 	await get_tree().process_frame
@@ -115,9 +125,12 @@ func test_hostile_fire_spawns_projectile_without_instant_damage() -> void:
 			break
 	assert_true(found_bolt, "HostileProjectile spawned on fire")
 
-	# Simulated hit path still works for condition tests.
+	# Simulated hit path still works for condition tests. Parked clear of every
+	# hull so only the explicit call can land (see REPAIR-11 note above).
 	var hit_bolt: Node = HostileProjectileScript.new()
 	space.add_child(hit_bolt)
+	if hit_bolt is Node3D:
+		(hit_bolt as Node3D).global_position = Vector3(0.0, 0.0, -500.0)
 	await get_tree().process_frame
 	hit_bolt.call(&"try_hit", ship)
 	assert_almost_eq(hull.condition(), start - BalanceCombat.HOSTILE_DAMAGE, 0.001)

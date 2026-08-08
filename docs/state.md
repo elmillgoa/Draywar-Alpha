@@ -52,6 +52,28 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (Job 11 — bolts collide along their path)** — External audit #48,
+  confirmed at runtime: bolts moved a whole physics step and then asked what
+  they overlapped, so above 1x the step (18.7 m at 4x, 74.7 m at 16x) cleared
+  the 0.9 m hit sphere and the bolt tunnelled. Two of the three shipped time
+  scales disabled the player's guns. **Decision (Opus): swept collision.** Both
+  `PlayerProjectile` and `HostileProjectile` shape-cast the segment they crossed
+  (`ShapeCast3D`, `enabled = false`, one `force_shapecast_update()` per bolt per
+  tick, nearest collider along the path wins). Sub-stepping was rejected — its
+  cost scales with time scale (~83 sub-steps per bolt at 16x); forcing 1x while
+  a bolt is alive was rejected as breaking the feature instead of fixing it.
+  REPAIR-8's point-blank grace is kept but restated as a **distance**
+  (`BalanceCombat.PROJECTILE_SPAWN_GRACE_DISTANCE = 4.7`, one 1x tick) — as a
+  tick count it blanked the first 74.7 m at 16x. Hostile bolts get the sweep and
+  no grace (a hostile bolt can only damage the player). **Measured** (method as
+  the audit's: bolt built in code, 10 m out, dead straight through the centre,
+  hp reset per shot, 1x control last): **9/9 at 1x, 7/7 at 4x, 6/6 at 16x**
+  (was 9/9, 0/7, 0/6). **Perf**, `Performance.TIME_PHYSICS_PROCESS`, 12 ships +
+  24 live bolts, 600 frames x 3 runs: 2.66 ms/frame at 1x and 3.17 ms at 16x
+  against the 16.67 ms 60 fps budget; the sweep costs +0.20 ms at 1x.
+  **Tests** (`tests/test_repair11_projectile_sweep.gd`): all three scales,
+  drift control, wide miss, point-blank grace (break-proved), `try_hit` still
+  directly callable, hostile bolt at 16x. Suite 104/104 scripts, 906/906.
 - **2026-08-08 (REPAIR-8 — escort/combat lifecycle leaks)** — External audit
   baseline ee17eab5: four lifecycle/timing defects (no save/standing/EventBus
   signal-set change).
