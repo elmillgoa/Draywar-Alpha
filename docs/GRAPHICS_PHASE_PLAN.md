@@ -71,6 +71,57 @@ Grok for proven-pattern repetition; sort by risk, not type).
 
 ---
 
+# Pre-pass job: the bake-off (runs DURING the fix pass — no game code)
+
+Sanctioned by Elliot 2026-08-08 as the one piece of the pass that starts before
+the fix pass closes, because it touches no code and retires the pass's biggest
+unknown: **can image-to-3D generation reproduce his reference style?**
+
+**Hard rules:** no file outside `docs/` is created or modified. No spend
+without asking Elliot with the price. Sessions never create accounts — if a
+tool needs a login, Elliot signs up and the session guides or drives the
+browser afterward.
+
+**Inputs:** Elliot's reference images in `docs/art_direction/` (his action
+item — the bake-off cannot start without them).
+
+**Procedure:**
+1. Take the primary hauler reference image (three-quarter view preferred).
+2. Generate a hauler model attempt with each of, in this order:
+   - **Hyper3D Rodin** via the installed Blender bridge (free preview mode).
+   - **Meshy** free tier (web — Elliot creates the free account when asked).
+   - **Tripo** free tier (web — same).
+3. Import each result into Blender via the bridge. Render each from the same
+   four angles (3/4 front, side, top, rear) on a neutral background.
+4. Score each against these criteria, in this priority order:
+   a. **Silhouette fidelity** — does it read as the reference ship?
+   b. **Surface quality** — panels, rivets, worn paint in the textures?
+   c. **Cleanup cost** — topology sanity, watertightness, polygon count after
+      decimation vs the spec's ≤15k budget, UV/material state.
+   d. **License clarity** of the tool's paid tier (spec §7 table).
+5. Deliverables, committed under `docs/art_direction/bakeoff/`:
+   side-by-side renders, a plain-language scorecard, a recommendation naming
+   the winner and its monthly price (~$20–30), and an honest verdict on the
+   fallback question — if ALL three disappoint, say so and recommend the
+   hand-model-in-Blender fallback (spec §9 row 1) instead of overselling.
+6. Elliot picks the winner. The paid month is NOT bought now — it gets bought
+   at G1 start, so the 30 days cover the real generation workload.
+
+**Kickoff prompt (paste into a new Claude Code chat opened in the
+`Grok Draywar` folder, model Opus 5 or the top tier offered):**
+
+```
+Run the graphics-pass bake-off (pre-pass job — the fix pass is still running, touch no game code).
+
+Read docs/GRAPHICS_PHASE_PLAN.md section "Pre-pass job: the bake-off" and follow it exactly. Also read docs/GRAPHICS_PASS_DESIGN.md sections 2, 5.2 and 7 for the style bar, pipeline and license context.
+
+Confirm docs/art_direction/ contains the reference images first; if not, stop and ask me. Free tiers only; ask me with the price before any spend; ask me before anything needing an account signup. Only files under docs/ may be created or changed.
+
+Close by presenting the side-by-side renders, the scorecard, and your recommendation for my pick.
+```
+
+---
+
 # Phase G0 — Foundation (full plan)
 
 **Branch:** `g0-foundation` off `main` (design doc: each phase on its own

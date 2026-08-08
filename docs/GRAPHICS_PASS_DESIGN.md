@@ -6,8 +6,11 @@ final spec review, then implementation planning.
 Owner sign-off model: same as the Steam phases — agents never declare "looks good";
 Elliot signs every style gate on real screenshots.
 
-This pass starts **only after the current fix pass closes**. Nothing here touches
-the fix-pass queue.
+The **code phases (G0 onward) start only after the current fix pass closes**.
+Nothing here touches the fix-pass queue. One sanctioned exception (Elliot,
+2026-08-08): the **bake-off** — pure asset exploration, no game code, outputs
+under `docs/` only — runs in parallel with the fix pass. Procedure and kickoff:
+`docs/GRAPHICS_PHASE_PLAN.md`, "Pre-pass job: the bake-off".
 
 ---
 
@@ -330,6 +333,8 @@ split is about fit and capacity, not per-token price.
 - Future growth (stated 2026-08-08, after spec approval): pass-1 counts are
   fine, but the roster grows later — see §12. Architecture must not close
   those doors; no future content is built in this pass.
+- Parallel start (2026-08-08): the bake-off runs during the fix pass (asset
+  exploration only, no code); all code phases still wait for fix-pass close.
 
 ## 12. Future growth — doors this pass must leave open
 
