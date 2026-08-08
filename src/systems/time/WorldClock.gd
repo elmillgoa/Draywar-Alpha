@@ -12,6 +12,10 @@ extends Node
 ##
 ## EventBus.on_world_time_advanced fires only on public bulk advance_* (not
 ## every frame — no per-frame bus traffic).
+##
+## PT-2: the clock keeps running through the opening (market, board and security
+## still age behind the create screen) but the wallet is exempt from life-support
+## upkeep until the career exists — see `_career_pending`.
 
 ## Elapsed game time in seconds since career start / last reset.
 var _elapsed_seconds: float = 0.0
@@ -20,6 +24,12 @@ var _sub_categories: Array[StringName] = []
 var _sub_callbacks: Array[Callable] = []
 ## > 0 while inside public advance_seconds / advance_hours (bulk path).
 var _bulk_depth: int = 0
+## True from the New Game button until the opening beat ends (annexation
+## continue) or is cancelled. Elliot's 2026-08-07 decision, question 2 option B:
+## life support may not bill a captain whose career does not exist yet. Session
+## state only — never saved, and `reset()` deliberately leaves it alone because
+## Main resets services in the same frame the opening starts.
+var _career_pending: bool = false
 
 
 func _ready() -> void:
@@ -29,6 +39,13 @@ func _ready() -> void:
 	set_process(true)
 	ServiceRegistry.register_resettable(reset)
 	register_category_subscriber(BalanceWorldClock.CATEGORY_WALLET_UPKEEP, _tick_wallet_upkeep)
+	EventBus.on_new_game_requested.connect(_on_career_opening_started)
+	EventBus.on_annexation_continue_requested.connect(_on_career_opening_ended)
+	EventBus.on_life_path_cancel_requested.connect(_on_career_opening_ended)
+	# Continue never opens the create screen, so this only ever clears a flag an
+	# abandoned opening left standing — a stuck exemption would mean free life
+	# support for the rest of the session.
+	EventBus.on_continue_requested.connect(_on_career_opening_ended)
 
 
 func _process(delta: float) -> void:
@@ -135,11 +152,25 @@ func _notify_subscribers(delta_seconds: float) -> void:
 			callback.call(delta_seconds)
 
 
+## The opening began (New Game). Upkeep is suspended until it ends.
+func _on_career_opening_started() -> void:
+	_career_pending = true
+
+
+## The opening ended — confirmed through annexation, cancelled, or replaced by a
+## load. Life support starts billing again from here.
+func _on_career_opening_ended() -> void:
+	_career_pending = false
+
+
 ## Wallet life-support upkeep on the world clock (E3.1 moved off PlayerShip).
 ## Live frames only drain while a player ship is in the tree so bare wallet unit
 ## tests that await frames are not taxed. Bulk advance_* always runs this path
 ## when a wallet exists (jump away-time, multi-frame equivalence tests).
+## Third guard (PT-2): no upkeep at all while the career is still being made.
 func _tick_wallet_upkeep(delta_seconds: float) -> void:
+	if _career_pending:
+		return
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return

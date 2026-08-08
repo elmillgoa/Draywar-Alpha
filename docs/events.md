@@ -841,21 +841,24 @@ Emergency loan debt state changed (borrow, garnish, repay, grace burn, load).
 
 ### `on_new_game_requested()`
 
-Main menu asked to start a new career.
+Main menu asked to start a new career. `WorldClock` also listens: from here
+until the opening beat ends, life support may not bill a career that does not
+exist yet (PT-2). The clock itself keeps running.
 
 No parameters.
 
 **Emitted by** `MainMenu`.
-**Listened to by** `Main`.
+**Listened to by** `Main`, `WorldClock`.
 
 ### `on_continue_requested()`
 
-Main menu asked to continue the most recent career save.
+Main menu asked to continue the most recent career save. `WorldClock` uses it to
+clear the pre-career upkeep exemption if an abandoned opening left it standing.
 
 No parameters.
 
 **Emitted by** `MainMenu`.
-**Listened to by** `Main`.
+**Listened to by** `Main`, `WorldClock`.
 
 ### `on_quit_to_desktop_requested()`
 
@@ -892,20 +895,23 @@ CareerStart then shows annexation.
 ### `on_life_path_cancel_requested()`
 
 Life-path create screen cancelled. Main tears play down and returns to menu.
+`WorldClock` ends the pre-career upkeep exemption here.
 
 No parameters.
 
 **Emitted by** `LifePathCreate`.
-**Listened to by** `Main`.
+**Listened to by** `Main`, `WorldClock`.
 
 ### `on_annexation_continue_requested()`
 
 Opening annexation beat dismissed. Main docks at starter and shows fly tip.
+`WorldClock` ends the pre-career upkeep exemption here — the career now exists,
+so life support starts billing.
 
 No parameters.
 
 **Emitted by** `OpeningAnnexation`.
-**Listened to by** `Main`.
+**Listened to by** `Main`, `WorldClock`.
 
 ### `on_pause_changed(open: bool)`
 

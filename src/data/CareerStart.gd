@@ -77,6 +77,7 @@ static func apply_default(wallet: Node) -> void:
 static func apply(
 	picked_origin: StringName, picked_trade: StringName, picked_mark: StringName, wallet: Node
 ) -> void:
+	_ensure_career_credit_floor(wallet)
 	_apply_option(picked_origin, BalanceStanding.LIFE_PATH_AXIS_ORIGIN, wallet)
 	_apply_option(picked_trade, BalanceStanding.LIFE_PATH_AXIS_TRADE, wallet)
 	_apply_option(picked_mark, BalanceStanding.LIFE_PATH_AXIS_MARK, wallet)
@@ -86,6 +87,17 @@ static func apply(
 ## Display name for a stored path option id (empty if unset / unknown).
 static func option_display_name(option_id: StringName) -> String:
 	return CareerPathState.option_display_name(option_id)
+
+
+## Job 8 / PT-2: a career opens on at least BalanceEconomy.STARTING_CREDITS.
+## Runs first, before any option is applied, so the debt mark's +400 lands on
+## top of the floor instead of the floor landing on top of the loan. Wallet may
+## be null (no mark opens debt), which is a silent no-op — the loud error for a
+## missing wallet stays with the debt path that actually needs one.
+static func _ensure_career_credit_floor(wallet: Node) -> void:
+	if wallet == null or not wallet.has_method(&"top_up_to_starting_floor"):
+		return
+	wallet.call(&"top_up_to_starting_floor")
 
 
 ## Load and apply a single life-path option by content id.

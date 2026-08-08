@@ -76,6 +76,9 @@ const REASON_OPS_UPKEEP: StringName = &"ops_upkeep"
 const REASON_OPS_HAUL_PAY: StringName = &"ops_haul_pay"
 ## Emergency tow out of a dry tank (Job 10). Charge is capped by what is held.
 const REASON_TOW: StringName = &"tow"
+## Career-start floor top-up (Job 8 / PT-2). Only ever a positive grant, and
+## only when Confirm found the wallet below BalanceEconomy.STARTING_CREDITS.
+const REASON_CAREER_START_FLOOR: StringName = &"career_start_floor"
 
 # --- Detail dictionary keys (StringName) --------------------------------------
 

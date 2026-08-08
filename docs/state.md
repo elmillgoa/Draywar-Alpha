@@ -52,6 +52,28 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (Job 8 phase 2 — making a captain no longer costs money)** —
+  Audit **PT-2** and the pre-career half of **PT-10**: the world clock ran behind
+  the character-creation screen and life support billed 1 credit/s of it
+  (measured 0.99/s at the shipping 1152x648 window), so reading the three cards
+  made the player poorer and careers were seen starting at 0 credits.
+  **Elliot's written decision, 2026-08-07** (`DECISION_creation-screen-clock.md`),
+  implemented as ruled. **Q2 option B** — the clock keeps running (market, board
+  and security still age behind the dialog) but `WorldClock._tick_wallet_upkeep`
+  gains a third guard: no upkeep while the opening is live. The window opens on
+  `on_new_game_requested` and closes on `on_annexation_continue_requested` /
+  `on_life_path_cancel_requested` / `on_continue_requested`; EventBus only, no
+  new signal, session state, nothing persisted. **Q1 option B** — new
+  `WalletService.top_up_to_starting_floor()` raises credits to
+  `BalanceEconomy.STARTING_CREDITS` only when below it and never subtracts; no
+  second tunable. `CareerStart.apply` calls it first, before any mark can open
+  the Free Haulers loan, so the debt card's "+400, owe 480" lands on top of the
+  floor instead of being wiped by it. Main.gd untouched (999 lines, the
+  1000-line gate). **Tests** (`tests/test_repair8_career_start_credits.gd`, 9):
+  break-proved three ways — guard removed (440 vs 500), floor removed (810 vs
+  900), floor applied as a hard set after the loan (500 vs 900, the ordering bug
+  the memo predicted). The pause-menu drain (#46) stays its own job.
+  Suite 106/106 scripts, 933/933.
 - **2026-08-08 (Job 11 — bolts collide along their path)** — External audit #48,
   confirmed at runtime: bolts moved a whole physics step and then asked what
   they overlapped, so above 1x the step (18.7 m at 4x, 74.7 m at 16x) cleared

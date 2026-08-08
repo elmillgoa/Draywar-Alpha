@@ -99,6 +99,25 @@ func can_afford(amount: int) -> bool:
 	return _credits >= amount
 
 
+## Career-start floor (Job 8 / PT-2 — Elliot's 2026-08-07 decision, question 1
+## option B). Raise credits to BalanceEconomy.STARTING_CREDITS when the wallet
+## sits below it; never subtract. Because it is a floor and not a hard set it
+## cannot wipe the Free Haulers loan (or any later credit grant) whatever order
+## it runs in — but CareerStart still applies it before any mark opens debt.
+## Reuses STARTING_CREDITS: the concept is "the floor a career starts on", not a
+## second starting balance. Returns credits granted (0 when already at/above).
+func top_up_to_starting_floor() -> int:
+	var floor_credits: int = BalanceEconomy.STARTING_CREDITS
+	if floor_credits <= 0 or _credits >= floor_credits:
+		return 0
+	var granted: int = floor_credits - _credits
+	_set_credits(floor_credits)
+	# The part-credit of upkeep run up before the career existed dies with it.
+	_upkeep_debt = 0.0
+	_emit_money(BalanceTelemetry.REASON_CAREER_START_FLOOR, granted)
+	return granted
+
+
 ## Spend credits if affordable. Returns true on success.
 func try_spend(amount: int) -> bool:
 	if amount <= 0:
