@@ -497,8 +497,15 @@ func _release_combat_lock_if_last() -> void:
 		return
 	var others: Array[Node] = tree.get_nodes_in_group(BalanceCombat.GROUP_HOSTILE)
 	for node: Node in others:
-		if node != self and is_instance_valid(node):
-			return
+		if node == self:
+			continue
+		if not is_instance_valid(node):
+			continue
+		# Same-frame multi-death: other hostiles are still valid and in the
+		# group but already _dead. Count only live ones (REPAIR-8).
+		if node.has_method(&"is_alive") and node.call(&"is_alive") != true:
+			continue
+		return
 	TimeScale.set_combat_lock(false)
 
 

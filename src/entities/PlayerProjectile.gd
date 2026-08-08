@@ -10,6 +10,11 @@ var _speed: float = BalanceCombat.PROJECTILE_SPEED
 var _damage: float = BalanceCombat.PLAYER_WEAPON_DAMAGE
 var _life: float = BalanceCombat.PROJECTILE_LIFETIME
 var _spent: bool = false
+## Physics ticks lived. Hit checks start after the first tick so a bolt placed
+## at PROJECTILE_LENGTH ahead of the muzzle does not auto-hit a point-blank
+## off-target hull it was born inside (REPAIR-8). Age increments at end of the
+## tick so body_entered mid-frame still sees the grace window.
+var _age_ticks: int = 0
 
 
 func _ready() -> void:
@@ -41,13 +46,18 @@ func _physics_process(delta: float) -> void:
 		return
 	var dt: float = TimeScale.scaled_delta(delta)
 	global_position = global_position + _direction * _speed * dt
-	# Teleport moves do not always emit body_entered; poll after each step.
-	_try_overlap_hits()
+	# Auto contact only after the first tick (spawn grace). Explicit try_hit
+	# (tests / scripted hits) is not gated.
+	if _age_ticks >= 1:
+		# Teleport moves do not always emit body_entered; poll after each step.
+		_try_overlap_hits()
 	if _spent:
 		return
 	_life -= dt
 	if _life <= 0.0:
 		queue_free()
+		return
+	_age_ticks += 1
 
 
 func _try_overlap_hits() -> void:
@@ -63,10 +73,14 @@ func _try_overlap_hits() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if _age_ticks < 1:
+		return
 	try_hit(body)
 
 
 func _on_area_entered(area: Area3D) -> void:
+	if _age_ticks < 1:
+		return
 	try_hit(area)
 
 

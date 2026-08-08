@@ -29,6 +29,11 @@ func _ready() -> void:
 	EventBus.on_mission_accepted.connect(_on_mission_accepted_ensure_escort)
 	EventBus.on_undocked.connect(_on_undocked_ensure_escort)
 	EventBus.on_system_entered.connect(_on_system_entered_ensure_escort)
+	# Mission close must free the freighter; otherwise _live_escort_count stays
+	# > 0 and the next escort job never spawns a fresh ship (REPAIR-8).
+	EventBus.on_mission_completed.connect(_on_mission_closed_clear_escort)
+	EventBus.on_mission_failed.connect(_on_mission_closed_clear_escort)
+	EventBus.on_mission_abandoned.connect(_on_mission_closed_clear_escort)
 
 
 func _exit_tree() -> void:
@@ -44,6 +49,12 @@ func _exit_tree() -> void:
 		EventBus.on_undocked.disconnect(_on_undocked_ensure_escort)
 	if EventBus.on_system_entered.is_connected(_on_system_entered_ensure_escort):
 		EventBus.on_system_entered.disconnect(_on_system_entered_ensure_escort)
+	if EventBus.on_mission_completed.is_connected(_on_mission_closed_clear_escort):
+		EventBus.on_mission_completed.disconnect(_on_mission_closed_clear_escort)
+	if EventBus.on_mission_failed.is_connected(_on_mission_closed_clear_escort):
+		EventBus.on_mission_failed.disconnect(_on_mission_closed_clear_escort)
+	if EventBus.on_mission_abandoned.is_connected(_on_mission_closed_clear_escort):
+		EventBus.on_mission_abandoned.disconnect(_on_mission_closed_clear_escort)
 
 
 ## Builds the gray box for `system_id`. Safe to call once; call `clear_world`
@@ -471,6 +482,29 @@ func _on_system_entered_ensure_escort(entered_id: StringName) -> void:
 	if entered_id != system_id:
 		return
 	_maybe_ensure_escort_freighter()
+
+
+## Complete / fail / abandon — free any live escort freighter so the next job
+## can spawn. Death already queue_frees via MissionEscortShip._die; this covers
+## the alive-at-close path that used to leave a stale hull in the group.
+func _on_mission_closed_clear_escort(
+	_template_id: StringName, _entity_id: StringName, _delta: float
+) -> void:
+	_clear_escort_freighters()
+
+
+## Free every mission-escort ship in this world. Safe when none exist.
+func _clear_escort_freighters() -> void:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	for node: Node in tree.get_nodes_in_group(BalanceBoard.GROUP_MISSION_ESCORT):
+		if not is_instance_valid(node):
+			continue
+		# Only free ships parented under this SystemWorld (multi-world tests).
+		if node.get_parent() != self and not is_ancestor_of(node):
+			continue
+		node.queue_free()
 
 
 ## When an active bounty targets this system and the kill is still open, make

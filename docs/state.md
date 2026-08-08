@@ -52,6 +52,25 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-8 — escort/combat lifecycle leaks)** — External audit
+  baseline ee17eab5: four lifecycle/timing defects (no save/standing/EventBus
+  signal-set change).
+  **(1) Stale escort freighter** — `SystemWorld` only spawned on accept/undock/
+  system enter and early-returned when `_live_escort_count() > 0`, so a live
+  freighter after complete/abandon blocked the next job. Now listens to
+  `on_mission_completed` / `failed` / `abandoned` and `_clear_escort_freighters()`.
+  **(2) Combat lock leak** — `_release_combat_lock_if_last` treated any valid
+  group member as alive; two deaths same frame left lock on forever. Skips
+  nodes with `is_alive() != true`.
+  **(3) Point-blank bolt** — spawn at `PROJECTILE_LENGTH` could sit inside a
+  hostile and auto-hit. `PlayerProjectile` ignores auto contact for the first
+  physics tick (`_age_ticks`); explicit `try_hit` still works.
+  **(4) Scaled cooldowns** — player `_fire_cooldown` and impact cooldowns now
+  tick with real `delta` (motion still scaled). Balance constants unchanged.
+  **Tests** (`tests/test_repair8_lifecycle.gd`): escort despawn complete +
+  abandon, next spawn fresh; two hostiles same-frame death releases combat
+  lock. Red-proved (3/3 fail with fixes stripped), then green. Full suite
+  103/103 scripts, 898/898, lint clean.
 - **2026-08-08 (REPAIR-19 — captain sheet fits shipping viewport)** — External
   audit PT-9 (baseline ee17eab5): at 1152×648 the Standing header, all six
   faction rows, and Close sat below the window. Accessibility content was

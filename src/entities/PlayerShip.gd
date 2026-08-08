@@ -251,9 +251,10 @@ func _sync_hull_id_from_service() -> void:
 
 func _physics_process(delta: float) -> void:
 	var dt: float = TimeScale.scaled_delta(delta)
-	# E3.1 upkeep lives on WorldClock (S1) — not the ship physics heartbeat.
+	# Fire / impact cadence is real-time (REPAIR-8): time scale must not change
+	# shots-per-real-second or ram collision cadence. Motion still uses scaled dt.
 	if _fire_cooldown > 0.0:
-		_fire_cooldown = maxf(0.0, _fire_cooldown - dt)
+		_fire_cooldown = maxf(0.0, _fire_cooldown - delta)
 
 	# Weapons + target lock work free-flying even when hull is crippled.
 	if not _input_blocked and not _is_docked():
@@ -303,7 +304,8 @@ func _physics_process(delta: float) -> void:
 	# into-wall component, so post-slide closing is ~0 and impact never fires.
 	var pre_slide_velocity: Vector3 = velocity
 	move_and_slide()
-	_resolve_soft_bumps_and_impact(dt, pre_slide_velocity)
+	# Real delta for impact cooldowns; physics already applied above.
+	_resolve_soft_bumps_and_impact(delta, pre_slide_velocity)
 
 	var speed: float = velocity.length()
 	if speed != _last_reported_speed:
