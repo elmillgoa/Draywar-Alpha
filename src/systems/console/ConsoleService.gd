@@ -5,6 +5,9 @@ extends RefCounted
 ##
 ## Not a node and not an autoload. Whoever shows the console owns one and
 ## drives it. Four bus signals: request, register, invoke, output.
+##
+## REPAIR-24: release exports never boot this service. Callers pass
+## their build flag into is_enabled_for_build — no config unlock.
 
 ## The one command the console owns.
 const HELP: StringName = &"help"
@@ -85,6 +88,12 @@ func submit(line: String) -> void:
 		return
 
 	EventBus.on_console_command_invoked.emit(name_of_command, args)
+
+
+## Pure build gate. True only when `is_debug_build` is true (editor / dev).
+## Release must never create or start a ConsoleService. No config unlock.
+static func is_enabled_for_build(is_debug_build: bool) -> bool:
+	return is_debug_build
 
 
 ## A typed line split into a command word and its arguments.

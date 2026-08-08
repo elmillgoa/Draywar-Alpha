@@ -10,6 +10,11 @@ extends Node
 
 const BOOT_BANNER: String = BalanceSettings.BOOT_BANNER
 
+## REPAIR-24: build gate for the debug console. Default is the real engine
+## flag; tests set false before add_child so the real `_ready` path can be
+## asserted without a release export. No config unlock.
+var build_is_debug: bool = OS.is_debug_build()
+
 ## The debug console's parser and roster. Not a global.
 var _console: ConsoleService = null
 
@@ -61,10 +66,13 @@ var _dead: bool = false
 func _ready() -> void:
 	print(BOOT_BANNER)
 	FlightInput.ensure_actions()
-	_console = ConsoleService.new()
-	# Children declared in Main.tscn are ready before this runs, so save and
-	# time (autoload) commands are listening when the console asks who is out.
-	_console.start()
+	# REPAIR-24: release exports never create or start the debug console.
+	# Editor / debug builds keep today's behaviour. No config unlock.
+	if ConsoleService.is_enabled_for_build(build_is_debug):
+		_console = ConsoleService.new()
+		# Children declared in Main.tscn are ready before this runs, so save and
+		# time (autoload) commands are listening when the console asks who is out.
+		_console.start()
 	_wire_session_bus()
 	_create_session_ui()
 	_show_main_menu()
@@ -112,6 +120,8 @@ func _try_close_play_overlay() -> bool:
 
 ## Connected in Main.tscn to the console view's line_submitted.
 func _on_debug_console_line_submitted(line: String) -> void:
+	if _console == null:
+		return
 	_console.submit(line)
 
 

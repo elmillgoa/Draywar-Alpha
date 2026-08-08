@@ -52,6 +52,27 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-07 (REPAIR-24 — debug console gated to debug builds)** — Audit
+  finding **#44**: `ConsoleService` was created and `start()`ed on every boot,
+  and `DebugConsole` registered backtick (`debug_console_toggle` /
+  `KEY_QUOTELEFT`) unconditionally, so a release export could set standing,
+  kill ships, and change time scale. **Fix:** injectable
+  `build_is_debug: bool = OS.is_debug_build()` on `Main` (line 16) and
+  `DebugConsole` (line 26). `Main._ready` (line 71) only constructs/starts the
+  service when `ConsoleService.is_enabled_for_build(build_is_debug)` is true;
+  submit handler null-guards (line 123). `DebugConsole._ready` (line 33) skips
+  toggle registration and disables input on release; passes `build_is_debug`
+  into `try_register_toggle_action` (line 37) — never a literal `true`.
+  No config unlock, no cheat code, console code kept. **Tests hit the real
+  `_ready` paths** (`DebugConsole.tscn` / `Main.tscn` with injected false/true)
+  — no test-local copy of Main's boot decision. **Proved red then green by
+  removing only the production gate lines** (helpers + tests left in place):
+  release `_ready` tests failed 2/4 exit 1 (DebugConsole registered toggle;
+  Main created ConsoleService); after restore 4/4. Earlier attempt-1 "red"
+  was only a parse drop (Scripts-count gate), not this assertion. Editor
+  check: open project, backtick still opens console. **Export templates
+  absent** — release backtick check not run. Full suite 873/873 (98 scripts);
+  lint clean.
 - **2026-08-07 (REPAIR-6 — audio buses + rebind integrity)** — External audit
   findings on options: UI/SFX buses never existed so volume sliders did nothing;
   Reset defaults cleared stored binds but left the live InputMap on old keys;

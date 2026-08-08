@@ -302,8 +302,10 @@ static state of its own.
 
 ### `ConsoleService` => `res://src/systems/console/ConsoleService.gd`
 
-1 static func(s), no static var. Callable by bare name; holds no mutable
-static state of its own.
+2 static func(s), no static var. Callable by bare name; holds no mutable
+static state of its own. `is_enabled_for_build` (REPAIR-24) is the pure
+release gate; `tokenise` parses typed lines.
+
 
 ### `DraywarUiTheme` => `res://src/ui/DraywarUiTheme.gd`
 
