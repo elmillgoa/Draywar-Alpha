@@ -474,10 +474,13 @@ func test_every_sim_child_of_main_freezes_under_a_paused_tree() -> void:
 	assert_true(
 		still_running.is_empty(),
 		(
-			"every non-overlay child of Main must be PAUSABLE, but these kept "
-			+ "running under a paused tree: %s — add _mark_sim_pausable at their "
-			+ "add_child, or add them to the overlay list above if they are session UI"
-		) % str(still_running)
+			(
+				"every non-overlay child of Main must be PAUSABLE, but these kept "
+				+ "running under a paused tree: %s — add _mark_sim_pausable at their "
+				+ "add_child, or add them to the overlay list above if they are session UI"
+			)
+			% str(still_running)
+		)
 	)
 
 	main.call("_set_pause", false)

@@ -186,3 +186,26 @@ encode it in `scripts/checkin.py` when possible.
     here: under this environment's locale it can report zero matches on a file
     that genuinely holds non-ASCII bytes, which is how the second one slipped
     through the first check.
+28. **`Main` is `PROCESS_MODE_ALWAYS`, so freezing the sim is opt-OUT — a node you
+    add to `Main` keeps simulating behind the pause menu unless you say
+    otherwise.** REPAIR-5 made `Main` ALWAYS so input, focus notifications and
+    session menus survive `get_tree().paused = true`. Every child inherits that
+    unless it is demoted, so `add_child(SomeService.new())` without
+    `_mark_sim_pausable(...)` gives you a service that runs while the player is
+    looking at a paused game — and it is invisible, because pausing still *looks*
+    like it works. Nothing in the language enforces the pairing.
+    `test_every_sim_child_of_main_freezes_under_a_paused_tree` walks Main's real
+    child list under a paused tree and fails naming the offender, so the trap has
+    a tripwire; keep it, and if a genuinely-interactive overlay is added, put it
+    in that test's allowlist rather than deleting the check.
+29. **A rule enforced at every caller is one new caller away from being broken —
+    put it in the function the callers go through.** REPAIR-5's "no pause menu
+    while docked" (#58) was written into each caller of `_set_pause`. There were
+    two. One attempt guarded both; the next attempt rewrote one of them to fix an
+    unrelated bounce, did not carry the check over, and the finding came back
+    with every test still green — because the rule was only ever tested through
+    the *other* caller. The check now lives inside `_set_pause`
+    (`_may_open_pause_menu`) and the tests assert it at the door as well as on
+    each route to it. **Two tells that this shape is present:** the same
+    condition appears in more than one place, and the test for it names a route
+    ("the Escape key does X") rather than the rule ("X cannot happen").

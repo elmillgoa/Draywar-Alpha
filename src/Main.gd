@@ -51,13 +51,11 @@ var _in_play: bool = false
 ## True while create / annexation are open — no tip, dock, or undock yet.
 var _opening_in_progress: bool = false
 var _pause_open: bool = false
-## True only when pause was opened by focus-loss auto-pause. Intentional Escape
-## pause must survive alt-tab; focus-in resumes only what focus-out opened, and
-## never while Options / sector map / sheet / journal is still up.
+## True only when focus-loss opened the pause. An intentional Escape pause must
+## survive alt-tab, and focus-in resumes only what focus-out opened.
 var _pause_from_focus_loss: bool = false
-## True while the window does not have focus. Freezing the sim (#47) and opening
-## the pause menu (#58 forbids it at a berth) are two different things, so they
-## get two different flags — `_apply_tree_paused` freezes for either one.
+## True while the window has no focus. Freezing the sim (#47) and opening the
+## pause menu (#58 forbids it at a berth) are two different things, so two flags.
 var _focus_freeze: bool = false
 var _console_open: bool = false
 var _jump_busy: bool = false
@@ -114,8 +112,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _try_close_play_overlay():
 		get_viewport().set_input_as_handled()
 		return
-	# #58's refusal lives inside _set_pause, not here. This path does not repeat
-	# it: a second copy is exactly what regressed the finding once already.
+	# #58's refusal lives inside _set_pause, not here — a second copy is exactly
+	# what regressed the finding once already.
 	if _set_pause(not _pause_open):
 		get_viewport().set_input_as_handled()
 
@@ -249,15 +247,11 @@ func _on_console_visibility_changed(open: bool) -> void:
 
 
 func _on_pause_changed_bus(open: bool) -> void:
-	# PauseMenu Resume emits this; keep Main flag + SceneTree pause in sync.
-	# The bus is the third way into `_pause_open`, so it asks the same question
-	# `_set_pause` does — no route to a paused docked session skips #58.
-	#
-	# What this does not cover, and cannot from here: PauseMenu sets its own
-	# `visible` off this same signal and connects after Main, so an outside
-	# emitter of true would raise the panel before this line could refuse it.
-	# Nothing emits true from outside Main today, so there is no live path;
-	# it is filed as a proposed finding rather than fixed inside this brief.
+	# PauseMenu Resume emits this; keep Main flag + SceneTree pause in sync. The
+	# bus is the third way into `_pause_open`, so it asks what `_set_pause` asks —
+	# no route to a paused docked session skips #58. It does NOT cover PauseMenu's
+	# own `visible` (set off this signal, connected after Main): filed proposal,
+	# and no live path, since nothing emits true from outside Main today.
 	if open and not _may_open_pause_menu():
 		return
 	_pause_open = open
@@ -269,14 +263,9 @@ func _on_pause_changed_bus(open: bool) -> void:
 
 
 ## The one door the pause menu opens and closes by. Returns true when the state
-## actually changed, so a caller can tell a refusal from a no-op.
-##
-## #58 is enforced HERE and nowhere else, and that placement is the fix rather
-## than an implementation detail. The rule was previously written into each
-## caller: the Escape path had it, and when the focus-loss handler was rewritten
-## its copy was not carried over, so alt-tabbing at a berth re-opened the menu
-## the Escape key had just been taught to refuse. A rule that has to be repeated
-## at every call site is a rule that is one new caller away from being broken.
+## actually changed, so a caller can tell a refusal from a no-op. #58 is enforced
+## HERE and nowhere else, and that placement is the fix, not an implementation
+## detail — docs/traps.md #29 is what happened when it lived at each caller.
 func _set_pause(open: bool) -> bool:
 	if _pause_open == open:
 		return false
@@ -295,15 +284,14 @@ func _set_pause(open: bool) -> bool:
 	return true
 
 
-## #58: the pause menu carries Load, and loading out of a berth is the broken
-## path, so the menu may not open while docked — by any route, present or future.
+## #58: the menu carries Load and loading out of a berth is the broken path, so
+## it may not open while docked — by any route, present or future.
 func _may_open_pause_menu() -> bool:
 	return not _is_session_docked()
 
 
-## REPAIR-5: SceneTree pause is the real freeze. UI flag alone is not enough.
-## Either the player's pause or a lost window freezes it; both must be clear
-## before the sim runs again.
+## REPAIR-5: SceneTree pause is the real freeze, not the UI flag. The player's
+## pause or a lost window freezes it; both must clear before the sim runs again.
 func _apply_tree_paused() -> void:
 	var tree: SceneTree = get_tree()
 	if tree == null:
@@ -311,13 +299,8 @@ func _apply_tree_paused() -> void:
 	tree.paused = _pause_open or _focus_freeze
 
 
-## Focus lost while playing. Two separate things happen, and keeping them
-## separate is what lets #47 and #58 both hold at once:
-##
-## - the sim freezes, always, berth or open space (#47)
-## - the pause menu opens only if `_set_pause` allows it, which it does not
-##   while docked (#58) — so alt-tabbing at a berth freezes behind the station
-##   menu and puts nothing on top of it
+## Focus lost while playing. Two separate things, which is what lets #47 and #58
+## both hold: the sim always freezes; the menu opens only if `_set_pause` allows.
 func _on_application_focus_out() -> void:
 	if not _in_play or _console_open or _jump_busy or _opening_in_progress or _dead:
 		return
@@ -330,9 +313,8 @@ func _on_application_focus_out() -> void:
 		_pause_from_focus_loss = true
 
 
-## Focus regained. The freeze belongs to the window, so it always lifts; the
-## pause menu only closes if focus-loss is what opened it, and never while a
-## session overlay other than the pause menu is still on screen.
+## Focus regained. The freeze belongs to the window, so it always lifts; the menu
+## closes only if focus-loss opened it, and never under another session overlay.
 func _on_application_focus_in() -> void:
 	_focus_freeze = false
 	if _pause_from_focus_loss and not _session_overlay_blocks_focus_resume():
