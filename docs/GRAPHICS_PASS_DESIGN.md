@@ -44,20 +44,25 @@ key art and the dock-screen backdrops.
 2. Livery system: paint is data, separate from models. Every government/organization
    (8 entities) gets its own paint scheme. Ships are told apart by silhouette first,
    scheme second.
-3. **Paint shop — full player feature in this pass:** a station screen to browse
+3. Hardpoints and visible weapons: every ship model carries named attachment
+   points; weapon models mount there and **swap visibly when the equipped weapon
+   changes**. All 12 weapons are covered by a small set of weapon-model families
+   (cannon, twin cannon, launcher/pod, heavy) with size/barrel/material variants.
+   Hostiles show their profile loadouts; traffic keeps fixed simple mounts.
+4. **Paint shop — full player feature in this pass:** a station screen to browse
    skins, preview them on your ship, buy with credits; choice survives save/load.
-4. Space environment: per-system deep-space backdrops (8 distinct), real sun/planet
+5. Space environment: per-system deep-space backdrops (8 distinct), real sun/planet
    surfaces, glow/haze/color treatment. The one-node-per-star starfield is retired.
-5. Combat and travel effects: engine trails, muzzle flashes, impact sparks,
+6. Combat and travel effects: engine trails, muzzle flashes, impact sparks,
    explosions, jump-gate and docking effects, camera shake.
-6. Window upgrade: 1920×1080 base resolution, fullscreen support, proper scaling;
+7. Window upgrade: 1920×1080 base resolution, fullscreen support, proper scaling;
    all ~25 screens re-verified at the new size.
-7. UI completion: military-stencil display font + readable HUD companion font,
+8. UI completion: military-stencil display font + readable HUD companion font,
    icons, existing dark-navy theme extended to every control type, hangar backdrop
    images behind dock screens.
-8. Sound effects: engine hum tied to throttle, weapons, impacts, docking, UI —
+9. Sound effects: engine hum tied to throttle, weapons, impacts, docking, UI —
    replacing the generated beeps.
-9. Store identity: Draywar logo, desktop/taskbar icon, Steam capsule/key art.
+10. Store identity: Draywar logo, desktop/taskbar icon, Steam capsule/key art.
 
 **Out (explicitly):**
 - Music (deferred by decision — sounds yes, music later).
@@ -65,6 +70,8 @@ key art and the dock-screen backdrops.
 - Visible 3D docking sequences (docking stays menu-based, with hangar backdrop art).
 - Raising the 20-ship performance budget.
 - Any change to combat hitboxes or tuned combat values.
+- Visible models for the 10 equipment items (shield boosters etc.) — they stay
+  internal; only weapons render on hulls.
 
 ## 4. Invariants — things this pass must not break
 
@@ -134,7 +141,24 @@ projectiles stay primitive-simple with better materials.
 - Liveries apply through the material chokepoint, so adding a skin later is data
   entry, not code.
 
-### 5.4 Paint shop (player feature)
+### 5.4 Hardpoints and weapon visuals
+
+- Every ship model carries named attachment points (hardpoints) placed during
+  Blender cleanup: wingtips, nose, belly per hull as the silhouette allows.
+  Hardpoints are part of the G1 hauler deliverable — retrofitting them later
+  would mean redoing models.
+- Weapon-model **families** cover all 12 weapons: cannon, twin cannon,
+  launcher/pod, heavy barrel — differentiated by size, barrel count, and
+  material. A weapon data row names its family + variant; no per-weapon sculpts.
+- Equipping a different weapon swaps the mounted model on the player's ship.
+  Hostiles mount their profile loadouts; traffic ships carry fixed simple mounts.
+- Muzzle flashes and beam effects originate from the mounted barrels.
+- **Invariant guard:** projectile *spawn* positions and the tuned combat values
+  (spawn grace distance, swept collision) do not move. Barrels are aligned to the
+  existing spawn math, never the reverse. This wiring is a Claude-tier job, not a
+  mechanical one.
+
+### 5.5 Paint shop (player feature)
 
 - New station screen: list owned + purchasable skins, live preview on the player's
   hull, purchase with credits through the existing market/credits services.
@@ -145,7 +169,7 @@ projectiles stay primitive-simple with better materials.
 - Tests: purchase deducts correct credits, ownership persists across save/load,
   equipped skin survives save/load, refusal path when credits are short.
 
-### 5.5 Environment
+### 5.6 Environment
 
 - Starfield: replaced by a skybox pipeline — procedural star shader layered over
   deep-space imagery (CC0/public domain), one variant per system, seeded/stable
@@ -156,13 +180,13 @@ projectiles stay primitive-simple with better materials.
 - Sun/planets/moons get textured surfaces; asteroid-belt collision behavior
   unchanged.
 
-### 5.6 Effects
+### 5.7 Effects
 
 GPU particles for trails/impacts/explosions/jump/dock; camera shake + small FOV
 kick on hits, kills, and jumps in `ChaseCamera`. Every emitter declares its
 time-scale behavior explicitly and respects pause via the existing convention.
 
-### 5.7 Window and UI
+### 5.8 Window and UI
 
 - Project display settings set explicitly: 1920×1080 base, `canvas_items` stretch,
   aspect keep, fullscreen toggle + resolution handling in options.
@@ -180,13 +204,13 @@ time-scale behavior explicitly and respects pause via the existing convention.
 - Icons where the UI is text-only; hangar backdrop art behind dock screens (in the
   reference style, warm practical lighting).
 
-### 5.8 Audio (SFX only)
+### 5.9 Audio (SFX only)
 
 Real samples replace generated beeps: engine loop tied to throttle, weapon fire,
 impacts, dock/undock, UI clicks. Existing bus layout (Master/UI/SFX) stays.
 Sources are license-clean (see §7). Music remains out of scope.
 
-### 5.9 Store identity
+### 5.10 Store identity
 
 Draywar logo (title screen + key art), proper desktop/taskbar icon (replaces the
 placeholder `icon.svg`), Steam capsule/key art composed from the reference
@@ -200,8 +224,8 @@ something Elliot can look at.
 | Phase | Content | Gate |
 |---|---|---|
 | **G0 — Foundation** | 1080p/fullscreen/stretch + all screens re-verified; `assets/` structure + import conventions; fresh perf baseline at densest scene, 1× and 16× | All tests green; Elliot confirms the game still plays right at the new window |
-| **G1 — The slice (style gate)** | Hauler model + default livery; one full system backdrop + celestials; one station + gate; engine trail + impact + one explosion; font pairing on HUD; one hangar backdrop; image-to-3D bake-off decides the generation tool | **Elliot signs the style on 1080p screenshots. Nothing fans out until signed.** |
-| **G2 — The fleet** | All remaining ship models; all 8 faction liveries; projectiles | Screenshot review; readability spot-check (friend/foe/hull at combat distance); tests green |
+| **G1 — The slice (style gate)** | Hauler model with hardpoints + default livery + one weapon family mounted; one full system backdrop + celestials; one station + gate; engine trail + impact + one explosion; font pairing on HUD; one hangar backdrop; image-to-3D bake-off decides the generation tool | **Elliot signs the style on 1080p screenshots. Nothing fans out until signed.** |
+| **G2 — The fleet** | All remaining ship models with hardpoints; all weapon families + visible swapping; hostile loadouts mounted; all 8 faction liveries; projectile material/glow/trail upgrade | Screenshot review; readability spot-check (friend/foe/hull at combat distance); weapon-swap check at the outfitting screen; tests green |
 | **G3 — The world** | All 8 system backdrops + celestials; remaining 15 stations; all gates | Screenshot review per system; system-identity spot-check |
 | **G4 — Effects** | Full VFX set + camera work | Reviewed in motion at 1×/4×/16×; frame-time measurement vs G0 baseline |
 | **G5 — Interface** | Theme to all control types; icons; all screens finished; hangar backdrops everywhere | Screen-by-screen review at 1080p |
@@ -219,7 +243,7 @@ dates in the session research reports).
 | Ship/station base models | Bake-off in G1: Meshy vs Tripo vs Hyper3D Rodin on the hauler reference image (free previews), then **one month** of the winner | Paid tiers: full commercial ownership, no attribution | ~$20–30 once, asked before buying |
 | Worn-metal PBR textures | Poly Haven, ambientCG | CC0 / public domain | Free |
 | Space backdrops | Procedural shader + Poly Haven / NASA imagery; fallback Blockade Labs one month if no free nebula matches | CC0 / public domain; Blockade paid = commercial | Free; fallback ~$20 once, asked first |
-| Fonts | Google Fonts (candidates in §5.7) | SIL OFL / Apache | Free |
+| Fonts | Google Fonts (candidates in §5.8) | SIL OFL / Apache | Free |
 | SFX | Kenney packs first; Sonniss GDC bundle second; Freesound only CC0 with per-file check | CC0 / royalty-free commercial | Free |
 
 **Ruled out, and why:** Tencent Hunyuan3D — license excludes EU/UK (Steam sells
@@ -289,3 +313,5 @@ split is about fit and capacity, not per-token price.
 - Window: 1920×1080 + fullscreen this pass.
 - Structure: A — slice first with style gate, then scale out.
 - Staffing: Option A risk-sorted (Claude judgment, Grok mechanical), both flat-rate.
+- Weapons: ships get hardpoints with visibly swappable weapons; model **families**
+  (not 12 unique sculpts) cover all weapons; equipment stays invisible.
