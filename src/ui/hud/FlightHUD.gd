@@ -385,6 +385,25 @@ func _status_tier(status: Dictionary) -> StringName:
 
 func _refresh_prompt() -> void:
 	_prompt_label.text = _prompt_text()
+	# Approach-refused uses the same glyph+color as the press-F refused path
+	# (S10 a11y: color + glyph + tier name). Other prompts stay accent.
+	if _is_dock_refused_prompt():
+		var status: Dictionary = StandingService.status_for_station(_dock_prompt_id)
+		var refuse_tier: StringName = _status_tier(status)
+		_prompt_label.add_theme_color_override(
+			"font_color", BalanceStanding.tier_color(refuse_tier)
+		)
+	else:
+		_prompt_label.add_theme_color_override("font_color", BalanceUi.ACCENT)
+
+
+## True when the approach prompt is the standing-refusal line (not PRESS F / APPROACHING).
+func _is_dock_refused_prompt() -> bool:
+	if _dock_prompt_id == &"":
+		return false
+	if _dock_can_dock:
+		return false
+	return not StandingService.can_dock_at_station(_dock_prompt_id)
 
 
 ## The one prompt line, in priority order. Split out of `_refresh_prompt` when
@@ -413,10 +432,17 @@ func _dock_prompt_text() -> String:
 		return "PRESS F TO DOCK — %s" % station_label
 	if not StandingService.can_dock_at_station(_dock_prompt_id):
 		var status: Dictionary = StandingService.status_for_station(_dock_prompt_id)
+		var refuse_tier: StringName = _status_tier(status)
 		return (
 			BalanceStanding.DOCK_REFUSED_PROMPT_FORMAT
 			% [
-				status[StandingService.STATUS_KEY_TIER_DISPLAY],
+				(
+					"%s %s"
+					% [
+						BalanceStanding.tier_glyph(refuse_tier),
+						status[StandingService.STATUS_KEY_TIER_DISPLAY],
+					]
+				),
 				status[StandingService.STATUS_KEY_ENTITY_DISPLAY],
 			]
 		)

@@ -627,8 +627,11 @@ func _on_person_standing_changed(
 func _on_entity_standing_changed(
 	_entity_id: StringName, _old_value: float, _new_value: float, _tier: StringName
 ) -> void:
+	# Entity standing moves trade markup and service prices, not only recovery.
+	# Person path already calls _refresh_all; match it so a dock-controller
+	# change while berth-side does not leave the trade banner stale.
 	if visible:
-		_refresh_recovery_buttons()
+		_refresh_all()
 
 
 func _on_wallet_changed(_credits: int) -> void:

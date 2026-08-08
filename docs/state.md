@@ -52,6 +52,27 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-9 — station/HUD standing display consistency)** — External
+  audit baseline ee17eab5: three display defects only (fourth HUD-stale-on-load
+  item lives in Opus Job 3 — do not touch StandingService / load path here).
+  **(1) Approach-refused prompt** (`FlightHUD._dock_prompt_text` / `_refresh_prompt`
+  ~386–460): showed tier name with no glyph and no color, failing signed S10
+  a11y (color + glyph + tier name). Press-F path already correct. Fix prepends
+  `tier_glyph` and sets `font_color` to `tier_color` on the refused approach
+  branch; non-refused prompts reset to accent.
+  **(2) Dock-controller standing while docked** (`StationMenu._on_entity_standing_changed`
+  ~627–634): only refreshed recovery buttons, leaving trade banner and service
+  markup stale. Now calls `_refresh_all()` when the menu is visible (matches
+  person path).
+  **(3) Sell cap note** (`StationTradeRow._cap_note` ~175–201): always used
+  MARKET sell wording; HOLD strings in BalanceEconomy were dead. Branches on
+  `_sell_limit` so hold-limited sell says “you are only carrying N”.
+  **Tests** (`tests/test_repair9_standing_display.gd`):
+  `test_dock_refused_prompt_has_tier_color_and_glyph` (red→green),
+  `test_status_line_has_tier_color_and_glyph` (green-on-arrival — S10 a11y
+  guard on both `_refresh_status_line` branches), plus sell HOLD note proof.
+  Full suite 101/101 scripts, 893/893, lint clean.
+  **Boundary** `git diff HEAD -- src/systems/standing/StandingService.gd`: empty.
 - **2026-08-08 (REPAIR-18 — load flight matches hull: PT-8 + IF-22)** — External
   audit **PT-8**: after hull hit zero, pause-menu Load restored a full hull but
   left the ship frozen (`crippled=true`, flight off). Continue worked because it

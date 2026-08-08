@@ -177,10 +177,28 @@ func _cap_note(asked: int) -> String:
 	if asked > _max_buy:
 		lines.append(_buy_cap_line())
 	if asked > _max_sell and _max_sell > 0:
-		lines.append(BalanceEconomy.STATION_TRADE_CAP_SELL_MARKET_FORMAT % _max_sell)
-	elif _max_sell <= 0 and _sell_limit == BalanceEconomy.TRADE_LIMIT_MARKET:
-		lines.append(BalanceEconomy.STATION_TRADE_NONE_SELL_MARKET)
+		lines.append(_sell_cap_line())
+	elif _max_sell <= 0:
+		var none_sell: String = _sell_none_line()
+		if not none_sell.is_empty():
+			lines.append(none_sell)
 	return " ".join(lines)
+
+
+## Sell-side "you asked for more than N" — dock market vs what is in the hold.
+func _sell_cap_line() -> String:
+	if _sell_limit == BalanceEconomy.TRADE_LIMIT_HOLD:
+		return BalanceEconomy.STATION_TRADE_CAP_SELL_HOLD_FORMAT % _max_sell
+	return BalanceEconomy.STATION_TRADE_CAP_SELL_MARKET_FORMAT % _max_sell
+
+
+## Sell-side empty limit wording (nothing left to sell / dock takes none).
+func _sell_none_line() -> String:
+	if _sell_limit == BalanceEconomy.TRADE_LIMIT_HOLD:
+		return BalanceEconomy.STATION_TRADE_NONE_SELL_HOLD
+	if _sell_limit == BalanceEconomy.TRADE_LIMIT_MARKET:
+		return BalanceEconomy.STATION_TRADE_NONE_SELL_MARKET
+	return ""
 
 
 func _buy_cap_line() -> String:
