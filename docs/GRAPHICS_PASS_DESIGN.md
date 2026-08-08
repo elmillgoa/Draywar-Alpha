@@ -124,6 +124,10 @@ s3tc_bptc textures (desktop-only target).
    per-entity build functions (`PlayerShip`, `HostileNpc`, `TrafficShip`,
    `SystemWorld` station/gate builders) become loaders; collision construction
    stays exactly where it is.
+   **Growth requirement:** the mapping from entity to model lives in the
+   entity's data row (hull/station/weapon `.tres` names its model file and
+   hardpoint set), never hardcoded in scripts — so a future ship, weapon, or
+   station class is a new data row plus new asset files, zero code (see §12).
 5. `BalancePresentation.gd` evolves from "six primitive materials" into the single
    place that hands out hull/livery/VFX materials. It remains the one chokepoint.
 
@@ -147,9 +151,17 @@ projectiles stay primitive-simple with better materials.
   Blender cleanup: wingtips, nose, belly per hull as the silhouette allows.
   Hardpoints are part of the G1 hauler deliverable — retrofitting them later
   would mean redoing models.
+- **Every hardpoint carries a type from day one: offensive / defensive /
+  utility.** Pass 1 only ever mounts offensive weapons, but the field exists in
+  the very first model so future defensive suites (point-defense turrets,
+  anti-missile guns, chaff/decoy launchers — see §12) mount without reworking
+  a single hull. Haulers get defensive-type hardpoints on their models now,
+  even though nothing mounts on them in this pass.
 - Weapon-model **families** cover all 12 weapons: cannon, twin cannon,
   launcher/pod, heavy barrel — differentiated by size, barrel count, and
   material. A weapon data row names its family + variant; no per-weapon sculpts.
+  The family list is **data, not a code enum** — adding family #5 later
+  (turret, missile pod, chaff dispenser) is a new family resource + models.
 - Equipping a different weapon swaps the mounted model on the player's ship.
   Hostiles mount their profile loadouts; traffic ships carry fixed simple mounts.
 - Muzzle flashes and beam effects originate from the mounted barrels.
@@ -315,3 +327,35 @@ split is about fit and capacity, not per-token price.
 - Staffing: Option A risk-sorted (Claude judgment, Grok mechanical), both flat-rate.
 - Weapons: ships get hardpoints with visibly swappable weapons; model **families**
   (not 12 unique sculpts) cover all weapons; equipment stays invisible.
+- Future growth (stated 2026-08-08, after spec approval): pass-1 counts are
+  fine, but the roster grows later — see §12. Architecture must not close
+  those doors; no future content is built in this pass.
+
+## 12. Future growth — doors this pass must leave open
+
+Stated by Elliot 2026-08-08. **None of this is built in pass 1.** It is
+recorded so pass-1 architecture choices (data-driven model mapping §5.2,
+typed hardpoints §5.4, data-driven weapon families §5.4, station classes
+below) cannot block it. The test for every pass-1 architecture decision:
+*adding any item below later must be data + assets, never a rework of what
+pass 1 shipped.*
+
+1. **Ship progression roster.** The player progresses through multiple ship
+   types over time — bigger ships, smaller ships, specialized ships, and more
+   hauler variants. Hull count is open-ended; the two pass-1 hulls are the
+   floor, not the shape.
+2. **Hauler defensive suites.** Haulers do not get traditional weapons. They
+   get defensive systems instead: point-defense/anti-missile turrets, chaff
+   and decoy launchers, and similar countermeasures. Pass-1 hauler models
+   therefore carry defensive-type hardpoints from the start (§5.4), sized for
+   turret and launcher mounts. Gameplay for these systems is its own future
+   design; this pass only guarantees the mounting surface exists.
+3. **Weapon family expansion.** Four families cover today's 12 weapons; the
+   long-term list is much larger (turrets, missile systems, countermeasures,
+   specialized mounts). Families stay data-defined so growth is additive.
+4. **Station design archetypes — roughly 10 total.** Each station *type*
+   eventually gets its own look: military, research, civilian, trading,
+   free-haven, and so on (~10 designs, list not final). Pass 1 ships one base
+   station dressed per system; to keep the door open, station data rows gain a
+   `station_class` field during G3 (all set to the same class initially), so
+   later archetypes are new models + a field value per station, no rework.
