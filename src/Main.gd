@@ -898,7 +898,7 @@ func _apply_world_section(sections: Dictionary) -> void:
 			_variant_to_float(world_data[BalanceSession.WORLD_KEY_POS_Z])
 		)
 		_ship.velocity = Vector3.ZERO
-		_ship.set_flight_enabled(true)
+		_ship.apply_load_flight_from_can_fly(_hull != null and _hull.can_fly())
 		_ship.visible = true
 	_raise_debug_console()
 

@@ -93,6 +93,15 @@ func set_flight_enabled(enabled: bool) -> void:
 		velocity = Vector3.ZERO
 
 
+## Load placement path: derive crippled from HullConditionService.can_fly(), then
+## request flight. Healthy hull → flag clear and flight on (PT-8). Grounded hull →
+## flag set and the enable is refused (IF-22). One source of truth either way —
+## do not clear _crippled unconditionally (that greens PT-8 and opens IF-22).
+func apply_load_flight_from_can_fly(can_fly: bool) -> void:
+	_crippled = not can_fly
+	set_flight_enabled(true)
+
+
 ## True when pilot control is on (not docked / not crippled lock).
 func is_flight_enabled() -> bool:
 	return _flight_enabled

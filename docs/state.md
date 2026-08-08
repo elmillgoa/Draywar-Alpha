@@ -52,6 +52,29 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-18 — load flight matches hull: PT-8 + IF-22)** — External
+  audit **PT-8**: after hull hit zero, pause-menu Load restored a full hull but
+  left the ship frozen (`crippled=true`, flight off). Continue worked because it
+  rebuilds the ship node. **IF-22** (same line, opposite direction): the free-
+  flight placement branch of `Main._apply_world_section` called
+  `set_flight_enabled(true)` unconditionally as the last word on flight, after
+  undock had already set flight from `HullConditionService.can_fly()` (via
+  `DockingService._wallet_can_fly()` — name is a leftover from the S5 split; it
+  does **not** read credits). That force-on could hand power to a grounded ship
+  when the `_crippled` flag and `can_fly()` disagreed.
+  **Fix (one source of truth, both directions):**
+  `PlayerShip.apply_load_flight_from_can_fly(can_fly)` sets `_crippled = not
+  can_fly` then requests enable; healthy hull flies (PT-8), grounded hull stays
+  off (IF-22). Placement at `Main.gd` ~901 now calls that with
+  `_hull.can_fly()` instead of forcing true. No save key, no
+  `WORLD_KEY_DOCKED_STATION_ID`, no wallet/credits gate on flight, no change to
+  what crippling does, no rename of `_wallet_can_fly` (reported only).
+  **Tests** (`tests/test_repair18_load_flight.gd`): both failed on the current
+  build (PT-8: healthy load left flight off; IF-22: grounded load with flag
+  clear forced flight on) and pass after. Full suite 890/890 (100 scripts),
+  lint clean.
+  **Boundary** `git diff HEAD -- src/Main.gd`: one call swap only — no
+  `WORLD_KEY_DOCKED_STATION_ID`, no new save key.
 - **2026-08-07 (REPAIR-5 attempt 3 — pause freezes the sim, and alt-tab pauses
   without re-opening a docked pause menu)** — Audit findings **#46** (pause does
   not pause), **#47** (no auto-pause on focus loss), **#57** (flight actions fire
