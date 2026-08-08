@@ -64,6 +64,7 @@ func _ready() -> void:
 	EventBus.on_mission_completed.connect(_on_mission_closed)
 	EventBus.on_mission_failed.connect(_on_mission_closed)
 	EventBus.on_mission_abandoned.connect(_on_mission_closed)
+	EventBus.on_recovery_offered.connect(_on_recovery_offered)
 	EventBus.on_recovery_accepted.connect(_on_recovery_accepted)
 	EventBus.on_recovery_completed.connect(_on_recovery_closed)
 	EventBus.on_recovery_failed.connect(_on_recovery_soft_closed)
@@ -95,6 +96,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_mission_completed, _on_mission_closed)
 	_disconnect(EventBus.on_mission_failed, _on_mission_closed)
 	_disconnect(EventBus.on_mission_abandoned, _on_mission_closed)
+	_disconnect(EventBus.on_recovery_offered, _on_recovery_offered)
 	_disconnect(EventBus.on_recovery_accepted, _on_recovery_accepted)
 	_disconnect(EventBus.on_recovery_completed, _on_recovery_closed)
 	_disconnect(EventBus.on_recovery_failed, _on_recovery_soft_closed)
@@ -580,10 +582,22 @@ func _on_mission_closed(_template_id: StringName, _entity_id: StringName, _delta
 	call_deferred(&"_refresh_all")
 
 
+## REPAIR-4: sole writer of _offer_person_id. Handlers below blank it, RecoveryService
+## re-announces, first of a sweep wins. Lifecycle contract: docs/events.md.
+func _on_recovery_offered(
+	_chain_id: StringName, _step_id: StringName, person_id: StringName
+) -> void:
+	if String(_offer_person_id).is_empty():
+		_offer_person_id = person_id
+	if visible:
+		_refresh_recovery_buttons()
+
+
 func _on_recovery_accepted(
 	_chain_id: StringName, _step_id: StringName, person_id: StringName
 ) -> void:
 	_active_recovery_person_id = person_id
+	_offer_person_id = &""
 	_refresh_all()
 
 
@@ -596,6 +610,7 @@ func _on_recovery_closed(
 	_entity_delta: float
 ) -> void:
 	_active_recovery_person_id = &""
+	_offer_person_id = &""
 	_refresh_all()
 
 
@@ -603,6 +618,7 @@ func _on_recovery_soft_closed(
 	_chain_id: StringName, _step_id: StringName, _person_id: StringName, _person_delta: float
 ) -> void:
 	_active_recovery_person_id = &""
+	_offer_person_id = &""
 	_refresh_all()
 
 
@@ -610,16 +626,20 @@ func _on_recovery_betrayed(
 	_person_id: StringName, _person_delta: float, _entity_delta: float
 ) -> void:
 	_active_recovery_person_id = &""
+	_offer_person_id = &""
 	_refresh_all()
 
 
 func _on_person_closed(_person_id: StringName, _reason: StringName) -> void:
+	_offer_person_id = &""
 	_refresh_all()
 
 
 func _on_person_standing_changed(
 	_person_id: StringName, _old_value: float, _new_value: float, _tier: StringName
 ) -> void:
+	# A standing drop can withdraw the offer; the re-announce restores what stands.
+	_offer_person_id = &""
 	if visible:
 		_refresh_all()
 
@@ -750,13 +770,9 @@ func _clear_contacts_list() -> void:
 func _refresh_recovery_buttons() -> void:
 	if _recovery_btn == null:
 		return
-	_offer_person_id = _offered_recovery_person_for_dock()
 	_favor_person_id = _favor_person_for_dock()
 	var recovery_busy: bool = _recovery_is_active()
-	if recovery_busy:
-		_active_recovery_person_id = _active_recovery_person()
-	elif not recovery_busy:
-		_active_recovery_person_id = &""
+	_active_recovery_person_id = _active_recovery_person() if recovery_busy else &""
 
 	var deep_negative: bool = StationDockQueries.is_deep_negative_with_controller(
 		_docked_station_id
@@ -970,12 +986,6 @@ func _offered_template_for_dock() -> StringName:
 
 func _offered_templates_for_dock() -> Array[StringName]:
 	return StationDockQueries.offered_templates(_docked_station_id)
-
-
-func _offered_recovery_person_for_dock() -> StringName:
-	return StationDockQueries.offered_recovery_person(
-		_docked_station_id, _node_in_group(&"recovery_service")
-	)
 
 
 func _favor_person_for_dock() -> StringName:

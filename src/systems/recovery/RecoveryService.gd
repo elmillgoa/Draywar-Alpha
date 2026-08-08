@@ -49,6 +49,12 @@ var _active_step_id: StringName = &""
 var _state: StringName = STATE_NONE
 ## chain_id → Array of completed step ids (StringName), in order.
 var _completed_steps: Dictionary[StringName, Array] = {}
+## Station the player is berthed at, or empty. Transient — dock state, not save
+## state; restored by the on_docked a load replays. REPAIR-4 needs it because the
+## offer announcement is no longer a one-shot at dock (see _announce_offers).
+var _docked_station_id: StringName = &""
+## One queued re-announce per frame, so a burst of standing writes is one sweep.
+var _announce_queued: bool = false
 
 
 func _ready() -> void:
@@ -60,6 +66,9 @@ func _ready() -> void:
 	EventBus.on_recovery_favor_requested.connect(_on_favor_requested)
 	EventBus.on_recovery_betray_requested.connect(_on_betray_requested)
 	EventBus.on_docked.connect(_on_docked)
+	EventBus.on_undocked.connect(_on_undocked)
+	EventBus.on_person_closed.connect(_on_person_closed)
+	EventBus.on_person_standing_changed.connect(_on_person_standing_changed)
 	EventBus.on_console_commands_requested.connect(_on_commands_requested)
 	EventBus.on_console_command_invoked.connect(_on_command_invoked)
 
@@ -78,6 +87,12 @@ func _exit_tree() -> void:
 		EventBus.on_recovery_betray_requested.disconnect(_on_betray_requested)
 	if EventBus.on_docked.is_connected(_on_docked):
 		EventBus.on_docked.disconnect(_on_docked)
+	if EventBus.on_undocked.is_connected(_on_undocked):
+		EventBus.on_undocked.disconnect(_on_undocked)
+	if EventBus.on_person_closed.is_connected(_on_person_closed):
+		EventBus.on_person_closed.disconnect(_on_person_closed)
+	if EventBus.on_person_standing_changed.is_connected(_on_person_standing_changed):
+		EventBus.on_person_standing_changed.disconnect(_on_person_standing_changed)
 	if EventBus.on_console_commands_requested.is_connected(_on_commands_requested):
 		EventBus.on_console_commands_requested.disconnect(_on_commands_requested)
 	if EventBus.on_console_command_invoked.is_connected(_on_command_invoked):
@@ -103,6 +118,8 @@ func reset() -> void:
 	_active_step_id = &""
 	_state = STATE_NONE
 	_completed_steps.clear()
+	_docked_station_id = &""
+	_announce_queued = false
 
 
 ## Clear only the active step without wiping chain progress.
@@ -230,6 +247,7 @@ func betray(person_id: StringName = &"") -> Dictionary:
 			clear_active()
 
 	EventBus.on_recovery_betrayed.emit(target, person_delta, entity_delta)
+	_queue_announce()
 
 	return {
 		REPORT_KEY_OK: true,
@@ -358,11 +376,56 @@ func _on_betray_requested(person_id: StringName) -> void:
 
 ## On dock: announce offerable recovery steps for the station controller's people.
 func _on_docked(station_id: StringName) -> void:
+	_docked_station_id = station_id
+	_announce_offers()
+
+
+func _on_undocked(_station_id: StringName) -> void:
+	_docked_station_id = &""
+
+
+## REPAIR-4: the Talk button is now driven by on_recovery_offered instead of by a
+## per-refresh query into this service, so a signal emitted only at the moment of
+## docking is not enough — the listener has no way to re-derive the offer after it
+## drops it. Every transition that can change what has_offer_for_person() answers
+## must re-announce, and there are exactly four kinds:
+##   * berthing at a station                     — _on_docked
+##   * this service's own progress               — accept / complete / fail /
+##     abandon / betray, via _queue_announce below
+##   * a Person being closed                     — on_person_closed
+##   * a Person's standing crossing Friendly     — on_person_standing_changed
+## Those four are the whole of what can_offer_recovery() and _next_step() read.
+func _on_person_closed(_person_id: StringName, _reason: StringName) -> void:
+	_queue_announce()
+
+
+func _on_person_standing_changed(
+	_person_id: StringName, _old_value: float, _new_value: float, _tier: StringName
+) -> void:
+	_queue_announce()
+
+
+## Re-announce on the next idle pass, never inline. Deferring is what makes this
+## order-independent: every listener that blanks its cached offer in response to
+## the same signal has already run by the time the sweep lands, and the writes a
+## transition makes after its own emit (record_personal_success, _mark_step_complete,
+## clear_active) have all landed too. Inline, the sweep would race both.
+func _queue_announce() -> void:
+	if _announce_queued:
+		return
+	_announce_queued = true
+	call_deferred(&"_announce_offers")
+
+
+## Emit on_recovery_offered for every offerable step at the berthed station.
+## No-op when not docked or when a step is already active.
+func _announce_offers() -> void:
+	_announce_queued = false
 	if has_active():
 		return
-	if not ContentLibrary.has_item(station_id):
+	if not ContentLibrary.has_item(_docked_station_id):
 		return
-	var station_item: ContentItem = ContentLibrary.item(station_id)
+	var station_item: ContentItem = ContentLibrary.item(_docked_station_id)
 	if not (station_item is Station):
 		return
 	var station: Station = station_item as Station
@@ -411,6 +474,7 @@ func _finish_success() -> Dictionary:
 	EventBus.on_recovery_completed.emit(
 		chain_id, step_id, person_id, entity_id, person_delta, entity_delta
 	)
+	_queue_announce()
 
 	return {
 		REPORT_KEY_OK: true,
@@ -463,6 +527,7 @@ func _finish_soft(abandoned: bool) -> Dictionary:
 		EventBus.on_recovery_abandoned.emit(chain_id, step_id, person_id, person_delta)
 	else:
 		EventBus.on_recovery_failed.emit(chain_id, step_id, person_id, person_delta)
+	_queue_announce()
 
 	return {
 		REPORT_KEY_OK: true,

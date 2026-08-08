@@ -172,7 +172,7 @@ channel is for; the offering Entity arrives separately on `on_mission_accepted`.
 - **Added by:** `src/systems/recovery/RecoveryService.gd:55` (raw string)
 - **Producer layer:** systems
 - **Permitted consumers:** (none)
-- **Reached via dynamic sites:** `src/systems/save/CareerSave.gd:533`, `src/ui/station/StationMenu.gd:960`
+- **Reached via dynamic sites:** `src/systems/save/CareerSave.gd:533`, `src/ui/station/StationMenu.gd:976`
 
 The one group with **no static lookup site at all** - every reach is through
 a same-file wrapper (`CareerSave._node_in_group`, `StationMenu._node_in_group`
@@ -359,7 +359,7 @@ parameter into `_node_in_group`). Groups reached this way: `wallet_service`,
 `operation_service`, `campaign_service`, `mission_service`, `docking_service`,
 `recovery_service`.
 
-### `src/ui/station/StationMenu.gd:960`
+### `src/ui/station/StationMenu.gd:976`
 
 `_node_in_group(group)`. Called directly with literal group names, and once
 more through `_group_bool(group, method)` (same forwarding shape). Groups

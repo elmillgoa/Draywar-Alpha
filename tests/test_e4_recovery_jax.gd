@@ -221,9 +221,16 @@ func test_station_queries_scope_favor_and_offer_by_controller() -> void:
 	assert_eq(StationDockQueries.favor_person(STATION_BETA_SPIT), PERSON_JAX)
 	assert_eq(StationDockQueries.favor_person(STATION_ALPHA), PERSON_MENDI)
 
+	# REPAIR-4 moved the Talk button off this query and onto the on_recovery_offered
+	# bus cache, but the query itself is unchanged and these assertions are the only
+	# coverage it has — keep them, or DRAYWAR_CONVENTIONS' "test helper only" reason
+	# for sanctioning it stops being true. Dock-scoped emission is separately covered
+	# by test_dock_offer_jax_at_drift_not_at_reach in this same file.
 	assert_eq(StationDockQueries.offered_recovery_person(STATION_BETA_HUB, _recovery), PERSON_JAX)
 	assert_eq(StationDockQueries.offered_recovery_person(STATION_ALPHA, _recovery), PERSON_MENDI)
 	assert_eq(StationDockQueries.offered_recovery_person(STATION_BETA_SPIT, _recovery), PERSON_JAX)
+	assert_true(_recovery.has_offer_for_person(PERSON_JAX))
+	assert_true(_recovery.has_offer_for_person(PERSON_MENDI))
 
 
 func test_station_ui_recovery_section_names_jax_without_console() -> void:

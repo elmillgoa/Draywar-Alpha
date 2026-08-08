@@ -104,12 +104,10 @@ this signal only carries the answer it reached.
 |---|---|---|
 | `locked` | `bool` | True to hold time at normal speed, false to release. |
 
-**Emitted by** _nobody yet — **Grok Brief 4 (REPAIR-4)** routes
-`src/world/HostileNpc.gd:60` and `:496`, which call `TimeScale.set_combat_lock()`
-directly today._
-**Listened to by** _nobody yet — **Grok Brief 4** has `src/systems/time/TimeScale.gd`
-listen._ Declared by Opus Job 12 because changing the signal set is not a brief's
-to make; see "Every signal names a production listener" above, point 5.
+**Emitted by** `src/world/HostileNpc.gd` on spawn (`true`) and when the last
+hostile dies / exits (`false`, via `_release_combat_lock_if_last`).
+**Listened to by** `src/systems/time/TimeScale.gd` — calls its own `set_combat_lock`.
+Wired by Grok Brief 4 (REPAIR-4). Declared by Opus Job 12.
 
 ### `on_combat_lock_changed(locked: bool)`
 
@@ -478,7 +476,9 @@ UI or console asked to accept the next recovery step from this Person.
 
 ### `on_recovery_offered(chain_id: StringName, step_id: StringName, person_id: StringName)`
 
-A recovery step is available (announced on dock when gated conditions pass).
+A recovery step is available. Announced whenever the answer could have changed,
+not only on dock — see the lifecycle contract below, which is the part of this
+signal that is easy to get wrong.
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -486,13 +486,41 @@ A recovery step is available (announced on dock when gated conditions pass).
 | `step_id` | `StringName` | RecoveryStep id within the chain. |
 | `person_id` | `StringName` | Person offering the step. |
 
-**Emitted by** `src/systems/recovery/RecoveryService.gd` on dock. Not emitted while
-a recovery step is already active.
-**Listened to by** _nobody yet — **Grok Brief 4 (REPAIR-4)** wires `StationMenu`,
-which surfaces the offer by direct query today (`StationDockQueries.gd:110`)._ The
-emit runs **before** `StationMenu._on_docked`, because `RecoveryService` is an
-earlier child of `Main` than the menu; Brief 4's wiring depends on that order and
-must pin it with a test.
+**Emitted by** `src/systems/recovery/RecoveryService.gd`. Not emitted while a
+recovery step is already active, and not emitted while undocked.
+**Listened to by** `src/ui/station/StationMenu.gd` — caches the first person
+announced and shows the Talk button for them.
+
+**The lifecycle contract, and why it exists.** REPAIR-4 replaced a per-refresh
+query (`StationDockQueries.offered_recovery_person`, which re-derived the answer
+from the service on every menu refresh) with this signal. A pull can be replaced
+by a push only if the push fires on **every** transition that changes the answer;
+announcing once at dock is not enough, and a listener that blanks its cache then
+has no way to re-derive it — the Talk button stays gone until the player undocks.
+
+So the service re-announces on each of the four things that can change what
+`has_offer_for_person()` answers, which between them are everything
+`can_offer_recovery()` and `_next_step()` read:
+
+| Trigger | Why it can change the answer |
+|---|---|
+| `on_docked` | different station controller, so a different set of People |
+| its own transitions — accept / complete / fail / abandon / betray | chain progress and the one-active-step gate |
+| `on_person_closed` | a closed Person never offers |
+| `on_person_standing_changed` | the offer gate is Friendly personal standing |
+
+Re-announcement is **deferred to the next idle pass**, never emitted inline. That
+is what makes it order-independent: every listener that blanks its cached offer in
+response to the same signal has already run, and the writes a transition makes
+after its own emit (`record_personal_success`, `_mark_step_complete`,
+`clear_active`) have all landed. It also means the menu never has to know which
+node runs first — earlier work asserted `RecoveryService` is an earlier child of
+`Main` than the menu, which `Main.tscn` does not actually say, and nothing now
+depends on it either way.
+
+Multi-person controllers announce once per chain in `list_chain_ids()` order and
+the menu keeps the first, which reproduces the first-match order of the query this
+replaced. Wired by Grok Brief 4 (REPAIR-4).
 
 ### `on_recovery_accepted(chain_id: StringName, step_id: StringName, person_id: StringName)`
 
@@ -1132,14 +1160,11 @@ choice. A request, not a fact — the service decides whether the choice is lega
 | `incident_id` | `StringName` | Instance id from `on_incident_prompt`. |
 | `choice` | `StringName` | One of `BalanceIncident`'s `CHOICE_*` values. |
 
-**Emitted by** _nobody yet — **Grok Brief 4 (REPAIR-4)** routes
-`src/ui/hud/FlightHUD.gd:794`, which calls `IncidentService.respond()` directly
-from a UI script today._
-**Listened to by** _nobody yet — **Grok Brief 4** has
-`src/systems/incident/IncidentService.gd` listen._ Named `_requested` per the
-naming rule above; the audit and Brief 4 called it `on_incident_respond`, which
-would have been the only intent signal on the bus without the suffix. Declared by
-Opus Job 12 because changing the signal set is not a brief's to make.
+**Emitted by** `src/ui/hud/FlightHUD.gd` when the player answers an active free-flight
+incident (`_respond_active_incident`).
+**Listened to by** `src/systems/incident/IncidentService.gd` — calls its own
+`respond()`. Named `_requested` per the naming rule above; the audit called it
+`on_incident_respond`. Declared by Opus Job 12; wired by Grok Brief 4 (REPAIR-4).
 
 **`on_incident_offered` used to sit here and was removed by Opus Job 12 on
 2026-08-07.** It was emitted on the line above `on_incident_prompt` with the same

@@ -17,7 +17,12 @@ var _console_commands: TimeConsoleCommands = null
 
 func _ready() -> void:
 	EventBus.on_save_loaded.connect(_on_save_loaded)
+	EventBus.on_combat_lock_requested.connect(_on_combat_lock_requested)
 	_console_commands = TimeConsoleCommands.new()
+
+
+func _on_combat_lock_requested(locked: bool) -> void:
+	set_combat_lock(locked)
 
 
 ## The speed the player asked for, whether or not the lock is honouring it.
