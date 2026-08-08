@@ -854,8 +854,7 @@ func _apply_world_section(sections: Dictionary) -> void:
 			system_id = StringName(raw_id)
 
 	if system_id != _world.system_id:
-		var from_id: StringName = _world.system_id
-		EventBus.on_system_exited.emit(from_id)
+		# REPAIR-3: on_system_exited emit removed (zero listeners). Declaration kept.
 		_world.clear_world()
 		await get_tree().process_frame
 		_world.system_id = system_id
@@ -942,7 +941,7 @@ func _on_jump_requested(destination_system_id: StringName) -> void:
 
 	_jump_busy = true
 	var from_id: StringName = _world.system_id
-	EventBus.on_system_exited.emit(from_id)
+	# REPAIR-3: on_system_exited emit removed (zero listeners). Destination uses entered.
 
 	_world.clear_world()
 	# Wait one frame so queue_free finishes before re-adding environment nodes.

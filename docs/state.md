@@ -52,6 +52,24 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 
 ## Session history
 
+- **2026-08-08 (REPAIR-3 attempt 2 — three dead signals, #65 red-proved)** — Audit
+  at baseline ee17eab5: three production emits with zero `.connect` anywhere.
+  **Job 12's five** and `on_kill_reported` left untouched. **EventBus.gd not
+  edited** (stale comment is a separate finding).
+  **`on_ops_charter_breached` (#19)** — wired: `StationOpsUi.connect_refresh`
+  + `FlightHUD` toast (`BalanceOps.CHARTER_BREACH_TOAST_FORMAT`). Emit stays in
+  `OperationService._breach_charter`. Guarded by isolated emit→refresh and
+  emit→toast tests (not the fire path, which also refreshes).
+  **`SystemWorld.built` (W4)** — node signal + emit removed; `on_system_entered`
+  remains the "world ready" contract. Guarded by signal-list assert.
+  **`on_system_exited` (#65)** — both production emits removed from `Main.gd`
+  (`_on_jump_requested` and `_apply_world_section`); declaration kept. **Attempt 1
+  bounce:** grep-only guard left suite green when Main emits restored. **Attempt 2
+  guard:** `test_main_never_emits_on_system_exited_from_jump_or_world_apply` boots
+  `Main.tscn`, connects a counter to the bus, drives both sites, asserts zero
+  emissions. Red-proved with both emits put back (1 then 2 hits); green with fix.
+  `docs/events.md` Listened-to-by for the two bus signals matches code. Suite
+  108/108, 941/941, lint clean.
 - **2026-08-08 (REPAIR-22 — intercept submit reports what was actually taken)** —
   Audit **#12** at baseline ee17eab5: submitting or ignoring a patrol intercept
   always wrote `pay_credits = -INTERCEPT_SUBMIT_PAY_LOSS` after

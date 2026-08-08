@@ -9,8 +9,9 @@ extends Node3D
 ## distinct silhouettes, per-system lighting, starfield, celestial sky (E6.2),
 ## and world gate labels. Does not spawn the player (entities layer). Main
 ## composes the two. Gates are jump destinations (GateTravelService + Main rebuild).
-
-signal built(system_id: StringName)
+##
+## REPAIR-3: removed node signal `built` — nothing ever connected. The bus contract
+## for "world is ready" is EventBus.on_system_entered (emitted at end of build).
 
 var system_id: StringName = BalanceFlight.PLAYABLE_SYSTEM_ID
 
@@ -71,7 +72,6 @@ func build() -> void:
 	CelestialSky.place_under(self, system_id)
 	_spawn_npc_traffic()
 	_spawn_hostile()
-	built.emit(system_id)
 	EventBus.on_system_entered.emit(system_id)
 	# Bounty may already be active (save restore / accept before jump). If the
 	# one-shot build spawn is gone or never ran, place prey near the player.

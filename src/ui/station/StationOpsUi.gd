@@ -14,6 +14,10 @@ static func connect_refresh(refresh: Callable) -> void:
 	EventBus.on_ops_order_changed.connect(refresh.unbind(BalanceOps.BUS_ARGS_ORDER_CHANGED))
 	EventBus.on_warehouse_changed.connect(refresh.unbind(BalanceOps.BUS_ARGS_WAREHOUSE_CHANGED))
 	EventBus.on_ops_upkeep_paid.connect(refresh.unbind(BalanceOps.BUS_ARGS_UPKEEP_PAID))
+	# REPAIR-3: breach was emitted with no production listener. Fire follows and
+	# also refreshes, but the breach signal is the surface that names *why*
+	# the ship left — keep it on the same refresh set as the other ops events.
+	EventBus.on_ops_charter_breached.connect(refresh.unbind(BalanceOps.BUS_ARGS_CHARTER_BREACHED))
 
 
 ## Disconnect the refresh callables created by connect_refresh.
@@ -27,6 +31,9 @@ static func disconnect_refresh(refresh: Callable) -> void:
 		EventBus.on_warehouse_changed, refresh.unbind(BalanceOps.BUS_ARGS_WAREHOUSE_CHANGED)
 	)
 	_safe_disconnect(EventBus.on_ops_upkeep_paid, refresh.unbind(BalanceOps.BUS_ARGS_UPKEEP_PAID))
+	_safe_disconnect(
+		EventBus.on_ops_charter_breached, refresh.unbind(BalanceOps.BUS_ARGS_CHARTER_BREACHED)
+	)
 
 
 static func _safe_disconnect(sig: Signal, callable: Callable) -> void:

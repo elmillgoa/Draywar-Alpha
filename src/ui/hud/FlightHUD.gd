@@ -87,6 +87,9 @@ func _ready() -> void:
 	EventBus.on_target_lock_changed.connect(_on_target_lock_changed)
 	EventBus.on_hostile_damaged.connect(_on_hostile_damaged)
 	EventBus.on_player_damaged.connect(_on_player_damaged_flash)
+	# REPAIR-3: charter breach was emitted with no listener. Surface it so an
+	# unpaid fleet is not silently fired while free-flying.
+	EventBus.on_ops_charter_breached.connect(_on_ops_charter_breached)
 	_refresh_mission_line()
 
 
@@ -121,6 +124,7 @@ func _exit_tree() -> void:
 	_disconnect(EventBus.on_target_lock_changed, _on_target_lock_changed)
 	_disconnect(EventBus.on_hostile_damaged, _on_hostile_damaged)
 	_disconnect(EventBus.on_player_damaged, _on_player_damaged_flash)
+	_disconnect(EventBus.on_ops_charter_breached, _on_ops_charter_breached)
 
 
 func _disconnect(sig: Signal, callable: Callable) -> void:
@@ -766,6 +770,18 @@ func _on_campaign_ending_blocked(_grade: StringName, line: String) -> void:
 	if line.is_empty():
 		return
 	_show_kill_toast(line)
+
+
+## REPAIR-3: upkeep miss threshold breached a charter — standing already hit and
+## the ship is about to be fired. Always toast (docked or not); missing this is
+## how a silent fleet loss looks like a bug.
+func _on_ops_charter_breached(_ops_ship_id: StringName, entity_id: StringName) -> void:
+	var display: String = _content_name(entity_id)
+	if display.is_empty():
+		display = String(entity_id)
+	if display.is_empty():
+		display = "unknown"
+	_show_kill_toast(BalanceOps.CHARTER_BREACH_TOAST_FORMAT % display)
 
 
 ## S3b: sector news toast while free-flying (same slot as kill toast).

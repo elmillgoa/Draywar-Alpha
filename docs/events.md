@@ -232,7 +232,11 @@ The player is now in this system. Session-only for A1 (no save section).
 
 **Emitted by** `src/world/SystemWorld.gd` after gray-box build.
 **Listened to by** `FlightHUD` (system name), `StandingService` (status moment),
-`AutosaveService` (writes the career, origin `autosave_entry`, Job 10).
+`AutosaveService` (writes the career, origin `autosave_entry`, Job 10),
+`IncidentService`, `SectorMapPanel`, `SystemWorld` (prey/escort ensure).
+
+Note (REPAIR-3): node-local `SystemWorld.built` was removed — nothing connected
+to it; this bus signal is the only "world ready" contract.
 
 ### `on_dock_requested(station_id: StringName)`
 
@@ -600,7 +604,13 @@ Player left this system (emitted before the destination is built).
 |---|---|---|
 | `system_id` | `StringName` | System content id being left. |
 
-**Emitted by** `src/Main.gd` on a successful jump.
+**Emitted by** _nobody — production emits removed in **REPAIR-3** (audit baseline
+ee17eab5: zero production or consumer `.connect`). Declaration kept; changing
+the EventBus signal set is Opus-owned. Destination still announces via
+`on_system_entered` after `SystemWorld.build()`.
+**Listened to by** _nobody in production_. (Test-only counter in
+`tests/test_repair3_dead_signals.gd` asserts zero emissions from Main's jump and
+`_apply_world_section` paths — a guard, not a consumer.)
 
 ### `on_credits_changed(credits: int)`
 
@@ -1416,6 +1426,8 @@ StandingService; ship is fired after this signal.
 | `entity_id` | `StringName` | Charter Entity that took the standing hit. |
 
 **Emitted by** `OperationService`.
+**Listened to by** `StationOpsUi` / `StationMenu` (ops panel refresh — REPAIR-3),
+`FlightHUD` (toast naming the charter Entity — REPAIR-3).
 
 ### `on_warehouse_changed(station_id: StringName)`
 

@@ -101,6 +101,8 @@ const BUS_ARGS_SHIP_FIRED: int = 1
 const BUS_ARGS_ORDER_CHANGED: int = 2
 const BUS_ARGS_WAREHOUSE_CHANGED: int = 1
 const BUS_ARGS_UPKEEP_PAID: int = 1
+## on_ops_charter_breached(ops_ship_id, entity_id) — REPAIR-3 production wire.
+const BUS_ARGS_CHARTER_BREACHED: int = 2
 
 # --- Station UI copy --------------------------------------------------------
 
@@ -121,6 +123,9 @@ const STATION_OPS_NEED_FRIENDLY: String = "Need Friendly standing with dock cont
 const STATION_OPS_FULL: String = "Fleet full (max 2)"
 const STATION_OPS_BROKE: String = "Not enough credits to hire"
 const STATION_OPS_NOT_DOCKED: String = "Dock to manage operations"
+## FlightHUD toast when upkeep miss threshold fires a ship (REPAIR-3).
+## %s = charter Entity display name.
+const CHARTER_BREACH_TOAST_FORMAT: String = "Charter breached with %s — ship released"
 
 
 ## Display name for a hireable ops type.
