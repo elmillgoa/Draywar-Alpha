@@ -35,6 +35,11 @@ complete was S9). Elliot = playtest + ideas only; LLMs program everything.
 1. **Post-plan work** — no S11 in the Steam queue. Next is product/launch ops
    Elliot chooses: external RC players, Steam page, live GodotSteam if approved,
    bug smash from play, optional polish passes.
+1b. **Graphics pass is planned and queued behind the repair pass** (2026-08-08).
+   Spec: `docs/GRAPHICS_PASS_DESIGN.md` (Elliot-approved). Plan + G0 kickoff
+   prompt: `docs/GRAPHICS_PHASE_PLAN.md`. Starts only after the repair pass
+   closes; Elliot's action item first: reference images into
+   `docs/art_direction/`.
 2. Do not invent new pillars. Standing law unchanged.
 3. Cold chat: `/start` reads this file.
 
